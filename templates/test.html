@@ -1,162 +1,211 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML to Word Exporter</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <title>教务管理系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
 
-<div id="content">
-    <h1>导出的内容</h1>
-    <p>这是导出的内容的一部分。你可以在这里添加更多的文本和其他元素，比如列表、表格等。</p>
-    <ul>
-        <li>项目一</li>
-        <li>项目二</li>
-        <li>项目三</li>
-    </ul>
+<div class="container">
+    <h1>教务管理系统</h1>
+    
+    <!-- 学生信息管理 -->
+    <div id="student-management">
+        <h2>学生信息管理</h2>
+        <button onclick="addStudent()">添加学生</button>
+        <table id="students-table">
+            <thead>
+                <tr>
+                    <th>学号</th>
+                    <th>姓名</th>
+                    <th>年龄</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 学生数据将通过JavaScript动态添加 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 课程安排 -->
+    <div id="course-management">
+        <h2>课程安排</h2>
+        <button onclick="addCourse()">添加课程</button>
+        <table id="courses-table">
+            <thead>
+                <tr>
+                    <th>课程号</th>
+                    <th>课程名</th>
+                    <th>教师</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 课程数据将通过JavaScript动态添加 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 成绩查询 -->
+    <div id="grade-query">
+        <h2>成绩查询</h2>
+        <form onsubmit="queryGrades(event)">
+            <label for="student-id">学号:</label>
+            <input type="text" id="student-id" name="student-id" required>
+            <button type="submit">查询</button>
+        </form>
+        <table id="grades-table">
+            <thead>
+                <tr>
+                    <th>课程号</th>
+                    <th>课程名</th>
+                    <th>成绩</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 成绩数据将通过JavaScript动态添加 -->
+            </tbody>
+        </table>
+    </div>
+
 </div>
 
-<button id="exportBtn">导出为Word文档</button>
-
 <script>
-document.getElementById('exportBtn').addEventListener('click', function() {
-    var content = document.getElementById('content').innerHTML;
-    
-    // 构造Word文档的基本结构
-    var docXml = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-            <w:body>
-                <w:p w:rsidR="004C23B6" w:rsidRPr="004C23B6" w:rsidRDefault="004C23B6">
-                    <w:pPr>
-                        <w:pStyle w:val="Normal"/>
-                    </w:pPr>
-                    <w:r w:rsidR="004C23B6">
-                        <w:t>${content}</w:t>
-                    </w:r>
-                </w:p>
-            </w:body>
-        </w:document>
-    `;
-    
-    // 创建ZIP文件
-    var zip = new JSZip();
-    
-    // 内容类型文件
-    zip.file("[Content_Types].xml", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-            <Default Extension="xml" ContentType="application/xml"/>
-            <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-            <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-            <Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
-            <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-            <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
-        </Types>
-    `);
-    
-    // 关系文件
-    zip.file("_rels/.rels", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-            <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-            <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
-            <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
-        </Relationships>
-    `);
-    
-    // 核心属性文件
-    zip.file("docProps/core.xml", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <dc:title>Document Title</dc:title>
-            <dcterms:created xsi:type="dcterms:W3CDTF">2024-09-20T17:23:00Z</dcterms:created>
-            <cp:lastModifiedBy>User</cp:lastModifiedBy>
-        </cp:coreProperties>
-    `);
-    
-    // 应用程序特定属性文件
-    zip.file("docProps/app.xml", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
-            <Application>Microsoft Office Word</Application>
-            <DocSecurity>0</DocSecurity>
-            <ScaleCrop>false</ScaleCrop>
-            <HeadingPairs>
-                <vt:vector size="2" baseType="variant">
-                    <vt:variant>
-                        <vt:i4>0</vt:i4>
-                    </vt:variant>
-                    <vt:variant>
-                        <vt:i4>0</vt:i4>
-                    </vt:variant>
-                </vt:vector>
-            </HeadingPairs>
-        </Properties>
-    `);
-    
-    // 文档主体文件
-    zip.file("word/document.xml", docXml);
-    
-    // 样式文件
-    zip.file("word/styles.xml", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-            <w:style w:type="paragraph" w:styleId="Normal">
-                <w:name>
-                    <w:val>Normal</w:val>
-                </w:name>
-                <w:qFormat/>
-                <w:pPr>
-                    <w:spacing w:before="240" w:line="280" w:lineRule="auto"/>
-                </w:pPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:asciiTheme="minorHAnsi" w:hAnsiTheme="minorHAnsi"/>
-                    <w:sz w:val="18"/>
-                    <w:szCs w:val="18"/>
-                    <w:lang w:eastAsia="en-US" w:hAnsi="en-US" w:bidi="ar-SA"/>
-                </w:rPr>
-            </w:style>
-        </w:styles>
-    `);
-    
-    // 设置文件
-    zip.file("word/settings.xml", `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-            <w:compat>
-                <w:useAltKernOutsideFonts/>
-                <w:doNotUseSideBySideIfVeryTight/>
-                <w:useTypoMetrics/>
-                <w:doNotExpandShiftReturn/>
-                <w:adjustLineHeightInTable/>
-                <w:breakWrappedTables/>
-                <w:splitPgBreakAndParaMark/>
-                <w:applyBreakingRules/>
-                <w:doNotWrapTextWithPunct/>
-                <w:wrapTrailSpaces/>
-                <w:doNotUseEastAsianBreakRules/>
-                <w:use悬挂标点字符/>
-                <w:useAsianBreakRules/>
-                <w:doNotUseKnockoutRules/>
-                <w:doNotTrimFontHeightInCell/>
-                <w:doNotSuppressIndentation/>
-                <w:doNotAutofitConstrainedTables/>
-                <w:doNotVertAlignCellWithSp/>
-                <w:doNotBreakConstrainedForcedTables/>
-                <w:doNotUseFELayout/>
-            </w:compat>
-        </w:settings>
-    `);
-    
-    // 生成ZIP文件并下载
-    zip.generateAsync({type:"blob"}).then(function(content) {
-        saveAs(content, "exported_content.docx");
-    });
-});
+    // 示例数据
+    const students = [
+        { id: "001", name: "张三", age: 20 },
+        { id: "002", name: "李四", age: 21 }
+    ];
+
+    const courses = [
+        { id: "C001", name: "数学", teacher: "王老师" },
+        { id: "C002", name: "英语", teacher: "赵老师" }
+    ];
+
+    // 添加学生
+    function addStudent() {
+        const studentId = prompt("请输入学号:");
+        const studentName = prompt("请输入姓名:");
+        const studentAge = prompt("请输入年龄:");
+
+        if (studentId && studentName && studentAge) {
+            students.push({ id: studentId, name: studentName, age: studentAge });
+            updateStudentsTable();
+        }
+    }
+
+    // 更新学生表格
+    function updateStudentsTable() {
+        const tableBody = document.querySelector("#students-table tbody");
+        tableBody.innerHTML = "";
+        students.forEach(student => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${student.id}</td>
+                <td>${student.name}</td>
+                <td>${student.age}</td>
+                <td><button onclick="deleteStudent('${student.id}')">删除</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // 删除学生
+    function deleteStudent(studentId) {
+        students = students.filter(student => student.id !== studentId);
+        updateStudentsTable();
+    }
+
+    // 添加课程
+    function addCourse() {
+        const courseId = prompt("请输入课程号:");
+        const courseName = prompt("请输入课程名:");
+        const teacher = prompt("请输入教师:");
+
+        if (courseId && courseName && teacher) {
+            courses.push({ id: courseId, name: courseName, teacher: teacher });
+            updateCoursesTable();
+        }
+    }
+
+    // 更新课程表格
+    function updateCoursesTable() {
+        const tableBody = document.querySelector("#courses-table tbody");
+        tableBody.innerHTML = "";
+        courses.forEach(course => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${course.id}</td>
+                <td>${course.name}</td>
+                <td>${course.teacher}</td>
+                <td><button onclick="deleteCourse('${course.id}')">删除</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // 删除课程
+    function deleteCourse(courseId) {
+        courses = courses.filter(course => course.id !== courseId);
+        updateCoursesTable();
+    }
+
+    // 查询成绩
+    function queryGrades(event) {
+        event.preventDefault();
+        const studentId = document.querySelector("#student-id").value;
+        const grades = [
+            { courseId: "C001", courseName: "数学", grade: 95 },
+            { courseId: "C002", courseName: "英语", grade: 88 }
+        ].filter(grade => grade.courseId === studentId);
+
+        updateGradesTable(grades);
+    }
+
+    // 更新成绩表格
+    function updateGradesTable(grades) {
+        const tableBody = document.querySelector("#grades-table tbody");
+        tableBody.innerHTML = "";
+        grades.forEach(grade => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${grade.courseId}</td>
+                <td>${grade.courseName}</td>
+                <td>${grade.grade}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // 初始化表格
+    updateStudentsTable();
+    updateCoursesTable();
 </script>
 
 </body>
