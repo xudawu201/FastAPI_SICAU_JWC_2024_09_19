@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-19 20:12:48
 LastEditors: xudawu
-LastEditTime: 2024-09-20 18:13:36
+LastEditTime: 2024-09-23 09:11:20
 '''
 import fastapi
 import fastapi.templating
@@ -18,7 +18,8 @@ def index(request: fastapi.Request):
     message = 'this is home page'
     books = ['book1', 'book2', 'book3']
     return templates.TemplateResponse(
-        'index.html', 
+        # 'index.html', 
+        'test.html', 
         {   
             'request':request,
             'html_message': message,
