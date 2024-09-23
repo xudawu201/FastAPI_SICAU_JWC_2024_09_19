@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-19 20:12:48
 LastEditors: xudawu
-LastEditTime: 2024-09-20 18:13:36
+LastEditTime: 2024-09-23 09:37:45
 '''
 import fastapi
 import fastapi.templating
@@ -17,12 +17,15 @@ templates = fastapi.templating.Jinja2Templates(directory='templates')
 def index(request: fastapi.Request):
     message = 'this is home page'
     books = ['book1', 'book2', 'book3']
+    test_age = 16
     return templates.TemplateResponse(
         'index.html', 
+        # 'test.html', 
         {   
             'request':request,
             'html_message': message,
-            'book': books
+            'book': books,
+            'age': test_age
          }
         )
 

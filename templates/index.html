@@ -8,5 +8,18 @@
     <h1>{{ html_message }}</h1>
     <h1>{{ book.0 }}</h1>
     <h1>{{ book.1 }}</h1>
+    
+    {% if age == 16 %}
+        <h1>age is 16</h1>
+    {% else %}
+        <h1>age is not 16</h1>
+    {% endif %}
+    
+    <ul>
+        {% for temp_book in book %}
+            <li>{{ temp_book }}</li>
+        {% endfor %}
+    </ul>
+    
 </body>
 </html>
