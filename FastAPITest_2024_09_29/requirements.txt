@@ -1,0 +1,15 @@
+-->install module
+pip install sqlalchemy
+pip install databases
+pip install datetime
+pip install typing
+pip install uuid
+pip install pydantic
+pip install passlib
+
+-->DB script
+create user usertest with NOINHERIT LOGIN ENCRYPTED PASSWORD 'usertest222';
+create database dbtest owner=usertest;
+
+-->how to run
+uvicorn main:app  --reload
