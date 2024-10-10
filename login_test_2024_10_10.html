@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录</title>
+    <script>
+        // 页面加载时，通过后端验证 session_token 是否有效
+        window.onload = async function() {
+            const response = await fetch('/verify-token', {
+                method: 'GET',
+                credentials: 'include'  // 允许携带 HttpOnly Cookie
+            });
+
+            if (response.ok) {
+                // 如果后端验证通过，跳转到成功页面
+                window.location.href = '/success';
+            } else {
+                // 如果后端验证失败，保持在登录页面
+                console.log('Invalid or expired token, staying on login page.');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>用户登录</h2>
+    <form id="loginForm">
+        <label for="username">用户名:</label>
+        <input type="text" id="username" name="username" required>
+        <br><br>
+        <label for="password">密码:</label>
+        <input type="password" id="password" name="password" required>
+        <br><br>
+        <button type="submit">登录</button>
+    </form>
+    <p id="message"></p>
+
+    <script>
+        document.getElementById('loginForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                // 登录成功后跳转到成功页面
+                window.location.href = '/success';
+            } else {
+                const result = await response.json();
+                document.getElementById('message').innerText = '登录失败: ' + result.detail;
+            }
+        }
+    </script>
+</body>
+</html>

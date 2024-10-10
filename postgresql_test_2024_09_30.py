@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-30 09:36:46
 LastEditors: xudawu
-LastEditTime: 2024-10-08 11:15:07
+LastEditTime: 2024-10-08 11:56:30
 '''
 import sqlalchemy
 
@@ -16,8 +16,7 @@ Student = sqlalchemy.Table('student', metadata,
 
 # 连接数据库
 # 数据库类型://用户名:密码@主机名:端口号/数据库名
-# DataBaseEngine = sqlalchemy.create_engine('postgresql://postgres:123@localhost:5432/test_2024_09_29')
-DataBaseEngine = sqlalchemy.create_engine('mssql://sa:123@127.0.0.1:1433/JWC_SCAU_2024_10_08')
+DataBaseEngine = sqlalchemy.create_engine('postgresql://postgres:123@localhost:5432/test_2024_09_29')
 # metadata.create_all(DataBaseEngine)
     
 # 使用ORM查询数据

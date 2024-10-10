@@ -1,0 +1,73 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-10-09 13:41:02
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-09 14:15:26
+-->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>教务管理系统</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            header {
+                background-color: #4CAF50;
+                color: white;
+                padding: 1em 0;
+                text-align: center;
+            }
+            nav {
+                background-color: #333;
+                overflow: hidden;
+            }
+            nav a {
+                float: left;
+                display: block;
+                color: white;
+                text-align: center;
+                padding: 14px 20px;
+                text-decoration: none;
+            }
+            nav a:hover {
+                background-color: #ddd;
+                color: black;
+            }
+            .container {
+                padding: 20px;
+            }
+        </style>
+    </head>
+<body>
+    <header>
+        <h1>教务管理系统</h1>
+    </header>
+    <nav>
+        <a href="#students">学生管理</a>
+        <a href="#teachers">教师管理</a>
+        <a href="#courses">课程管理</a>
+        <a href="#grades">成绩管理</a>
+    </nav>
+    <div class="container">
+        <h2>欢迎使用教务管理系统</h2>
+        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
+    </div>
+    <h2>Add an account</h2>
+    <form method="POST" action="/login">
+        <label for="username">username</label><br>
+        <input type="text" id="username" name="username"><br><br>
+
+        <label for="password">password</label><br>
+        <input type="password" id="password" name="password"><br><br>
+
+        <button type="submit">Sign in</button><br><br>
+        <a href="/forgot-password">Forgot password?</a><br><br>
+        <a href="/register">Want to create an account?</a>
+    </form>
+</body>
+</html>

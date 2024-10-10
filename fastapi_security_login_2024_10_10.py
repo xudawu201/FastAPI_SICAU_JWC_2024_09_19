@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-20 09:11:00
 LastEditors: xudawu
-LastEditTime: 2024-10-10 17:34:53
+LastEditTime: 2024-10-10 17:59:54
 '''
 import secrets
 import uvicorn
@@ -22,7 +22,8 @@ app = FastAPI()
 # 设置JWT密钥和算法
 jwt_secret_key_str = "74701188166a9ee01a13cfa21de9532d4aa94a2f7a921500a3ad0b64e250461a"
 algorithm_str = "HS256"
-access_token_expire_minutes_int = 30  # 设置Token过期时间为30分钟
+# 设置令牌的过期时间
+access_token_expire_minutes_int = 15
 
 # 获得文件夹路径
 BASE_PATH = pathlib.Path(__file__).resolve().parent
@@ -77,9 +78,9 @@ def get_current_user(session_token: str = Cookie(None)):
 async def login(response: Response, user: User):
     if user.username in fake_users_db and user.password == fake_users_db[user.username]["password"]:
         token_data = {"sub": user.username}
-        token = create_access_token(data=token_data, expires_delta=timedelta(minutes=access_token_expire_minutes_int))
-        # 设置Cookie
-        response.set_cookie(key="session_token", value=token, httponly=True, max_age=60*60, secure=True)
+        token = create_access_token(data=token_data, expires_delta=timedelta(seconds=access_token_expire_minutes_int))
+        # 设置Cookie超时时间，max_age单位为秒
+        response.set_cookie(key="session_token", value=token, httponly=True, max_age=10, secure=False)
         return {
             "username": user.username,
             "message": f"Login successful for user {user.username}",
@@ -96,6 +97,15 @@ async def protected_route(user: str = Depends(get_current_user)):
 @app.get("/verify-token")
 async def verify_token(user: str = Depends(get_current_user)):
     return {"message": "Token is valid."}
+
+# 退出登录接口
+@app.post("/logout")
+async def logout(response: Response):
+    """
+    清除客户端的 session_token cookie，实现用户退出登录
+    """
+    response.delete_cookie("session_token")  # 删除session_token cookie
+    return {"message": "Logout successful."}
 
 # 返回登录页面
 @app.get("/")

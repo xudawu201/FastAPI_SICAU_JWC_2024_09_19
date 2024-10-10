@@ -1,15 +1,4 @@
--->install module
-pip install sqlalchemy
-pip install databases
-pip install datetime
-pip install typing
-pip install uuid
-pip install pydantic
-pip install passlib
-
--->DB script
-create user usertest with NOINHERIT LOGIN ENCRYPTED PASSWORD 'usertest222';
-create database dbtest owner=usertest;
-
--->how to run
-uvicorn main:app  --reload
+curl -X 'GET' \
+  'http://127.0.0.1:8000/users/me/' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiZXhwIjoxNzI4NDYyNzkxfQ.vcbmk7JL99oFixpCIAmKDPc1tUz2mv_9mH5MAH4Nn38'

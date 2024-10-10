@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-19 20:12:48
 LastEditors: xudawu
-LastEditTime: 2024-09-25 15:58:22
+LastEditTime: 2024-10-10 16:03:16
 '''
 import fastapi
 import fastapi.templating
@@ -19,7 +19,6 @@ def index(request: fastapi.Request):
     books = ['book1', 'book2', 'book3']
     test_age = 16
     return templates.TemplateResponse(
-        # 'index.html', 
         'test.html', 
         {   
             'request':request,
