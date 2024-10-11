@@ -1,40 +1,104 @@
-'''
-Author: xudawu
-Date: 2024-09-19 20:12:48
-LastEditors: xudawu
-LastEditTime: 2024-10-10 16:28:41
-'''
-import fastapi
-import fastapi.templating
-from fastapi.responses import HTMLResponse
+import secrets
 import uvicorn
+from fastapi import FastAPI, Depends, Cookie, HTTPException, Response
+from pydantic import BaseModel
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+import pathlib
+import passlib.context
 
-app = fastapi.FastAPI()
+app = FastAPI()
 
-# 初始化 Jinja2 模板引擎
-templates = fastapi.templating.Jinja2Templates(directory='templates')
+# 获得文件夹路径
+BASE_PATH = pathlib.Path(__file__).resolve().parent
+TemplatesJinja2 = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
-# @app.get('/')
-# def index(request: fastapi.Request):
-#     message = 'this is home page'
-#     books = ['book1', 'book2', 'book3']
-#     test_age = 16
-#     return templates.TemplateResponse(
-#         'test.html', 
-#         {   
-#             'request':request,
-#             'html_message': message,
-#             'book': books,
-#             'age': test_age
-#          }
-#         )
+# 设置密码哈希算法为 pbkdf2_sha256
+pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-# response_class=HTMLResponse：明确声明返回的是 HTML 响应。
-# 这不是必须的，因为 TemplateResponse 默认会返回 HTML 响应，但这为代码增加了可读性。
+# 验证密码和哈希密码
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+# 获得哈希密码
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+# 用户模型
+class User(BaseModel):
+    username: str
+    password: str
+
+# 模拟的用户数据库，包含哈希密码
+fake_users_db = {
+    "xudawu": {"username": "xudawu", "hashed_password": get_password_hash("test")},
+    "jane_smith": {"username": "jane_smith", "hashed_password": get_password_hash("secret_jane")},
+    "alice": {"username": "alice", "hashed_password": get_password_hash("secret_alice")},
+    "bob": {"username": "bob", "hashed_password": get_password_hash("secret_bob")},
+    "charlie": {"username": "charlie", "hashed_password": get_password_hash("secret_charlie")}
+}
+
+# 假设这是存储token与其对应用户的简单字典
+active_tokens = {}
+
+def get_current_user(session_token: str = Cookie(None)):
+    """
+    验证Cookie中的session_token是否有效，这里是简化的版本，实际应用中应该有更安全的验证机制。
+    """
+    user = active_tokens.get(session_token)
+    if user is not None:
+        return user
+    else:
+        raise HTTPException(status_code=401, detail="Invalid session token")
+
+@app.post("/login")
+async def login(response: Response, user: User):
+    if user.username in fake_users_db:
+        stored_user = fake_users_db[user.username]
+        # 验证密码是否正确
+        if verify_password(user.password, stored_user["hashed_password"]):
+            token = secrets.token_hex(16)
+            active_tokens[token] = user.username  # 将生成的token与用户名关联起来
+            print("active_tokens:", active_tokens)
+            # 设置cookie的有效时间，max_age的秒数
+            response.set_cookie(key="session_token", value=token, max_age=10, httponly=True)
+            return {
+                "username": user.username,
+                "token": token,
+                "active_tokens": active_tokens,
+                "message": f"Login successful for user {user.username}"
+            }
+    raise HTTPException(status_code=401, detail="Incorrect username or password")
+
+@app.get("/protected-route")
+async def protected_route(user: str = Depends(get_current_user)):
+    """
+    受保护的路由，只有携带有效Cookie的请求才能访问
+    """
+    return {"message": f"Welcome back, {user}!"}
+
+from fastapi.responses import HTMLResponse
+
 @app.get("/", response_class=HTMLResponse)
-async def login_success_page(request: fastapi.Request):
-    return templates.TemplateResponse("test.html", {"request": request})
+async def read_login_page(request: Request):
+    context = {"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login_test_2024_10_10.html", context)
 
-if __name__ == '__main__':
-    # 启动服务器
-    uvicorn.run(app='FastAPITest2_2024_09_19:app', host='127.0.0.1', port=8000, reload=True)
+# 返回成功登录的页面
+@app.get("/login_success", response_class=HTMLResponse)
+async def login_success_page(request: Request):
+    context = {"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login_sucess_test_2024_10_10.html", context)
+
+@app.get("/verify-token")
+async def verify_token(user: str = Depends(get_current_user)):
+    """
+    验证 session_token 是否有效。
+    如果有效，返回 200 状态码；如果无效，返回 401。
+    """
+    return {"message": "Token is valid."}
+
+# 主函数，用于启动FastAPI应用程序
+if __name__ == "__main__":
+    # debug 模式
+    uvicorn.run("fastapi_cookie_session_2024_10_10:app", host="127.0.0.1", port=8000, reload=True)

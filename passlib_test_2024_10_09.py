@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-09 17:00:32
 LastEditors: xudawu
-LastEditTime: 2024-10-09 17:10:46
+LastEditTime: 2024-10-11 16:38:01
 '''
 
 import passlib.context
@@ -14,10 +14,10 @@ pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"], deprecated
 password = "test"
 
 # 生成哈希
-hashed_password_1 = pwd_context.hash(password)
-# hashed_password_1 = '$pbkdf2-sha256$29000$bW1tzTlnDIHwHgOg1JrTeg$ks6k90wAUBC8QyeBUU9T6B77y2XMlQx.yxQw9FFtQMo'
-hashed_password_2 = pwd_context.hash(password)
-# hashed_password_2 = '$pbkdf2-sha256$29000$r3WOkZLynlOq9T6n1Nobww$1ksVePSQ65NS4UQy/gkNHL2MqBQN4Nd/zS4nh1k5s4I'
+# hashed_password_1 = pwd_context.hash(password)
+hashed_password_1 = '$pbkdf2-sha256$29000$aw3BuNf6H8MYQ8j5X0tJ6Q$8nX0D7HpWq34L.GctNkUgqx9iI1DQWbBW4MMlqMj4jo'
+# hashed_password_2 = pwd_context.hash(password)
+hashed_password_2 = '$pbkdf2-sha256$29000$r3WOkZLynlOq9T6n1Nobww$1ksVePSQ65NS4UQy/gkNHL2MqBQN4Nd/zS4nh1k5s4I'
 
 # 打印不同的哈希值
 print(f"哈希值 1: {hashed_password_1}")

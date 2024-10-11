@@ -2,15 +2,22 @@
 Author: xudawu
 Date: 2024-09-20 09:11:00
 LastEditors: xudawu
-LastEditTime: 2024-10-10 17:58:03
+LastEditTime: 2024-10-11 08:44:50
 '''
 import secrets
 import uvicorn
 from fastapi import FastAPI, Depends, Cookie, HTTPException, Response
 from pydantic import BaseModel
- 
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+import pathlib
+
+
 app = FastAPI()
- 
+
+# 获得文件夹路径
+BASE_PATH = pathlib.Path(__file__).resolve().parent
+TemplatesJinja2 = Jinja2Templates(directory=str(BASE_PATH / "templates"))
  
 # 用户模型
 class User(BaseModel):
@@ -69,22 +76,19 @@ async def protected_route(user: str = Depends(get_current_user)):
     return {"message": f"Welcome back, {user}!"}
  
 
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 
-# 挂载静态文件路径
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
-async def read_login_page():
-    with open("login_test_2024_10_10.html", "r", encoding="utf-8") as file:
-        return file.read()
-    
-@app.get("/success", response_class=HTMLResponse)
-async def login_success_page():
-    # 返回成功登录的页面
-    with open("login_sucess_test_2024_10_10.html", "r", encoding="utf-8") as file:
-        return file.read()
+async def read_login_page(request: Request):
+    context = {"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login_test_2024_10_10.html", context)
+
+# 返回成功登录的页面
+@app.get("/login_success", response_class=HTMLResponse)
+async def login_success_page(request: Request):
+    context={"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login_sucess_test_2024_10_10.html", context)
 
 @app.get("/verify-token")
 async def verify_token(user: str = Depends(get_current_user)):
