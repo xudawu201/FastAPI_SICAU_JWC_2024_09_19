@@ -14,7 +14,6 @@ BASE_PATH = pathlib.Path(__file__).resolve().parent
 TemplatesJinja2 = Jinja2Templates(directory=str(BASE_PATH / "templates"))
 
 # 设置密码哈希算法为 pbkdf2_sha256
-# pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"])
 
 # 验证密码和哈希密码

@@ -1,3 +1,8 @@
+* @Author: xudawu
+ * @Date: 2024-10-10 09:20:58
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-12 10:54:17
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -32,6 +37,7 @@
             width: 93%;
             padding: 10px;
             margin: 10px 0px;
+
             border: 1px solid #ddd;
             border-radius: 5px;
         }
@@ -68,18 +74,55 @@
         window.onload = async function() {
             const response = await fetch('/verify-token', {
                 method: 'GET',
-                credentials: 'include'
+                credentials: 'include'  // 允许携带 HttpOnly Cookie
             });
+            // 解析响应，判断是否验证通过
             if (response.ok) {
+                // 如果后端验证通过，重定向路径
                 window.location.href = '/login_success';
-            } else {
+            }
+            else {
+                // 如果后端验证失败，保持在登录页面
                 console.log('Invalid or expired token, staying on login page.');
             }
         }
+    </script>
+</head>
+<body>
 
-        // 登录表单提交时阻止默认提交行为并使用 fetch 处理请求
-        async function handleLoginSubmit(event) {
-            event.preventDefault();  // 阻止默认表单提交
+    <div class="login-container" id="login-form">
+        <h2>用户登录</h2>
+        <input type="text" id="login-username" class="input-field" placeholder="用户名" required>
+        <input type="password" id="login-password" class="input-field" placeholder="密码" required>
+        <button class="btn" onclick="login()">登录</button>
+        <p id="login-error-message" class="error-message">用户名或密码错误</p>
+        <div class="toggle-btn" onclick="toggleForms()">没有账号？注册</div>
+    </div>
+
+    <div class="login-container" id="register-form" style="display: none;">
+        <h2>用户注册</h2>
+        <input type="text" id="register-username" class="input-field" placeholder="用户名" required>
+        <input type="password" id="register-password" class="input-field" placeholder="密码" required>
+        <input type="password" id="confirm-password" class="input-field" placeholder="确认密码" required>
+        <button class="btn" onclick="register()">注册</button>
+        <p id="register-error-message" class="error-message">注册失败，请重试</p>
+        <div class="toggle-btn" onclick="toggleForms()">已有账号？登录</div>
+    </div>
+
+    <script>
+        function toggleForms() {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+            }
+        }
+        
+        async function login() {
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
             const errorMessage = document.getElementById('login-error-message');
@@ -93,19 +136,23 @@
             });
 
             if (response.ok) {
-                window.location.href = '/login_success';  // 登录成功后跳转
+                window.location.href = '/login_success';
             } else {
-                errorMessage.style.display = 'block';  // 显示错误信息
+                errorMessage.style.display = 'block';
             }
         }
 
-        // 注册表单提交时阻止默认提交行为并使用 fetch 处理请求
-        async function handleRegisterSubmit(event) {
-            event.preventDefault();  // 阻止默认表单提交
+        async function register() {
             const username = document.getElementById('register-username').value;
             const password = document.getElementById('register-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const errorMessage = document.getElementById('register-error-message');
+
+            if (!username) {
+                errorMessage.textContent = '用户名不能为空';
+                errorMessage.style.display = 'block';
+                return;
+            }
 
             if (password !== confirmPassword) {
                 errorMessage.textContent = '密码不匹配';
@@ -124,57 +171,11 @@
             if (response.ok) {
                 alert('注册成功，请登录');
                 toggleForms();
-            } 
-            else {
+            } else {
                 errorMessage.textContent = '注册失败，请重试';
                 errorMessage.style.display = 'block';
             }
         }
-
-        // 切换登录和注册表单
-        function toggleForms() {
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            if (loginForm.style.display === 'none') {
-                loginForm.style.display = 'block';
-                registerForm.style.display = 'none';
-            } 
-            else {
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'block';
-            }
-        }
-    </script>
-</head>
-<body>
-
-    <div class="login-container" id="login-form">
-        <h2>用户登录</h2>
-        <form id="login_form">
-            <input type="text" id="login-username" name="username" class="input-field" placeholder="用户名" required>
-            <input type="password" id="login-password" name="password" class="input-field" placeholder="密码" required>
-            <button type="submit" class="btn">登录</button>
-        </form>
-        <p id="login-error-message" class="error-message">用户名或密码错误</p>
-        <div class="toggle-btn" onclick="toggleForms()">没有账号？注册</div>
-    </div>
-
-    <div class="login-container" id="register-form" style="display: none;">
-        <h2>用户注册</h2>
-        <form id="register_form">
-            <input type="text" id="register-username" name="username" class="input-field" placeholder="用户名" required>
-            <input type="password" id="register-password" name="password" class="input-field" placeholder="密码" required>
-            <input type="password" id="confirm-password" name="confirm_password" class="input-field" placeholder="确认密码" required>
-            <button type="submit" class="btn">注册</button>
-        </form>
-        <p id="register-error-message" class="error-message">注册失败，请重试</p>
-        <div class="toggle-btn" onclick="toggleForms()">已有账号？登录</div>
-    </div>
-
-    <script>
-        // 监听表单提交事件
-        document.getElementById('login_form').addEventListener('submit', handleLoginSubmit);
-        document.getElementById('register_form').addEventListener('submit', handleRegisterSubmit);
     </script>
 
 </body>

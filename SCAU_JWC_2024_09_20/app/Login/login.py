@@ -2,183 +2,144 @@
 Author: xudawu
 Date: 2024-10-09 13:42:12
 LastEditors: xudawu
-LastEditTime: 2024-10-10 17:22:22
+LastEditTime: 2024-10-12 16:24:31
 '''
-
-from datetime import datetime, timedelta
-from typing import Annotated
-
-import jwt
-from fastapi import Depends, FastAPI, HTTPException, status,Cookie
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jwt.exceptions import InvalidTokenError
-import passlib.context
+import secrets
+import uvicorn
+from fastapi import Depends, Cookie, HTTPException, Response
 from pydantic import BaseModel
-
-from fastapi.staticfiles import StaticFiles
+from fastapi import Request
 from fastapi.templating import Jinja2Templates
+import pathlib
+import passlib.context
+from fastapi.staticfiles import StaticFiles
+import fastapi
 
+app = fastapi.FastAPI()
 
-# to get a string like this run:
-# 创建用于 JWT 令牌签名的随机密钥。
-# jwt_secret_key_str = secrets.token_hex(32)
-jwt_secret_key_str = "74701188166a9ee01a13cfa21de9532d4aa94a2f7a921500a3ad0b64e250461a"
-# 创建指定 JWT 令牌签名算法的变量 ALGORITHM，本例中的值为 "HS256"
-algorithm_str = "HS256"
-# 创建设置令牌过期时间的变量
-access_token_expire_minutes_int = 10
+# 获得文件夹路径
+BASE_PATH = pathlib.Path(__file__).resolve().parent
 
-# 密码test
-fake_users_db = {
-    "xudawu": {
-        "username": "xudawu",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "$pbkdf2-sha256$29000$/L/3vndOCaEUQugdo1QK4Q$lvyt1fz9PIH5F8gjdo53Jj2Db./tkTsIYueT5tIYCxM",
-        "disabled": False,
-    }
-}
+# 挂载静态文件路径
+app.mount("/login_static_path", StaticFiles(directory=BASE_PATH / "frontend/static"))
 
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-
-class TokenData(BaseModel):
-    username: str | None = None
-
-
-class User(BaseModel):
-    username: str
-    email: str | None = None
-    full_name: str | None = None
-    disabled: bool | None = None
-
-
-class UserInDB(User):
-    hashed_password: str
+# 使用 Jinja2 模板渲染 HTML 文件
+TemplatesJinja2 = Jinja2Templates(directory=BASE_PATH / "frontend/template")
 
 # 设置密码哈希算法为 pbkdf2_sha256
-pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"])
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-app = FastAPI()
- 
 # 验证密码和哈希密码
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    # 验证密码是否正确
+    is_correct = pwd_context.verify(plain_password, hashed_password)
+    # 检查密码是否需要更新
+    if is_correct and pwd_context.needs_update(hashed_password):
+        print("Password hash needs to be updated")
+        # 这里可以选择将新哈希存入数据库
+    
+    return is_correct
 
 # 获得哈希密码
 def get_password_hash(password):
     return pwd_context.hash(password)
 
-# 获得用户信息
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
+# 用户模型
+class User(BaseModel):
+    username: str
+    password: str
 
-# 验证用户
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
+# 模拟的用户数据库，包含哈希密码
+fake_users_db = {
+    "xudawu": {
+        "username": "xudawu", 
+        "hashed_password": '$pbkdf2-sha256$29000$aw3BuNf6H8MYQ8j5X0tJ6Q$8nX0D7HpWq34L.GctNkUgqx9iI1DQWbBW4MMlqMj4jo'
+        # "hashed_password": get_password_hash("test")
+        },
+    # "jane_smith": {"username": "jane_smith", "hashed_password": get_password_hash("secret_jane")},
+    # "alice": {"username": "alice", "hashed_password": get_password_hash("secret_alice")},
+    # "bob": {"username": "bob", "hashed_password": get_password_hash("secret_bob")},
+    # "charlie": {"username": "charlie", "hashed_password": get_password_hash("secret_charlie")}
+}
 
+# 假设这是存储token与其对应用户的简单字典
+active_tokens = {}
 
-# 创建访问令牌
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now() + expires_delta
-    # 未设置超时时间，则默认设置为 15 分钟
+def get_current_user(session_token: str = Cookie(None)):
+    """
+    验证Cookie中的session_token是否有效，这里是简化的版本，实际应用中应该有更安全的验证机制。
+    """
+    user = active_tokens.get(session_token)
+    if user is not None:
+        return user
     else:
-        expire = datetime.now() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    # 生成 JWT 令牌
-    encoded_jwt = jwt.encode(to_encode, jwt_secret_key_str, algorithm=algorithm_str)
-    return encoded_jwt
+        raise HTTPException(status_code=401, detail="Invalid session token")
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, jwt_secret_key_str, algorithms=[algorithm_str])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        # 验证当前活动用户是否是之前登录获得令牌的用户
-        token_data = TokenData(username=username)
-    except InvalidTokenError:
-        raise credentials_exception
-    # 获得当前活动用户信息
-    user = get_user(fake_users_db, username=token_data.username)
-    if user is None:
-        raise credentials_exception
-    return user
+@app.post("/login")
+async def login(response: Response, user: User):
+    if user.username in fake_users_db:
+        stored_user = fake_users_db[user.username]
+        # 验证密码是否正确
+        if verify_password(user.password, stored_user["hashed_password"]):
+            token = secrets.token_hex(16)
+            active_tokens[token] = user.username  # 将生成的token与用户名关联起来
+            print("active_tokens:", active_tokens)
+            # 设置cookie的有效时间，max_age的秒数
+            response.set_cookie(key="session_token", value=token, max_age=10, httponly=True)
+            return {
+                "username": user.username,
+                "token": token,
+                "active_tokens": active_tokens,
+                "message": f"Login successful for user {user.username}"
+            }
+    raise HTTPException(status_code=401, detail="Incorrect username or password")
 
+from fastapi.responses import HTMLResponse
 
-async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
-):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+@app.get("/", response_class=HTMLResponse)
+async def read_login_page(request: Request):
+    context = {"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login.html", context)
 
+# 返回成功登录的页面
+@app.get("/login_success", response_class=HTMLResponse)
+async def login_success_page(request: Request):
+    context = {"request": request, "cookies": request.cookies}
+    return TemplatesJinja2.TemplateResponse("login_sucess.html", context)
 
-@app.post("/token")
-async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-) -> Token:
-    user = authenticate_user(fake_users_db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=access_token_expire_minutes_int)
-    # 获得访问令牌
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
-    return Token(access_token=access_token, token_type="bearer")
+@app.get("/verify-token")
+async def verify_token(user: str = Depends(get_current_user)):
+    """
+    验证 session_token 是否有效。
+    如果有效，返回 200 状态码；如果无效，返回 401。
+    """
+    return {"message": f"Welcome back, {user}!"}
 
+# 退出登录接口
+@app.post("/logout")
+async def logout(response: Response):
+    """
+    清除客户端的 session_token cookie，实现用户退出登录
+    """
+    response.delete_cookie("session_token")  # 删除session_token cookie
+    return {"message": "Logout successful."}
 
-@app.get("/users/me/", response_model=User)
-async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-):
-    return current_user
-
-
-@app.get("/users/me/items/")
-async def read_own_items(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-):
-    return [{"item_id": "Foo", "owner": current_user.username}]
-
-# 获得用户登录的cookie
-class Cookies(BaseModel):
-    model_config = {"extra": "forbid"}
+@app.post("/register")
+async def register(user: User):
+    """
+    注册新用户，存储用户名和哈希密码。
+    """
+    if user.username in fake_users_db:
+        raise HTTPException(status_code=400, detail="Username already registered")
     
-    session_id: str
-    fatebook_tracker: str | None = None
-    googall_tracker: str | None = None
+    hashed_password = get_password_hash(user.password)
+    fake_users_db[user.username] = {
+        "username": user.username,
+        "hashed_password": hashed_password
+    }
+    return {"message": f"User {user.username} registered successfully"}
 
-
-@app.get("/items/")
-async def read_items(cookies: Annotated[Cookies, Cookie()]):
-    return cookies
-
-if __name__ == '__main__':
-    # 启动服务器
-    import uvicorn
-    uvicorn.run(app='login:app', host='127.0.0.1', port=8000, reload=True)
+# 主函数，用于启动FastAPI应用程序
+if __name__ == "__main__":
+    # debug 模式
+    uvicorn.run("login:app", host="127.0.0.1", port=8000, reload=True)
