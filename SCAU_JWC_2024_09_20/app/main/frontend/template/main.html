@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-09 13:41:02
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-14 09:51:37
+ * @LastEditTime: 2024-10-14 16:52:21
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -59,11 +59,13 @@
 </head>
 <body>
     <header>
+        <!-- 验证session的js -->
+        <script src="login_static_path/js/verify_session_valid.js?v=login_sucess_valid_js"></script>
         <h1>教务管理系统</h1>
         <div class="user-info">
             {% if user %}
                 <span>欢迎, {{ user }}</span>
-                <a href="#" id="logout-button">注销</a>
+                <a href="#" id="logout_button">注销</a>
             {% else %}
                 <a href="/">登录</a>
             {% endif %}
@@ -80,6 +82,9 @@
         <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
     </div>
     <!-- 退出登录js -->
-    <script src="login_static_path/js/logout.js"></script>  
+    <!-- 使用php查询当前时间戳来作为js版本号用于强制更新js文件,用于解决多个文件调用同一个js文件时，js未更新的情况 -->
+    <!-- <script src="login_static_path/js/logout.js?v=<?php echo time(); ?>"></script> -->
+    <!-- 指定版本号 -->
+    <script src="login_static_path/js/logout.js?v=main_logout_js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-09 13:42:12
 LastEditors: xudawu
-LastEditTime: 2024-10-14 17:57:24
+LastEditTime: 2024-10-14 16:54:31
 '''
 import secrets
 import uvicorn
@@ -21,13 +21,10 @@ app = fastapi.FastAPI()
 BASE_PATH = pathlib.Path(__file__).resolve().parent
 
 # 挂载静态文件路径
-# SCAU_JWC_2024_09_20\frontend\template
 app.mount("/login_static_path", StaticFiles(directory=BASE_PATH / "frontend/static"))
-app.mount("/public_static_path", StaticFiles(directory='SCAU_JWC_2024_09_20/frontend/static'))
 
 # 使用 Jinja2 模板渲染 HTML 文件
-TemplatesJinja2Login = Jinja2Templates(directory=BASE_PATH / "frontend/template")
-TemplatesJinja2Main = Jinja2Templates(directory='SCAU_JWC_2024_09_20/frontend/template')
+TemplatesJinja2 = Jinja2Templates(directory=BASE_PATH / "frontend/template")
 
 # 设置密码哈希算法为 pbkdf2_sha256
 pwd_context = passlib.context.CryptContext(schemes=["pbkdf2_sha256"])
@@ -105,14 +102,14 @@ async def login(response: Response, user: User):
 async def read_login_page(request: Request,session_token: str = Cookie(None)):
     user = active_tokens.get(session_token)
     context = {"request": request, "user": user}  # 传递用户信息到模板
-    return TemplatesJinja2Login.TemplateResponse("login.html", context)
+    return TemplatesJinja2.TemplateResponse("login.html", context)
 
 # 返回成功登录的页面
 @app.get("/main", response_class=fastapi.responses.HTMLResponse)
 async def login_success_page(request: Request,session_token: str = Cookie(None)):
     user = active_tokens.get(session_token)
     context = {"request": request, "user": user}  # 传递用户信息到模板
-    return TemplatesJinja2Main.TemplateResponse("main.html", context)
+    return TemplatesJinja2.TemplateResponse("main.html", context)
 
 # 验证 cookie 接口
 @app.get("/verify-token")

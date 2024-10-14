@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Button Example</title>
+</head>
+<body>
+    <h1>{{ message }}</h1>  <!-- 显示从后端传递的消息 -->
+    
+    <h2>User List:</h2>
+    <ul>
+        {% for user in users %}
+            <li>Name: {{ user.name }}, Age: {{ user.age }}</li>  <!-- 显示用户信息 -->
+        {% endfor %}
+    </ul>
+    <h2>{{request}}</h2>
+    <h1>{{ message }}</h1>
+
+    <!-- 显示请求方法和路径 -->
+    <p><strong>Request Method:</strong> {{ request.method }}</p>
+    <p><strong>Request URL:</strong> {{ request.url }}</p>
+    <p><strong>Request Path:</strong> {{ request.url.path }}</p>
+
+    <!-- 显示请求头 -->
+    <h2>Headers</h2>
+    <ul>
+        {% for key, value in request.headers.items() %}
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+
+    <!-- 显示查询参数 -->
+    <h2>Query Parameters</h2>
+    {% if request.query_params %}
+    <ul>
+        {% for key, value in request.query_params.items() %}
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No query parameters found.</p>
+    {% endif %}
+
+    <!-- 显示Cookies -->
+    <h2>Cookies</h2>
+    {% if request.cookies %}
+    <ul>
+        {% for key, value in request.cookies.items() %}
+        <li><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No cookies found.</p>
+    {% endif %}
+
+    <!-- 显示客户端信息 -->
+    <h2>Client Info</h2>
+    <p><strong>Client IP:</strong> {{ request.client.host }}</p>
+    <p><strong>Client Port:</strong> {{ request.client.port }}</p>
+    
+    <!-- 显示完整的请求URL -->
+    <h2>Complete Request Info</h2>
+    <pre>{{ request }}</pre>
+
+    <!-- 按钮 -->
+    <button id="loadDataBtn">Load More Data</button>
+
+    <!-- 显示数据的容器 -->
+    <div id="dataContainer"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 获取按钮和数据容器
+            const loadDataBtn = document.getElementById("loadDataBtn");
+            const dataContainer = document.getElementById("dataContainer");
+        
+            // 按钮点击事件监听器
+            loadDataBtn.addEventListener("click", async function () {
+                // 发送请求到后端
+                const response = await fetch('/get_data');
+                const data = await response.json();
+        
+                // 清空现有数据
+                dataContainer.innerHTML = '';
+        
+                // 检查是否成功返回数据
+                if (data.status === 'success') {
+                    // 遍历返回的用户数据并显示在页面上
+                    data.users.forEach(user => {
+                        const userElement = document.createElement('p');
+                        // 使用模板字符串语法（反引号 ``）进行的字符串插值，将变量嵌入到字符串中
+                        userElement.textContent = `Name: ${user.name}, Age: ${user.age}`;
+                        dataContainer.appendChild(userElement);
+                    });
+                } else {
+                    dataContainer.textContent = 'Failed to load data.';
+                }
+            });
+        });
+    </script> <!-- 引入JavaScript文件 -->
+</body>
+</html>

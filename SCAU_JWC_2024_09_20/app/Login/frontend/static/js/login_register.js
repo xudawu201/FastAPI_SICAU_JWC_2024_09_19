@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-12 11:52:07
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-12 16:10:02
+ * @LastEditTime: 2024-10-14 16:55:39
  */
 // 登录表单提交时阻止默认提交行为并使用 fetch 处理请求
 async function handleLoginSubmit(event) {
@@ -20,7 +20,7 @@ async function handleLoginSubmit(event) {
     });
 
     if (response.ok) {
-        window.location.href = '/login_success';  // 登录成功后跳转
+        window.location.href = '/main';  // 登录成功后跳转
     } else {
         errorMessage.style.display = 'block';  // 显示错误信息
     }
@@ -35,7 +35,7 @@ async function handleRegisterSubmit(event) {
     const errorMessage = document.getElementById('register-error-message');
 
     if (password !== confirmPassword) {
-        errorMessage.textContent = '密码不匹配';
+        errorMessage.textContent = '两次密码不匹配';
         errorMessage.style.display = 'block';
         return;
     }
@@ -48,13 +48,16 @@ async function handleRegisterSubmit(event) {
         body: JSON.stringify({ username, password })
     });
 
-    if (response.ok) {
-        alert('注册成功，请登录');
-        toggleForms();
-    } 
-    else {
-        errorMessage.textContent = '注册失败，请重试';
+    const result = await response.json();
+
+    if (result.already_name_flag ==='true'){
+        errorMessage.textContent = '注册失败，该用户名已被注册';
         errorMessage.style.display = 'block';
+    }
+    else if (result.already_name_flag ==='false'){
+        errorMessage.style.display = 'block';
+        alert(`${result.username} 注册成功，请登录`);
+        toggleForms();
     }
 }
 

@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-12 09:18:05
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-12 16:33:59
+ * @LastEditTime: 2024-10-14 16:48:34
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -12,15 +12,25 @@
     <title>登录成功</title>
 
     <!-- 验证session的js -->
-    <script src="login_static_path/js/verify_session_valid.js"></script>
+    <script src="login_static_path/js/verify_session_valid.js?v=login_sucess_valid_js"></script>
+    <div class="user-info">
+        {% if user %}
+            <span>欢迎, {{ user }}</span>
+            <a href="#" id="logout_button">注销</a>
+            <!-- <button id="logout_button">Logout</button> -->
+        {% else %}
+            <a href="/">登录</a>
+        {% endif %}
+    </div>
 </head>
 <body>
     <h2>登录成功！</h2>
     <p id="message">正在加载用户信息...</p>
     <!-- 退出登录按钮 -->
-    <button id="logout-btn">Logout</button>
+    <!-- <button id='logout_button'>Logout</button> -->
 
     <!-- 退出登录js -->
-    <script src="login_static_path/js/logout.js"></script>
+    <!-- <script src="login_static_path/js/logout.js?v=<?php echo time(); ?>"></script> -->
+    <script src="login_static_path/js/logout.js?v=login_sucess_logout_js"></script>
 </body>
 </html>

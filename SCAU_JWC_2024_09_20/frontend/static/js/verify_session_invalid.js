@@ -6,7 +6,7 @@ window.onload = async function() {
     });
     // 如果session有效，跳转到登录成功页面
     if (response.ok) {
-        window.location.href = '/login_success';
+        window.location.href = '/main';
     } 
     // 如果session无效，保持在当前页面
     else {
