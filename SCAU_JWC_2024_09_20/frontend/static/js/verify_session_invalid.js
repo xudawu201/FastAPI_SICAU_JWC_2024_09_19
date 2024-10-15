@@ -1,6 +1,12 @@
+/*
+ * @Author: xudawu
+ * @Date: 2024-10-14 17:05:28
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-15 15:31:48
+ */
 // 页面完全加载完成后时，通过后端验证 session_token 是否有效,访问 /verify-token路径，这是后端用于验证 session_token 的接口
 window.onload = async function() {
-    const response = await fetch('/verify-token', {
+    const response = await fetch('/verify_cookie', {
         method: 'GET',
         credentials: 'include'
     });

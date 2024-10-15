@@ -1,103 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FastAPI Button Example</title>
+    <title>教务管理系统</title>
+    <link rel="stylesheet" href="public_static_path/css/main.css?v=main_css">
+    <!-- 验证session的js -->
+    <script src="public_static_path/js/verify_session_valid.js?v=verify_valid_js"></script>
+    <style>
+        /* 子窗口样式 */
+        .slide-in-panel {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background-color: #f9f9f9;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.5);
+            transition: right 0.3s ease;
+            z-index: 1000;
+        }
+        .slide-in-panel.active {
+            right: 0;
+        }
+        .slide-in-panel h3 {
+            padding: 20px;
+            margin: 0;
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+        }
+        .slide-in-panel button {
+            display: block;
+            width: 80%;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .slide-in-panel button:hover {
+            background-color: #c82333;
+        }
+
+        /* 美观的按钮样式 */
+        #logout_button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #logout_button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ message }}</h1>  <!-- 显示从后端传递的消息 -->
-    
-    <h2>User List:</h2>
-    <ul>
-        {% for user in users %}
-            <li>Name: {{ user.name }}, Age: {{ user.age }}</li>  <!-- 显示用户信息 -->
-        {% endfor %}
-    </ul>
-    <h2>{{request}}</h2>
-    <h1>{{ message }}</h1>
+    <header>
+        <h1>教务管理系统</h1>
+        <div class="user-info">
+            {% if user %}
+                <span>欢迎, {{ user }}</span>
+                <button id="logout_button">退出登录</button>
+            {% else %}
+                <a href="/">登录</a>
+            {% endif %}
+        </div>
+    </header>
+    <nav>
+        <a href="#students">学生管理</a>
+        <a href="#teachers">教师管理</a>
+        <a href="#courses">课程管理</a>
+        <a href="#grades">成绩管理</a>
+    </nav>
+    <div class="container">
+        <h2>欢迎使用教务管理系统</h2>
+        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
+    </div>
 
-    <!-- 显示请求方法和路径 -->
-    <p><strong>Request Method:</strong> {{ request.method }}</p>
-    <p><strong>Request URL:</strong> {{ request.url }}</p>
-    <p><strong>Request Path:</strong> {{ request.url.path }}</p>
+    <!-- 右侧滑动的子窗口 -->
+    <div id="slidePanel" class="slide-in-panel">
+        <h3>确定要退出登录吗？</h3>
+        <button id="confirm_logout">退出登录</button>
+    </div>
 
-    <!-- 显示请求头 -->
-    <h2>Headers</h2>
-    <ul>
-        {% for key, value in request.headers.items() %}
-        <li><strong>{{ key }}:</strong> {{ value }}</li>
-        {% endfor %}
-    </ul>
-
-    <!-- 显示查询参数 -->
-    <h2>Query Parameters</h2>
-    {% if request.query_params %}
-    <ul>
-        {% for key, value in request.query_params.items() %}
-        <li><strong>{{ key }}:</strong> {{ value }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No query parameters found.</p>
-    {% endif %}
-
-    <!-- 显示Cookies -->
-    <h2>Cookies</h2>
-    {% if request.cookies %}
-    <ul>
-        {% for key, value in request.cookies.items() %}
-        <li><strong>{{ key }}:</strong> {{ value }}</li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No cookies found.</p>
-    {% endif %}
-
-    <!-- 显示客户端信息 -->
-    <h2>Client Info</h2>
-    <p><strong>Client IP:</strong> {{ request.client.host }}</p>
-    <p><strong>Client Port:</strong> {{ request.client.port }}</p>
-    
-    <!-- 显示完整的请求URL -->
-    <h2>Complete Request Info</h2>
-    <pre>{{ request }}</pre>
-
-    <!-- 按钮 -->
-    <button id="loadDataBtn">Load More Data</button>
-
-    <!-- 显示数据的容器 -->
-    <div id="dataContainer"></div>
-
+    <!-- 退出登录js -->
+    <script src="public_static_path/js/logout.js?v=main_logout_js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            // 获取按钮和数据容器
-            const loadDataBtn = document.getElementById("loadDataBtn");
-            const dataContainer = document.getElementById("dataContainer");
-        
-            // 按钮点击事件监听器
-            loadDataBtn.addEventListener("click", async function () {
-                // 发送请求到后端
-                const response = await fetch('/get_data');
-                const data = await response.json();
-        
-                // 清空现有数据
-                dataContainer.innerHTML = '';
-        
-                // 检查是否成功返回数据
-                if (data.status === 'success') {
-                    // 遍历返回的用户数据并显示在页面上
-                    data.users.forEach(user => {
-                        const userElement = document.createElement('p');
-                        // 使用模板字符串语法（反引号 ``）进行的字符串插值，将变量嵌入到字符串中
-                        userElement.textContent = `Name: ${user.name}, Age: ${user.age}`;
-                        dataContainer.appendChild(userElement);
-                    });
-                } else {
-                    dataContainer.textContent = 'Failed to load data.';
-                }
-            });
+        // 获取按钮和子窗口元素
+        const logoutButton = document.getElementById('logout_button');
+        const slidePanel = document.getElementById('slidePanel');
+        const confirmLogout = document.getElementById('confirm_logout');
+
+        // 点击退出登录按钮时显示滑动子窗口
+        logoutButton.addEventListener('click', function() {
+            slidePanel.classList.add('active');
         });
-    </script> <!-- 引入JavaScript文件 -->
+
+        // 确认退出登录操作
+        confirmLogout.addEventListener('click', function() {
+            // 调用退出登录逻辑
+            window.location.href = '/logout';
+        });
+
+        // 点击页面其他区域关闭子窗口
+        window.addEventListener('click', function(event) {
+            if (!slidePanel.contains(event.target) && event.target !== logoutButton) {
+                slidePanel.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

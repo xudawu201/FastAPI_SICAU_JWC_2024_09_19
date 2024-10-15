@@ -60,12 +60,7 @@ fake_users_db = {
     "xudawu": {
         "username": "xudawu", 
         "hashed_password": '$pbkdf2-sha256$29000$aw3BuNf6H8MYQ8j5X0tJ6Q$8nX0D7HpWq34L.GctNkUgqx9iI1DQWbBW4MMlqMj4jo'
-        # "hashed_password": get_password_hash("test")
-        },
-    # "jane_smith": {"username": "jane_smith", "hashed_password": get_password_hash("secret_jane")},
-    # "alice": {"username": "alice", "hashed_password": get_password_hash("secret_alice")},
-    # "bob": {"username": "bob", "hashed_password": get_password_hash("secret_bob")},
-    # "charlie": {"username": "charlie", "hashed_password": get_password_hash("secret_charlie")}
+    }
 }
 
 # 假设这是存储token与其对应用户的简单字典

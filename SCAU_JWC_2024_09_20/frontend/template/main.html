@@ -1,71 +1,101 @@
-<!--
- * @Author: xudawu
- * @Date: 2024-10-09 13:41:02
- * @LastEditors: xudawu
- * @LastEditTime: 2024-10-14 16:52:21
--->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教务管理系统</title>
+    <link rel="stylesheet" href="public_static_path/css/main.css?v=main_css">
+    <!-- 验证session的js -->
+    <script src="public_static_path/js/verify_session_valid.js?v=verify_valid_js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
+        /* 右上角滑出的弹出窗口 */
+        .slide-in-menu {
+            position: fixed;
+            top: 10px;
+            right: -330px; /* 初始隐藏 */
+            width: 270px;
+            height: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* 透明度 */
+            /* opacity: 0.95;  */
+            z-index: 1000;
+            transition: right 0.3s ease; /* 滑动效果 */
+            padding: 10px 15px;
+        }
+
+        /* 当菜单显示时，滑入页面 */
+        .slide-in-menu.active {
+            right: 10px; /* 显示位置 */
+        }
+
+        .slide-in-menu h4 {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #333;
+            text-align: left;
+        }
+
+        .slide-in-menu ul {
+            margin-top: 30px;
+            list-style: none;
             padding: 0;
         }
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1em 0;
-            text-align: center;
-            position: relative;
+
+        .slide-in-menu li {
+            margin: 5px 0;
+            text-align: left;
         }
-        nav {
-            background-color: #333;
-            overflow: hidden;
+
+        /* 悬浮时的效果 */
+        .slide-in-menu li:hover {
+            background-color: #f0f0f0;
+            cursor: pointer;
         }
-        nav a {
-            float: left;
+
+        .slide-in-menu li a {
+            text-decoration: none;
+            color: #007bff;
+            font-size: 1rem;
             display: block;
+        }
+
+        .slide-in-menu li a:hover {
+            color: #0056b3;
+        }
+
+        /* 分割线样式 */
+        .divider {
+            border: 0;
+            border-top: 1px solid #ddd; /* 灰色分割线 */
+            margin: 10px 0;
+        }
+
+        /* 按钮样式 */
+        #user_menu_button {
+            background-color: #e9e8e8;
             color: white;
-            text-align: center;
-            padding: 14px 20px;
-            text-decoration: none;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        nav a:hover {
-            background-color: #ddd;
-            color: black;
-        }
-        .container {
-            padding: 20px;
-        }
-        .user-info {
-            position: absolute;
-            right: 20px;
-            top: 10px;
-        }
-        .user-info a {
-            color: white;
-            text-decoration: none;
-            margin-left: 15px;
-        }
-        .user-info a:hover {
-            text-decoration: underline;
+
+        #user_menu_button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
     <header>
-        <!-- 验证session的js -->
-        <script src="login_static_path/js/verify_session_valid.js?v=login_sucess_valid_js"></script>
         <h1>教务管理系统</h1>
         <div class="user-info">
             {% if user %}
                 <span>欢迎, {{ user }}</span>
-                <a href="#" id="logout_button">注销</a>
+                <button id="user_menu_button" class="slide_button">
+                    <div class="slide_button_line"></div>
+                </button>
             {% else %}
                 <a href="/">登录</a>
             {% endif %}
@@ -81,10 +111,45 @@
         <h2>欢迎使用教务管理系统</h2>
         <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
     </div>
+
+    <!-- 右上角滑出的个人账户菜单 -->
+    <div id="userMenu" class="slide-in-menu">
+        <h4>账户设置</h4>
+        <ul>
+            <hr class="divider"> <!-- 添加分割线 -->
+            <li><a href="#">个人资料</a></li>
+            <li><a href="#">修改密码</a></li>
+            <li><a href="#">消息中心</a></li>
+            <hr class="divider"> <!-- 添加灰色分割线 -->
+            <li><a href="#" id="confirm_logout" class="logout-btn">退出登录</a></li>
+        </ul>
+    </div>
+
     <!-- 退出登录js -->
-    <!-- 使用php查询当前时间戳来作为js版本号用于强制更新js文件,用于解决多个文件调用同一个js文件时，js未更新的情况 -->
-    <!-- <script src="login_static_path/js/logout.js?v=<?php echo time(); ?>"></script> -->
-    <!-- 指定版本号 -->
-    <script src="login_static_path/js/logout.js?v=main_logout_js"></script>
+    <!-- <script src="public_static_path/js/logout.js?v=main_logout_js"></script> -->
+    <script>
+        // 获取按钮和滑出菜单元素
+        const userMenuButton = document.getElementById('user_menu_button');
+        const userMenu = document.getElementById('userMenu');
+        const confirmLogout = document.getElementById('confirm_logout');
+
+        // 点击个人账户按钮时显示或隐藏菜单
+        userMenuButton.addEventListener('click', function() {
+            userMenu.classList.toggle('active'); // 切换显示状态
+        });
+
+        // 点击退出登录按钮
+        confirmLogout.addEventListener('click', function() {
+            // 调用退出登录逻辑
+            window.location.href = '/logout';
+        });
+
+        // 点击页面其他部分时隐藏菜单
+        window.addEventListener('click', function(event) {
+            if (!userMenu.contains(event.target) && event.target !== userMenuButton) {
+                userMenu.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
