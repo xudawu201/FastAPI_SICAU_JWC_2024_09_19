@@ -1,0 +1,65 @@
+/* 右上角滑出的弹出窗口 */
+.slide-in-menu {
+    position: fixed;
+    top: 10px;
+    right: -330px; /* 初始隐藏 */
+    width: 270px;
+    height: 800px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* 透明度 */
+    /* opacity: 0.95;  */
+    /* 保证窗口在最上层 */
+    z-index: 10;
+    transition: right 0.3s ease; /* 滑动效果 */
+    padding: 10px 15px;
+}
+
+/* 当菜单显示时，滑入页面 */
+.slide-in-menu.active {
+    right: 10px; /* 显示位置 */
+}
+
+.slide-in-menu h4 {
+    margin-top: 20px;
+    font-size: 1rem;
+    color: #333;
+    /* 文字位置 */
+    text-align: left;
+}
+
+.slide-in-menu ul {
+    margin-top: 30px;
+    list-style: none;
+    padding: 0;
+}
+
+.slide-in-menu li {
+    margin: 5px 0;
+    text-align: left;
+}
+
+/* 悬浮时的效果 */
+.slide-in-menu li:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+
+.slide-in-menu li a {
+    text-decoration: none;
+    color: #007bff;
+    font-size: 1rem;
+    display: block;
+}
+
+.slide-in-menu li a:hover {
+    color: #0056b3;
+}
+
+/* 分割线样式 */
+.divider {
+    border: 0;
+    border-top: 1px solid #ddd; /* 灰色分割线 */
+    margin: 10px 0;
+}

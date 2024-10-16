@@ -2,11 +2,11 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-15 16:50:50
+LastEditTime: 2024-10-16 17:18:45
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from app.security.password_utils import verify_password, get_password_hash
-from app.model.user import User, fake_users_db, active_tokens
+from app.model.user import User, users_db, active_tokens
 from pydantic import BaseModel
 import secrets
 
@@ -25,8 +25,8 @@ def get_current_user(session_token: str = Cookie(None)):
 # 登录验证
 @router.post("/login")
 async def login(response: Response, user: User):
-    if user.username in fake_users_db:
-        stored_user = fake_users_db[user.username]
+    if user.username in users_db:
+        stored_user = users_db[user.username]
         # 验证密码是否正确
         if verify_password(user.password, stored_user["hashed_password"]):
             token = secrets.token_hex(16)
@@ -55,7 +55,7 @@ async def register(user: User):
             "message": '',
             }
     # 检查用户名是否已存在
-    if user.username in fake_users_db:
+    if user.username in users_db:
         response_context_dict['already_name_flag'] = 'true'
         response_context_dict["message"] = "username already registered"
         return response_context_dict
@@ -63,7 +63,7 @@ async def register(user: User):
     # 用户名没有重复，注册新用户
     hashed_password = get_password_hash(user.password)
     # 将新用户名和哈希密码添加到数据库中
-    fake_users_db[user.username] = {
+    users_db[user.username] = {
         "username": user.username,
         "hashed_password": hashed_password
     }
@@ -71,6 +71,9 @@ async def register(user: User):
     response_context_dict['username'] = user.username
     response_context_dict['already_name_flag'] = 'false'
     response_context_dict["message"] = "registration successful"
+    print("register user:", users_db[user.username])
+    
+    # 返回注册成功的信息
     return response_context_dict
 
 # 登出验证

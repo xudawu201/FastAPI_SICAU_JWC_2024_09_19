@@ -1,0 +1,18 @@
+.line_button::before,
+.line_button::after {
+    position: relative;
+    /* content: ''; */
+    top: 300px;
+    width: 200px; /* 横线宽度 */
+    height: 20px; /* 横线高度 */
+    /* background-color: black; */
+    background-color: rgb(235, 178, 22);
+}
+
+.line_button::before {
+    top: 70px; /* 第一条横线距离顶部的距离 */
+}
+
+.line_button::after {
+    top: 170px; /* 第二条横线距离顶部的距离 */
+}

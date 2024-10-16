@@ -1,113 +1,59 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-10-14 17:59:01
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-16 18:29:08
+-->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教务管理系统</title>
+    <!-- 主页面css -->
     <link rel="stylesheet" href="public_static_path/css/main.css?v=main_css">
+    <!-- 顶部div的css -->
+    <link rel='stylesheet' href="public_static_path/css/top_header_div.css"></link>
+    <!-- 左侧窗口css -->
+    <link rel='stylesheet' href="public_static_path/css/left_menu_div.css"></link>
+    <!-- 主内容css -->
+    <link rel='stylesheet' href="public_static_path/css/content_div.css"></link>
+    <!-- 右侧滑出窗口css -->
+    <link rel='stylesheet' href="public_static_path/css/right_slide_menu.css"></link>
+
     <!-- 验证session的js -->
     <script src="public_static_path/js/verify_session_valid.js?v=verify_valid_js"></script>
-    <style>
-        /* 右上角滑出的弹出窗口 */
-        .slide-in-menu {
-            position: fixed;
-            top: 10px;
-            right: -330px; /* 初始隐藏 */
-            width: 270px;
-            height: 800px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            /* 透明度 */
-            /* opacity: 0.95;  */
-            z-index: 1000;
-            transition: right 0.3s ease; /* 滑动效果 */
-            padding: 10px 15px;
-        }
-
-        /* 当菜单显示时，滑入页面 */
-        .slide-in-menu.active {
-            right: 10px; /* 显示位置 */
-        }
-
-        .slide-in-menu h4 {
-            margin-top: 20px;
-            font-size: 1rem;
-            color: #333;
-            text-align: left;
-        }
-
-        .slide-in-menu ul {
-            margin-top: 30px;
-            list-style: none;
-            padding: 0;
-        }
-
-        .slide-in-menu li {
-            margin: 5px 0;
-            text-align: left;
-        }
-
-        /* 悬浮时的效果 */
-        .slide-in-menu li:hover {
-            background-color: #f0f0f0;
-            cursor: pointer;
-        }
-
-        .slide-in-menu li a {
-            text-decoration: none;
-            color: #007bff;
-            font-size: 1rem;
-            display: block;
-        }
-
-        .slide-in-menu li a:hover {
-            color: #0056b3;
-        }
-
-        /* 分割线样式 */
-        .divider {
-            border: 0;
-            border-top: 1px solid #ddd; /* 灰色分割线 */
-            margin: 10px 0;
-        }
-
-        /* 按钮样式 */
-        #user_menu_button {
-            background-color: #e9e8e8;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        #user_menu_button:hover {
-            background-color: #0056b3;
-        }
-    </style>
 </head>
 <body>
-    <header>
-        <h1>教务管理系统</h1>
-        <div class="user-info">
+    <!-- 顶部div -->
+    <div id="header_div">
+        <h1 id="header_h1">教务管理系统</h1>
+        <div class="user_info">
             {% if user %}
-                <span>欢迎, {{ user }}</span>
-                <button id="user_menu_button" class="slide_button">
-                    <div class="slide_button_line"></div>
+                <span class="welcome_span">欢迎, {{ user }}</span>
+                <button id="user_info_button" class="line_button">
+                    <div class="slide_div_line"></div>
                 </button>
             {% else %}
                 <a href="/">登录</a>
             {% endif %}
         </div>
-    </header>
-    <nav>
-        <a href="#students">学生管理</a>
-        <a href="#teachers">教师管理</a>
-        <a href="#courses">课程管理</a>
-        <a href="#grades">成绩管理</a>
-    </nav>
-    <div class="container">
+    </div>
+    <!-- 左侧功能选择div -->
+    <div id="left_div">
+        <nav class="nav_bar">
+            <a href="#students">成绩可视化</a>
+            <hr class="nav_bar_divider"> <!-- 添加分割线 -->
+            <a href="#teachers">智能问答</a>
+            <hr class="nav_bar_divider"> <!-- 添加分割线 -->
+            <a href="#courses">超级查询</a>
+            <hr class="nav_bar_divider"> <!-- 添加分割线 -->
+            <a href="#grades">智能工具</a>
+            <hr class="nav_bar_divider"> <!-- 添加分割线 -->
+        </nav>
+    </div>
+    <!-- 主页面内容div -->
+    <div id="content_div">
         <h2>欢迎使用教务管理系统</h2>
         <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
     </div>
@@ -120,36 +66,16 @@
             <li><a href="#">个人资料</a></li>
             <li><a href="#">修改密码</a></li>
             <li><a href="#">消息中心</a></li>
-            <hr class="divider"> <!-- 添加灰色分割线 -->
-            <li><a href="#" id="confirm_logout" class="logout-btn">退出登录</a></li>
+            <hr class="divider"> <!-- 添加分割线 -->
+            <li><a href="#" id='logout_button'>退出登录</a></li>
         </ul>
     </div>
 
     <!-- 退出登录js -->
-    <!-- <script src="public_static_path/js/logout.js?v=main_logout_js"></script> -->
-    <script>
-        // 获取按钮和滑出菜单元素
-        const userMenuButton = document.getElementById('user_menu_button');
-        const userMenu = document.getElementById('userMenu');
-        const confirmLogout = document.getElementById('confirm_logout');
-
-        // 点击个人账户按钮时显示或隐藏菜单
-        userMenuButton.addEventListener('click', function() {
-            userMenu.classList.toggle('active'); // 切换显示状态
-        });
-
-        // 点击退出登录按钮
-        confirmLogout.addEventListener('click', function() {
-            // 调用退出登录逻辑
-            window.location.href = '/logout';
-        });
-
-        // 点击页面其他部分时隐藏菜单
-        window.addEventListener('click', function(event) {
-            if (!userMenu.contains(event.target) && event.target !== userMenuButton) {
-                userMenu.classList.remove('active');
-            }
-        });
-    </script>
+    <script src="public_static_path/js/logout.js?v=main_logout_js"></script>
+    <!-- 滑出个人账户设置窗口js -->
+    <script src="public_static_path/js/slide_menu.js"></script>
+    <!-- 返回main页面js -->
+    <script src="public_static_path/js/go_main_page.js"></script>
 </body>
 </html>

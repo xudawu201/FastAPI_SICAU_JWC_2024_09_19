@@ -1,0 +1,61 @@
+/* 导航菜单 */
+#left_div .nav_bar {
+    /* 固定在页面左侧 */
+    position: relative;
+    /* 固定在页面顶部 */
+    top: 0;
+    /* 固定在页面左侧 */
+    left: 0;
+    width: 200px;
+    /* 高度减去顶部边距 */
+    height: calc(100% - 5px);
+    /* 顶部内边距 */
+    padding-top: 5px; 
+    background-color: #333;
+    /* 添加阴影效果 */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2); 
+}
+
+#left_div .nav_bar a {
+    position: relative;
+    left: 0;
+    top: 10px;
+    /* 宽度 */
+    width: 100% -20px;
+    /* 高度 */
+    height: 30px;
+    /* 编列方向 */
+    /* float: left; */
+    display: block;
+    /* 文字颜色 */
+    color: white;
+    font-size: 16px;
+    /* 文字方向 */
+    text-align: left;
+    /* 内边距 */
+    padding-left: 20px;
+    /* 调整文字所在位置 */
+    margin-top: -17px;
+    /* 移除下划线 */
+    text-decoration: none;
+    /* 设置默认背景颜色 */
+    /* background-color: #2619dd; */
+    /* height: 50px;  */
+    display: flex;
+    /* 垂直方向底部对齐 */
+    align-items: flex-end; 
+} 
+
+#left_div .nav_bar a:hover {
+    background-color: #ddd;
+    color: black;
+}
+
+/* 分割线样式 */
+#left_div .nav_bar .nav_bar_divider {
+    position: relative;
+    top: 2px;
+    border: none;
+    border-top: 1px solid #ffffff;
+    width: 99%;
+}

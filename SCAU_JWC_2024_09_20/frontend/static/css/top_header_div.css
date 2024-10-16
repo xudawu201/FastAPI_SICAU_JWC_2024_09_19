@@ -1,0 +1,98 @@
+/* 顶端横幅的文字样式 */
+#header_div h1 {
+    position: relative;
+    top: -17px;
+    color: white;
+    text-align: center;
+    width: 11%;
+    margin: 21px auto;
+    /* background-color: #d41717; */
+}
+
+#header_div h1:hover{
+    /* background-color: #cac9c9; */
+    /* color: #cac9c9; */
+    color: #c1d9f1;
+    /* 改变放上去的鼠标样式 */
+    cursor: pointer;
+    /* width: 50%;
+    text-align: center;
+    left: 50%; */
+}
+
+.user_info {
+    position: relative;
+    right: 40px;
+    top: -77px;
+    left: calc(100% - 250px);
+    width: 200px;
+    height: 40px;
+    /* background-color: #e91313; */
+}
+
+.welcome_span {
+    /* 背景颜色 */
+    /* background-color: #3d2dca; */
+    padding: 10px; /* 内边距 */
+    /* 圆角边框 */
+    border-radius: 5px; 
+    /* 边框 */
+    /* border: 1px solid #ccc;  */
+    /* 保持内容紧凑 */
+    display: inline-block; 
+    /* 让文字更醒目 */
+    font-weight: bold;
+    /* 字体颜色 */
+    /* color: #333; */
+    color: white;
+}
+
+/* 按钮样式 */
+#user_info_button {
+    position: relative;
+    background-color: #e9e8e8;
+    /* background-color: #ec3ad5; */
+    width: 20px;
+    height: 35px;
+    /* 边框样式改为none */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    /* 改变放上去的鼠标样式 */
+    cursor: pointer;
+    /* 外圈阴影 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#user_info_button:hover {
+    background-color: #cac9c9;
+}
+
+.line_button::before,
+.line_button::after {
+    position: absolute;
+    content: '';
+    top: 0;
+    left: 15%; /* 横线距离左侧的距离 */
+    width: 70%; /* 横线宽度 */
+    height: 2px; /* 横线高度 */
+
+    background-color: black;
+}
+
+.line_button::before {
+    top: 20%; /* 第一条横线距离顶部的距离 */
+}
+
+.line_button::after {
+    top: 50%; /* 第二条横线距离顶部的距离 */
+}
+
+.slide_div_line {
+    position: absolute;
+    top: 75%; /* 第三条横线距离顶部的距离 */
+    left: 15%;
+    width: 70%; /* 横线宽度 */
+    height: 2px; /* 横线高度 */
+    background-color: black;
+}

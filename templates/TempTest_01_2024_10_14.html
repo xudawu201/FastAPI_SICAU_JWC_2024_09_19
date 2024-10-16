@@ -1,117 +1,60 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教务管理系统</title>
-    <link rel="stylesheet" href="public_static_path/css/main.css?v=main_css">
-    <!-- 验证session的js -->
-    <script src="public_static_path/js/verify_session_valid.js?v=verify_valid_js"></script>
+    <title>Three Div Layout</title>
     <style>
-        /* 子窗口样式 */
-        .slide-in-panel {
-            position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100%;
-            background-color: #f9f9f9;
-            box-shadow: -2px 0 5px rgba(0,0,0,0.5);
-            transition: right 0.3s ease;
-            z-index: 1000;
-        }
-        .slide-in-panel.active {
-            right: 0;
-        }
-        .slide-in-panel h3 {
-            padding: 20px;
+        body {
             margin: 0;
-            background-color: #007bff;
+            padding: 0;
+        }
+        /* 顶端横幅 */
+        #header {
+            background-color: #4CAF50;
             color: white;
             text-align: center;
-        }
-        .slide-in-panel button {
-            display: block;
-            width: 80%;
-            margin: 20px auto;
             padding: 10px;
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            cursor: pointer;
+            height: 100px;
+            width: 100%;
         }
-        .slide-in-panel button:hover {
-            background-color: #c82333;
+        /* 左侧竖直小窗口 */
+        #sidebar {
+            background-color: #f4f4f4;
+            padding: 10px;
+            width: 200px;
+            height: calc(100vh - 100px); /* 减去顶部横幅的高度 */
+            position: fixed;
+            top: 100px; /* 顶部横幅高度 */
+            left: 0;
+            overflow-y: auto;
         }
-
-        /* 美观的按钮样式 */
-        #logout_button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #logout_button:hover {
-            background-color: #0056b3;
+        /* 剩余的主窗口 */
+        #content {
+            margin-left: 210px; /* 给左侧竖直窗口留出空间 */
+            padding: 20px;
+            height: calc(100vh - 100px);
+            background-color: #eaeaea;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>教务管理系统</h1>
-        <div class="user-info">
-            {% if user %}
-                <span>欢迎, {{ user }}</span>
-                <button id="logout_button">退出登录</button>
-            {% else %}
-                <a href="/">登录</a>
-            {% endif %}
-        </div>
-    </header>
-    <nav>
-        <a href="#students">学生管理</a>
-        <a href="#teachers">教师管理</a>
-        <a href="#courses">课程管理</a>
-        <a href="#grades">成绩管理</a>
-    </nav>
-    <div class="container">
-        <h2>欢迎使用教务管理系统</h2>
-        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
+
+    <div id="header">
+        <h1>Page Header</h1>
+        <p>This is the top banner of the page</p>
     </div>
 
-    <!-- 右侧滑动的子窗口 -->
-    <div id="slidePanel" class="slide-in-panel">
-        <h3>确定要退出登录吗？</h3>
-        <button id="confirm_logout">退出登录</button>
+    <div id="sidebar">
+        <h2>Sidebar</h2>
+        <p>This is the left vertical window</p>
+        <p>Additional content can be placed here</p>
     </div>
 
-    <!-- 退出登录js -->
-    <script src="public_static_path/js/logout.js?v=main_logout_js"></script>
-    <script>
-        // 获取按钮和子窗口元素
-        const logoutButton = document.getElementById('logout_button');
-        const slidePanel = document.getElementById('slidePanel');
-        const confirmLogout = document.getElementById('confirm_logout');
+    <div id="content">
+        <h2>Main Content</h2>
+        <p>This is the remaining window area for the main content</p>
+    </div>
 
-        // 点击退出登录按钮时显示滑动子窗口
-        logoutButton.addEventListener('click', function() {
-            slidePanel.classList.add('active');
-        });
-
-        // 确认退出登录操作
-        confirmLogout.addEventListener('click', function() {
-            // 调用退出登录逻辑
-            window.location.href = '/logout';
-        });
-
-        // 点击页面其他区域关闭子窗口
-        window.addEventListener('click', function(event) {
-            if (!slidePanel.contains(event.target) && event.target !== logoutButton) {
-                slidePanel.classList.remove('active');
-            }
-        });
-    </script>
 </body>
 </html>
