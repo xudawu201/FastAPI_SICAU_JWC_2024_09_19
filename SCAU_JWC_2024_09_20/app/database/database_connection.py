@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-10-16 17:44:06
+LastEditTime: 2024-10-17 15:34:08
 '''
 import pyodbc
 
@@ -12,7 +12,7 @@ database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE
 # database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=123'
 
 # 连接到数据库
-def get_db_connection_cursor():
+def get_database_connection_cursor():
     try:
         # 获得数据库连接对象
         DatabaseConnection = pyodbc.connect(database_url)
@@ -27,7 +27,7 @@ def get_db_connection_cursor():
     
 if __name__ == "__main__":
     # 获取数据库连接和游标
-    DatabaseConnection, DatabaseCursor = get_db_connection_cursor()
+    DatabaseConnection, DatabaseCursor = get_database_connection_cursor()
     if DatabaseConnection and DatabaseCursor:
         try:
             # 执行SQL语句
@@ -45,7 +45,7 @@ if __name__ == "__main__":
             print(row[0])
             column_name_str = row.cursor_description[1][0]
             print(column_name_str)
-            print(row.name)
+            print(row.password)
         except pyodbc.Error as e:
             print(f"SQL Error: {e}")
         finally:

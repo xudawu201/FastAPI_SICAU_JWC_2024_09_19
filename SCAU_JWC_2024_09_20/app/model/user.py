@@ -2,14 +2,16 @@
 Author: xudawu
 Date: 2024-10-15 10:28:56
 LastEditors: xudawu
-LastEditTime: 2024-10-16 17:17:51
+LastEditTime: 2024-10-17 17:28:09
 '''
 from pydantic import BaseModel
 
 # 用户模型
 class User(BaseModel):
+    id: int
     username: str
     password: str
+    flag: str
 
 # 模拟的用户数据库，包含哈希密码
 users_db = {

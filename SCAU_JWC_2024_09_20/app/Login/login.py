@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-09 13:42:12
 LastEditors: xudawu
-LastEditTime: 2024-10-14 17:57:24
+LastEditTime: 2024-10-17 17:47:53
 '''
 import secrets
 import uvicorn
@@ -52,6 +52,7 @@ def get_password_hash(password):
 
 # 用户模型
 class User(BaseModel):
+    id: int
     username: str
     password: str
 

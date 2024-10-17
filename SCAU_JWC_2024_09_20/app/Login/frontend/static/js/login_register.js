@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-12 11:52:07
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-14 16:55:39
+ * @LastEditTime: 2024-10-17 17:43:55
  */
 // 登录表单提交时阻止默认提交行为并使用 fetch 处理请求
 async function handleLoginSubmit(event) {
@@ -16,7 +16,7 @@ async function handleLoginSubmit(event) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({username, password})
     });
 
     if (response.ok) {
@@ -45,7 +45,7 @@ async function handleRegisterSubmit(event) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({username, password})
     });
 
     const result = await response.json();
@@ -63,8 +63,8 @@ async function handleRegisterSubmit(event) {
 
 // 切换登录和注册表单
 function toggleForms() {
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
+    const loginForm = document.getElementById('login_div');
+    const registerForm = document.getElementById('register_div');
     if (loginForm.style.display === 'none') {
         loginForm.style.display = 'block';
         registerForm.style.display = 'none';

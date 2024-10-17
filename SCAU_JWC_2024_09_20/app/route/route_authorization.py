@@ -2,13 +2,14 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-16 17:18:45
+LastEditTime: 2024-10-17 18:00:15
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from app.security.password_utils import verify_password, get_password_hash
 from app.model.user import User, users_db, active_tokens
 from pydantic import BaseModel
 import secrets
+import fastapi
 
 router = APIRouter()
 
@@ -24,7 +25,13 @@ def get_current_user(session_token: str = Cookie(None)):
 
 # 登录验证
 @router.post("/login")
-async def login(response: Response, user: User):
+async def login(request: fastapi.Request):
+    """
+    处理登录请求，验证用户名和密码，并设置session_token cookie。
+    """
+    # 获取前端的数据
+    requestData = await request.json()
+    user = User(username=form_data["username"], password=form_data["password"])
     if user.username in users_db:
         stored_user = users_db[user.username]
         # 验证密码是否正确

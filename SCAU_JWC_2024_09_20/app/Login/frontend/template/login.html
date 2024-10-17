@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-10 09:20:58
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-15 09:00:18
+ * @LastEditTime: 2024-10-17 17:02:52
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -11,13 +11,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>用户登录</title>
     <!-- 登录和注册css -->
-    <link rel="stylesheet" type="text/css" href="login_static_path/css/login_register.css?v=login_css">
+    <link rel="stylesheet" type="text/css" href="login_static_path/css/login_register.css">
     <!-- 验证session -->
-    <script src="public_static_path/js/verify_session_invalid.js?v=verify_session_invalid_js"></script>
+    <script src="public_static_path/js/verify_session_invalid.js"></script>
 </head>
 <body>
 
-    <div class="login-container" id="login-form">
+    <div class="login-container" id="login_div">
         <h2>用户登录</h2>
         <form id="login_form">
             <input type="text" id="login-username" name="username" class="input-field" placeholder="用户名" required>
@@ -28,7 +28,7 @@
         <div class="toggle-btn" onclick="toggleForms()">没有账号？注册</div>
     </div>
 
-    <div class="login-container" id="register-form" style="display: none;">
+    <div class="login-container" id="register_div" style="display: none;">
         <h2>用户注册</h2>
         <form id="register_form">
             <input type="text" id="register-username" name="username" class="input-field" placeholder="用户名" required>
@@ -41,9 +41,7 @@
     </div>
 
     <!-- 登录和注册js -->
-    
-    <script src="login_static_path/js/login_register.js?v=login_login_register_js"></script>
-    <!-- <script src="login_static_path/js/login_register.js?v=<?php echo time(); ?>"></script> -->
+    <script src="login_static_path/js/login_register.js"></script>
 
 </body>
 </html>
