@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 10:28:56
 LastEditors: xudawu
-LastEditTime: 2024-10-17 17:28:09
+LastEditTime: 2024-10-18 14:54:48
 '''
 from pydantic import BaseModel
 
@@ -21,5 +21,5 @@ users_db = {
     }
 }
 
-# cookie存储
-active_tokens = {}
+# cookie存储字典，用于验证cookie有效性
+cookie_tokens_dict = {}

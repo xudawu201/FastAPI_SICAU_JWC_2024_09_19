@@ -2,11 +2,11 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-17 18:00:15
+LastEditTime: 2024-10-18 14:51:11
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from app.security.password_utils import verify_password, get_password_hash
-from app.model.user import User, users_db, active_tokens
+from app.model import user
 from pydantic import BaseModel
 import secrets
 import fastapi
@@ -18,43 +18,64 @@ cookie_token_expire_second_int = 60*60*7
 
 # 获取当前用户
 def get_current_user(session_token: str = Cookie(None)):
-    user = active_tokens.get(session_token)
-    if user:
-        return user
+    auth_user = user.cookie_tokens_dict.get(session_token)
+    if auth_user:
+        return auth_user
     return None
 
 # 登录验证
+# request 参数用于接收客户端的请求，而 response 参数允许修改响应的属性，如状态码或头信息
 @router.post("/login")
-async def login(request: fastapi.Request):
+async def login(request: fastapi.Request,response: Response):
     """
     处理登录请求，验证用户名和密码，并设置session_token cookie。
     """
-    # 获取前端的数据
-    requestData = await request.json()
-    user = User(username=form_data["username"], password=form_data["password"])
-    if user.username in users_db:
-        stored_user = users_db[user.username]
+    # 获取请求体中的 JSON 数据
+    request_data = await request.json()
+    username_str = request_data.get("username")
+    password_str = request_data.get("password")
+    # 初始化回应字典
+    response_context_dict = {
+            "username": '',
+            "token": None,
+            "active_tokens": None,
+            'login_flag': '',
+            "have_user": 'true',
+            }
+    if username_str in user.users_db:
+        stored_user = user.users_db[username_str]
         # 验证密码是否正确
-        if verify_password(user.password, stored_user["hashed_password"]):
+        if verify_password(password_str, stored_user["hashed_password"]):
             token = secrets.token_hex(16)
-            active_tokens[token] = user.username  # 将生成的token与用户名关联起来
-            print("active_tokens:", active_tokens)
+            user.cookie_tokens_dict[token] = username_str  # 将生成的token与用户名关联起来
+            print("active_tokens:", user.cookie_tokens_dict)
             # 设置cookie的有效时间，max_age的秒数
             response.set_cookie(key="session_token", value=token, max_age=cookie_token_expire_second_int, httponly=True)
-            return {
-                "username": user.username,
-                "token": token,
-                "active_tokens": active_tokens,
-                "message": f"Login successful for user {user.username}"
-            }
-    raise HTTPException(status_code=401, detail="Incorrect username or password")
+            # 返回登录成功的信息
+            response_context_dict['username']= username_str
+            response_context_dict['token']= token
+            response_context_dict['active_tokens']= user.cookie_tokens_dict
+            response_context_dict['login_flag']= 'true'
+            return response_context_dict
+        else:
+            response_context_dict['login_flag']= 'false'
+            return response_context_dict
+    else:
+        # 用户名不存在
+        response_context_dict['have_user']= 'false'
+        return response_context_dict
 
 # 注册验证
 @router.post("/register")
-async def register(user: User):
+async def register(request: fastapi.Request):
     """
     注册新用户，存储用户名和哈希密码。
     """
+    # 获取请求体中的 JSON 数据
+    request_data = await request.json()
+    username_str = request_data.get("username")
+    password_str = request_data.get("password")
+
     # 初始化回应字典
     response_context_dict = {
             "username": '',
@@ -62,23 +83,23 @@ async def register(user: User):
             "message": '',
             }
     # 检查用户名是否已存在
-    if user.username in users_db:
+    if username_str in user.users_db:
         response_context_dict['already_name_flag'] = 'true'
         response_context_dict["message"] = "username already registered"
         return response_context_dict
 
     # 用户名没有重复，注册新用户
-    hashed_password = get_password_hash(user.password)
+    hashed_password = get_password_hash(password_str)
     # 将新用户名和哈希密码添加到数据库中
-    users_db[user.username] = {
-        "username": user.username,
+    user.users_db[username_str] = {
+        "username": username_str,
         "hashed_password": hashed_password
     }
 
-    response_context_dict['username'] = user.username
+    response_context_dict['username'] = username_str
     response_context_dict['already_name_flag'] = 'false'
     response_context_dict["message"] = "registration successful"
-    print("register user:", users_db[user.username])
+    print("register user:", user.users_db[username_str])
     
     # 返回注册成功的信息
     return response_context_dict
@@ -89,14 +110,14 @@ async def logout(response: Response, session_token: str = Cookie(None)):
     """
     清除客户端的 session_token cookie，实现用户退出登录
     """
-    if session_token in active_tokens:
-        del active_tokens[session_token]  # 从active_tokens中移除用户
+    if session_token in user.cookie_tokens_dict:
+        del user.cookie_tokens_dict[session_token]  # 从active_tokens中移除用户
     response.delete_cookie("session_token")  # 删除session_token cookie
     return {"message": "Logout successful."}
 
 # 验证cookie有效性
 @router.get("/verify_cookie")
-async def verify_cookie(user: str = Depends(get_current_user)):
-    if user:
-        return {"message": f"Welcome back, {user}!"}
+async def verify_cookie(ver_user: str = Depends(get_current_user)):
+    if ver_user:
+        return {"message": f"Welcome back, {ver_user}!"}
     raise HTTPException(status_code=401, detail="Invalid session token")

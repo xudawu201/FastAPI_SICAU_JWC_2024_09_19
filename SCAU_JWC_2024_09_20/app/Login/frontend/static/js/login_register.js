@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-12 11:52:07
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-17 17:43:55
+ * @LastEditTime: 2024-10-18 14:41:08
  */
 // 登录表单提交时阻止默认提交行为并使用 fetch 处理请求
 async function handleLoginSubmit(event) {
@@ -19,9 +19,17 @@ async function handleLoginSubmit(event) {
         body: JSON.stringify({username, password})
     });
 
-    if (response.ok) {
+    const result = await response.json();
+    
+    if (result.login_flag==='true') {
         window.location.href = '/main';  // 登录成功后跳转
-    } else {
+    } 
+    else if(result.have_user==='false'){
+        errorMessage.textContent = '用户名不存在';
+        errorMessage.style.display = 'block';  // 显示错误信息
+    }
+    else if(result.have_user==='true' && result.login_flag==='false'){
+        errorMessage.textContent = '密码错误';
         errorMessage.style.display = 'block';  // 显示错误信息
     }
 }

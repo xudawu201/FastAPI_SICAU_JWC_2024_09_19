@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-10-15 15:48:30
+LastEditTime: 2024-10-18 18:32:55
 '''
 # 引入文件目录设置
 import sys
@@ -34,4 +34,4 @@ app.include_router(route_main.router)
 # 主函数启动应用程序
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
