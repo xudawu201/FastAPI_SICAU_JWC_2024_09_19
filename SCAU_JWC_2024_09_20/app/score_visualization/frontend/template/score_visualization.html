@@ -1,0 +1,18 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-10-10 09:20:58
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-21 14:58:44
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+    <head>
+        <!-- <title>可交互的折线图</title> -->
+    </head>
+    <body>
+        <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
+        <div>{{ graph_html | safe }}</div>
+        <!-- 传递点击页面的消息到父页面 -->
+        <script src="public_static_path/js/iframe_click_listener.js"></script>
+    </body>
+</html>

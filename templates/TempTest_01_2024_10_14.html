@@ -1,60 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three Div Layout</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        /* 顶端横幅 */
-        #header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 10px;
-            height: 100px;
-            width: 100%;
-        }
-        /* 左侧竖直小窗口 */
-        #sidebar {
-            background-color: #f4f4f4;
-            padding: 10px;
-            width: 200px;
-            height: calc(100vh - 100px); /* 减去顶部横幅的高度 */
-            position: fixed;
-            top: 100px; /* 顶部横幅高度 */
-            left: 0;
-            overflow-y: auto;
-        }
-        /* 剩余的主窗口 */
-        #content {
-            margin-left: 210px; /* 给左侧竖直窗口留出空间 */
-            padding: 20px;
-            height: calc(100vh - 100px);
-            background-color: #eaeaea;
-        }
-    </style>
+    <title>可交互的折线图</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
+    <div id="myDiv" style="width: 100%; height: 100%;"></div>
+    <script>
+        // 数据
+        var trace1 = {
+            x: [1, 2, 3, 4, 5],
+            y: [2, 3, 5, 4, 6],
+            mode: 'lines+markers',
+            type: 'scatter',
+            name: '系列1'
+        };
 
-    <div id="header">
-        <h1>Page Header</h1>
-        <p>This is the top banner of the page</p>
-    </div>
+        var trace2 = {
+            x: [1, 2, 3, 4, 5],
+            y: [1, 3, 4, 2, 5],
+            mode: 'lines+markers',
+            type: 'scatter',
+            name: '系列2'
+        };
 
-    <div id="sidebar">
-        <h2>Sidebar</h2>
-        <p>This is the left vertical window</p>
-        <p>Additional content can be placed here</p>
-    </div>
+        var data = [trace1, trace2];
 
-    <div id="content">
-        <h2>Main Content</h2>
-        <p>This is the remaining window area for the main content</p>
-    </div>
+        // 布局
+        var layout = {
+            title: '可交互的折线图示例',
+            xaxis: {
+                title: 'X 轴'
+            },
+            yaxis: {
+                title: 'Y 轴'
+            }
+        };
 
+        // 绘制图表
+        Plotly.newPlot('myDiv', data, layout);
+    </script>
 </body>
 </html>

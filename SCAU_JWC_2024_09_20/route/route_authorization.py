@@ -2,11 +2,12 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-18 14:51:11
+LastEditTime: 2024-10-21 14:37:39
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
-from app.security.password_utils import verify_password, get_password_hash
-from app.model import user
+from security.password_utils import verify_password, get_password_hash
+from model import user
+from service import service_user
 from pydantic import BaseModel
 import secrets
 import fastapi
@@ -42,10 +43,14 @@ async def login(request: fastapi.Request,response: Response):
             'login_flag': '',
             "have_user": 'true',
             }
-    if username_str in user.users_db:
-        stored_user = user.users_db[username_str]
+    # 根据用户名查询数据库中是否有匹配的数据
+    rows = service_user.get_user_by_employee_no(username_str)
+    # 如果查询结果不为空，则用户名存在
+    if len(rows) != 0 :
+        # 从查询结果中获取用户信息
+        UserInfo = rows[0]
         # 验证密码是否正确
-        if verify_password(password_str, stored_user["hashed_password"]):
+        if verify_password(password_str, UserInfo.哈希密码):
             token = secrets.token_hex(16)
             user.cookie_tokens_dict[token] = username_str  # 将生成的token与用户名关联起来
             print("active_tokens:", user.cookie_tokens_dict)

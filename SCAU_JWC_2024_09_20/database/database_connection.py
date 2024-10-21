@@ -2,14 +2,14 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-10-17 15:34:08
+LastEditTime: 2024-10-21 10:23:26
 '''
 import pyodbc
 
 # DRIVER:驱动名称,SERVER:服务器名称,DATABASE:数据库名称,UID:用户名,PWD:密码
-database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=JWC_SCAU_2024_10_08;UID=sa;PWD=123'
+# database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=JWC_SCAU_2024_10_08;UID=sa;PWD=123'
 # 教务处数据库
-# database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=123'
+database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=123'
 
 # 连接到数据库
 def get_database_connection_cursor():

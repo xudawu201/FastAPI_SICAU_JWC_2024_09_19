@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 10:28:56
 LastEditors: xudawu
-LastEditTime: 2024-10-18 14:54:48
+LastEditTime: 2024-10-21 10:40:53
 '''
 from pydantic import BaseModel
 

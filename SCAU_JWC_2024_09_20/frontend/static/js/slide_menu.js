@@ -13,3 +13,10 @@ window.addEventListener('click', function(event) {
         userMenu.classList.remove('active');
     }
 });
+
+// 点击iframe页面时也隐藏菜单
+window.addEventListener('message', function(event) {
+    if (event.data === 'hideMenu') {
+        userMenu.classList.remove('active');
+    }
+});
