@@ -2,11 +2,14 @@
 Author: xudawu
 Date: 2024-10-21 15:35:21
 LastEditors: xudawu
-LastEditTime: 2024-10-21 18:02:35
+LastEditTime: 2024-10-22 18:11:22
 '''
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+import plotly
+import copy
+
 # from app.template import TemplatesJinja2ScoreVisualization
 
 router = APIRouter()
@@ -15,7 +18,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 # 获得所有数据
-def get_score(select_sql_str):
+def get_score_database(select_sql_str):
     # 执行sql语句,返回执行标志和执行数据
     excute_sql_flag_str,excute_count_int,rows = crud.select_table(select_sql_str)
     return excute_sql_flag_str,excute_count_int,rows
@@ -69,6 +72,442 @@ async def score_visualization_page(request: Request):
     context = {"request": request, "graph_html": graph_html}
     return TemplatesJinja2ScoreVisualization.TemplateResponse("score_visualization.html", context)
 
+# 获得学生的成绩
+def get_student_score_by_id(student_id_str,row_list):
+    '''
+    数据格式要求：
+    student_id_str:
+        学生学号,字符串类型
+    row_list:
+        行数据列表,列表类型，每一行是一个类对象
+        一个对象包含成绩信息,学期和班级信息应当固定为特定的一个学期和特定班级,本函数不区分学期和班级，只区分学号
+    预期的row_list为:
+        某个学期某个班的所有学生的成绩
+    返回数据：
+        此学生的成绩列表,列表类型,一维列表,列表内的元素为一个学生的成绩
+    '''
+    # 学生成绩表
+    student_score_list = []
+    for TempRow in row_list:
+        # 学号
+        if student_id_str == TempRow.学号:
+            # 成绩
+            score_float = TempRow.成绩
+            # 成绩列表
+            student_score_list.append(score_float)
+    return student_score_list
+
+# 获得平均分
+def get_average_score(score_list):
+    '''
+    数据格式要求：
+    score_list:
+        学生成绩列表,列表类型,一维列表,列表内的元素为一个学生的成绩
+    返回数据：
+        此列表的平均分,浮点数类型
+    '''
+    # 初始化成绩列表,深拷贝
+    temp_score_list = copy.deepcopy(score_list)
+    # 初始化平均分成绩列表
+    average_class_student_score_list=[]
+
+    # 去掉子列表的第一位学号再计算平均分
+    for temp_list in temp_score_list:
+        # 记录学号
+        average_class_student_score_list.append([temp_list[0]])
+        # 去掉学号
+        temp_list.pop(0)
+
+    # 计算平均分
+    student_index_int = 0
+    for temp_temp_score_list in temp_score_list:
+        # 初始化平均成绩
+        average_score_float = None
+        # 如果有成绩再计算平均分
+        if len(temp_temp_score_list) != 0:
+            average_score_float = sum(temp_temp_score_list) / len(temp_temp_score_list)
+        
+        # 判断是否有数据
+        if average_score_float != None:
+            # 存入平均分
+            average_class_student_score_list[student_index_int].append(average_score_float)
+
+        # 索引增加
+        student_index_int += 1
+
+    return average_class_student_score_list
+
+# 获得降序排序的成绩列表
+def get_sorted_list_desc(score_list):
+    '''
+    数据格式要求：
+    score_list:
+        学生成绩列表,列表类型,二维列表,列表中的列表内元素为一个学生的成绩
+    返回数据：
+        此列表的降序排序,列表类型,一维列表,列表内的元素为一个学生的成绩
+    '''
+    # 初始化成绩列表,用于存储学生
+    temp_scores_list = []
+    for temp_this_score_list in score_list:
+        # 如果有成绩再计算平均分
+        if len(temp_this_score_list)!=1:
+            temp_scores_list.append(temp_this_score_list[1])
+
+    # 对成绩列表进行降序排序（分数越高排名越前）
+    temp_scores_list.sort(reverse=True)
+
+    # 返回降序排序的成绩列表
+    return temp_scores_list
+
+# 获得前30%和前70%的成绩标准线
+def get_top_30_percent_and_70_percent_score(student_score_list):
+    '''
+    数据格式要求：
+    average_class_student_score_list:
+        成绩列表,二维列表,子列表内元素代表成绩
+    返回数据：
+        两个成绩,分别为成绩前30%或前70%的成绩基准成绩
+    '''
+    # 初始化成绩列表,用于存储学生
+    temp_scores_list = get_sorted_list_desc(student_score_list)
+    
+    # 计算列表长度
+    student_sum_int = len(temp_scores_list)
+
+    # 计算前30%和前66%的位置
+    top_30_percent_index = int(student_sum_int * 0.3)
+    top_70_percent_index = int(student_sum_int * 0.7)
+
+    # 截取前30%和前70%的成绩
+    top_30_percent_score_float = temp_scores_list[top_30_percent_index]
+    top_70_percent_score_float = temp_scores_list[top_70_percent_index]
+
+    # 返回成绩
+    return top_30_percent_score_float,top_70_percent_score_float
+
+# 给成绩表添加分类标记
+def add_student_score_classify(score_list):
+    '''
+    数据格式要求：
+    score_list:
+        一个班级的学生成绩表,列表类型,二维列表,子列表内只有一个元素为一个学生的成绩
+    返回数据：
+        一个班级的学生成绩表,列表类型,二维列表,列表内的元素为一个学生的成绩列表,子列表内的第一个元素为一个学生的分类标记
+        1代表前30%的学生,2代表中间40%的学生,3代表后30%的学生
+
+    '''
+    # 截取前30%和前70%的成绩
+    top_30_percent_score,top_70_percent_score = get_top_30_percent_and_70_percent_score(score_list)
+
+    # 根据给班级学生添加标记
+    index_int=0
+    # 初始化拷贝列表,使用深拷贝使两个列表互不影响
+    score_copy_list = copy.deepcopy(score_list)
+    # 遍历成绩列表
+    for temp_this_score_list in score_list:
+        # 如果是空列表则代表无成绩
+        temp_score_float = temp_this_score_list[1]
+        if temp_score_float == []:
+            score_copy_list[index_int].insert(0, '无成绩')
+            index_int += 1
+            continue
+        # 如果是班级前3/1,分别标记
+        if temp_score_float >= top_30_percent_score:
+            score_copy_list[index_int].insert(0, 1)
+        # 如果是中等
+        elif temp_score_float >= top_70_percent_score:
+            score_copy_list[index_int].insert(0, 2)
+        else:
+            score_copy_list[index_int].insert(0, 3)
+        # 索引增加
+        index_int += 1
+        
+    # 返回等级标记和成绩
+    return score_copy_list
+
+# 获得特定班级的所有成绩
+def get_class_student_score_by_class_name(class_name_str,row_list):
+    '''
+    数据格式要求：
+    class_name_str:
+        班级名称,字符串类型
+    row_list:
+        行数据列表,列表类型，每一行是一个类对象
+        一个对象包含成绩信息,学期信息应当固定为特定的一个学期,本函数不区分学期，只区分班级
+    预期的row_list为:
+        某个学期所有学生的成绩,学院信息可特定或不特定
+    返回数据：
+        此班级的学生成绩表,列表类型,二维列表,第一个列表中的列表代表特定学期学生的学号和成绩
+        例如：
+        [
+            [学号,学生1的2020-2021-1成绩1,学生1的2020-2021-1成绩2],
+            [学号,学生2的2020-2021-2成绩],
+            [学号,学生3的2023-2021-1成绩],
+        ]
+    '''
+
+    # 学号索引表
+    student_id_index_dict = {}
+    # 初始化学生学号表
+    student_id_list = []
+    # 初始化学生成绩表
+    class_student_score_list = []
+    # 初始化学生索引号
+    student_id_index_int = 0
+    # 遍历行数据，获得学生学号和索引对应关系
+    for TempRow in row_list:
+        # 班级
+        if class_name_str == TempRow.班级:
+            # 锁定学号
+            student_id_str = TempRow.学号
+            # 记录不重复的学号
+            if student_id_str not in student_id_list:
+                # 更新已记录的学号列表
+                student_id_list.append(student_id_str)
+                # 学号索引表
+                student_id_index_dict[student_id_str] = student_id_index_int
+                # 学号索引增加
+                student_id_index_int += 1  
+                # 成绩表先添加学号
+                class_student_score_list.append([student_id_str])
+    
+    # 遍历行数据
+    for TempRow in row_list:
+        # 班级
+        if class_name_str == TempRow.班级:
+            # 锁定学号
+            student_id_str = TempRow.学号
+            # 获得学号索引
+            student_id_index_int = student_id_index_dict[student_id_str]
+            # 成绩
+            score_float = TempRow.成绩
+
+            # 存入成绩
+            class_student_score_list[student_id_index_int].append(score_float)
+    
+    # 返回学生成绩表
+    return class_student_score_list
+
+# 线条设置
+def create_traces(student_score_list,top_30_percent_score_list,top_70_percent_score_list):
+    # 轨迹列表
+    traces = []
+    name_list = ['排名前1/3学生成绩平均值', '排名中间1/3学生成绩平均值', '排名后1/3学生成绩平均值']
+    # x 轴值，与每组 y 的长度一致
+    x_value = []
+    for i in range(len(student_score_list[0])-1):
+        x_value.append(i)
+        # 颜色列表
+    color_list = ['green', 'blue', 'red']
+    show_legend = {
+        color_list[0]: True,  # 对应绿色分组
+        color_list[1]: True,  # 对应蓝色分组
+        color_list[2]: True   # 对应红色分组
+    }
+    
+    # 添加成绩线
+    # 遍历 y_values 创建数据线
+    for i, y in enumerate(student_score_list):
+        # 根据第一个数据的值设置颜色
+        if y[0] == 1:
+            # color = 'green'  # 绿色
+            color = color_list[0]  # 绿色
+            name = '入学成绩班级前30%'
+            legendgroup = 'green_group'
+            legendrank=1
+        elif y[0] == 2:
+            # color = 'blue'   # 蓝色
+            color = color_list[1]   # 蓝色
+            name = '入学成绩班级中间40%'
+            legendgroup = 'blue_group'
+            legendrank=2
+        else:
+            # color = 'red'    # 红色
+            color = color_list[2]    # 红色
+            name = '入学成绩班级后30%'
+            legendgroup = 'red_group'
+            legendrank=3
+
+        trace = plotly.graph_objs.Scatter(
+            x=x_value,  # 使用固定长度的 x_values
+            y=y[1:],  # y 数据
+            mode='lines+markers',
+            name=name,
+            # line=dict(color=color,dash='dash'),  # 设置线条颜色、线型
+            line=dict(color=color,dash='solid'),  # 设置线条、线型
+            # opacity=0.5,  # 设置透明度
+            showlegend=show_legend[color],  # 控制图例显示
+            legendgroup=legendgroup,  # 同一组图例
+            legendrank=legendrank  # 设置图例顺序
+        )
+        traces.append(trace)
+
+        # 图例只显示一次
+        show_legend[color] = False
+
+    # 创建前30%和前70%成绩的标准线
+    standard_traces = [
+        plotly.graph_objs.Scatter(
+            x=x_value,  # x 轴值
+            y=top_30_percent_score_list,  # 创建水平线，y值是前30%成绩
+            mode='lines',
+            name='班级前30%成绩基准线',
+            # line=dict(color='black', dash='solid'),  # 使用黑色实线
+            line=dict(color='rgb(246,193,77)', dash='dot'),  # 使用橙色点线
+            showlegend=True
+        ),
+        plotly.graph_objs.Scatter(
+            x=x_value,  # x 轴值
+            y=top_70_percent_score_list,  # 创建水平线，y值是前70%成绩
+            mode='lines',
+            name='班级前70%成绩基准线',
+            # line=dict(color='black', dash='solid'),  # 使用实线
+            line=dict(color='rgb(0,0,0)', dash='dot'),  # 使用黑色点线
+            showlegend=True
+        )
+    ]
+
+    # 将标准线添加到 traces 列表中
+    traces.extend(standard_traces)
+    
+    return traces,x_value
+
+# 坐标轴、图例等设置
+def get_layout(traces,x_value,semester_list,college_name, class_name, course_type_name, student_count_int, class_teacher_name, y_axis_range, width, height, y_axis_dtick):
+    layout = plotly.graph_objs.Layout(
+        title={
+            'text': f"{college_name}_{class_name}_{course_type_name}_成绩走势图<br><sub>班级人数: {student_count_int}  班主任姓名: {class_teacher_name}</sub>",
+            'x': 0.5,
+            'xanchor': 'center'
+        },
+        plot_bgcolor='white',paper_bgcolor='white',
+        xaxis=dict(
+            title='学期',showgrid=False,zeroline=True,showline=True,linecolor='black',
+            rangemode='tozero',dtick=1,
+            # 设置 x 轴范围为 x_value 的范围
+            range=[x_value[0], x_value[-1]],
+            tickvals=x_value,
+            # ticktext=['入学成绩折算分数（百分制）', '第1学年', '第2学年', '第3学年', '第4学年']
+            ticktext=semester_list
+        ),
+        yaxis=dict(
+            title='平均成绩',showgrid=True,zeroline=True,showline=True, linecolor='black',gridcolor='lightgrey',
+            rangemode='tozero',range=[y_axis_range[0], y_axis_range[1]],
+            dtick=y_axis_dtick,
+        ),
+        width=width,
+        height=height,
+        # 图例加背景框
+        legend=dict(
+            x=1.05, y=1, traceorder='normal', font=dict(size=10),
+            bgcolor='rgba(255, 255, 255, 0)', bordercolor='Black', borderwidth=1
+        )
+    )
+
+    return layout
+
+# 获得指定班级,指定学期,指定课程类型的成绩折线图
+def get_score_simple_semester(class_name_str,class_type_str,semester_str):
+    '''
+    数据格式要求：
+    class_name_str:
+        班级名称,字符串类型
+    class_type_str:
+        课程类型,字符串类型
+    semester_str:
+        学期,字符串类型
+    返回数据：
+        此班级的学生成绩表,列表类型,二维列表,列表内的元素为一个学生的成绩列表,子列表内的第一个元素为一个学生的分类标记
+        1代表前30%的学生,2代表中间40%的学生,3代表后30%的学生
+    '''
+    # 构造sql语句
+    select_sql_str =f"select * from 成绩 where 班级 = '{class_name_str}' and 课程性质 = '{class_type_str}' and 学期 = '{semester_str}'"
+
+    # 执行sql语句,返回执行标志和执行数据
+    excute_sql_flag_str,excute_count_int,rows = get_score_database(select_sql_str)
+
+    # 获得班级成绩
+    class_student_score_list = get_class_student_score_by_class_name(class_name_str,rows)
+
+    # 获得平均分
+    average_class_student_score_list = get_average_score(class_student_score_list)
+
+    # 获得增加等级标记的成绩
+    # tag_class_student_average_score_list_list = add_student_score_classify(average_class_student_score_list)
+    # print(tag_class_student_average_score_list_list)
+    
+    # 获得前30%和前70%的成绩标准线
+    top_30_percent_score_float,top_70_percent_score_float = get_top_30_percent_and_70_percent_score(average_class_student_score_list)
+    
+    # 返回数据
+    return average_class_student_score_list,top_30_percent_score_float,top_70_percent_score_float
+
+# 获得多个学期的数据
+def get_score_by_semester(class_name_str,class_type_str,semester_list):
+    # 初始化数据
+    tag_class_student_average_score_list_list=[]
+    top_30_percent_score_list=[]
+    top_70_percent_score_list=[]
+    # 初始化学号字典
+    student_id_dict={}
+    # 初始化学生索引
+    student_index_int=0
+    # 遍历学期列表
+    for semester_str in semester_list:
+        # 获得班级成绩
+        average_class_student_score_list,top_30_percent_score_float,top_70_percent_score_float = get_score_simple_semester(class_name_str,class_type_str,semester_str)
+        
+        # 根据学号定位到学生的成绩,并添加到列表中
+        for student_score_list in average_class_student_score_list:
+            # 学号
+            student_id_str = student_score_list[0]
+            # 成绩
+            score_float = student_score_list[1]
+            
+            # 判断学号是否存在
+            if student_id_str not in student_id_dict:
+                # 更新学号索引字典
+                student_id_dict[student_id_str] = student_index_int
+                # 索引增加
+                student_index_int += 1
+
+                # 初始化学生成绩列表
+                temp_list = []
+                # 列表末尾存入学号
+                temp_list.append(student_id_str)
+                # 列表末尾存入成绩
+                temp_list.append(score_float)
+                # 列表末尾存入学号和成绩
+                tag_class_student_average_score_list_list.append(temp_list)
+            else:
+                # 定位到学生的成绩,并添加到列表中
+                tag_class_student_average_score_list_list[student_id_dict.get(student_id_str)].append(score_float)
+
+    # 添加分类标记
+
+    # 返回数据
+    return tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list
+
+
+# 将数据以折线图方式呈现
+def show_score_line_chart(class_name_str,class_type_str,semester_str):
+    # 获得班级成绩
+    class_student_score_list = get_score_simple_semester(class_name_str,class_type_str,semester_str)
+
+    # 获得平均分
+    average_class_student_score_list = []
+    for student_score_list in class_student_score_list:
+        # 获得平均分
+        average_score_float = get_average_score(student_score_list)
+        # 判断是否有数据
+        if average_score_float!= None:
+            # 存入平均分
+            average_class_student_score_list.append([average_score_float])
+        else:
+            # 存入空列表,需要用空列表占位
+            average_class_student_score_list.append([])
+
+
 if __name__ == '__main__':
     # 引入文件目录设置
     import sys
@@ -79,25 +518,40 @@ if __name__ == '__main__':
 
     # 引入模板文件
     from app.template import TemplatesJinja2ScoreVisualization
-
     from service import crud
 
     # 查询测试
     class_name_str = '金融202003'
     class_type_str = '必修'
     # 学期
-    semester_str = '2022-2023-2'
+    semester_list = ['2022-2023-1','2022-2023-2']
+    
+    # 获得班级成绩,单个学期
+    average_class_student_score_list,top_30_percent_score_float,top_70_percent_score_float = get_score_simple_semester(class_name_str,class_type_str,semester_list[0])
 
-    # 构造sql语句
-    select_sql_str =f"select * from 成绩 where 班级 = '{class_name_str}' and 课程性质 = '{class_type_str}' and 学期 = '{semester_str}'"
+    # 获得班级成绩,多个学期
+    tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list = get_score_by_semester(class_name_str,class_type_str,semester_list)
+    # # 创建轨迹，用于展示分数分布
+    # traces,x_value = create_traces(tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list)
+    
+    # college_name = 'ccc'
+    # class_name ='111'
+    # course_type_name = '必修'
+    # student_count_int = 50
+    # class_teacher_name='aaa'
+    # y_axis_range = [0, 100]
+    # width = 1000
+    # height = 600
+    # y_axis_dtick = 10
+    
+    # # 创建布局，设置图表的标题、y轴标签、图例等
+    # layout_plotly = get_layout(traces,x_value,semester_list,college_name, class_name, course_type_name, student_count_int, class_teacher_name, y_axis_range, width, height, y_axis_dtick)
 
+    # # # 创建图表，并设置数据和布局
+    # fig_plotly = plotly.graph_objs.Figure(data=traces, layout=layout_plotly)
 
-    excute_sql_flag_str,excute_count_int,rows = get_score(select_sql_str)
-    print(excute_sql_flag_str,excute_count_int)
-    print(rows[0])
-    print(rows[1])
+    # # 将图表保存为图片
+    # file_name = 'test.png'
+    # plotly.io.write_image(fig_plotly, file_name)
 
-    # 获得指定学生的成绩
-    # for row in rows:
-    #     if row.学号 == '202002998':
-    #         print(row.课程,row.成绩)
+    # print(f'成功保存{file_name}图片')
