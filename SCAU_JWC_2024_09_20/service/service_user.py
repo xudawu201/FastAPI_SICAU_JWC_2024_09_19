@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-17 11:50:08
 LastEditors: xudawu
-LastEditTime: 2024-10-21 14:36:16
+LastEditTime: 2024-10-23 17:41:14
 '''
 from model import user
 from service import crud
