@@ -2,52 +2,14 @@
 Author: xudawu
 Date: 2024-10-21 15:35:21
 LastEditors: xudawu
-LastEditTime: 2024-10-23 18:12:28
+LastEditTime: 2024-10-24 14:46:36
 '''
-
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
 import plotly
 import copy
 import math
 
 # 引入自定义文件
-from app.template import TemplatesJinja2ScoreVisualization
-from app.score_visualization.service import service_score
-
-router = APIRouter()
-
-# 成绩可视化页
-@router.get("/score_visualization", response_class=HTMLResponse)
-async def score_visualization_page(request: Request):
-    
-    # 班级名称
-    class_name_str = '农学202001'
-    # 课程类型
-    course_type_name = '必修'
-    # 学期
-    semester_list = ['2020-2021-1','2020-2021-2','2021-2022-1','2021-2022-2','2022-2023-1','2022-2023-2','2023-2024-1','2023-2024-2']
-    # 将数据绘图为折线图
-    fig_plotly = show_score_line_chart(class_name_str,course_type_name,semester_list)
-
-    # 修改配置
-    config_dict = {
-        'displayModeBar': True,
-        'doubleClick': 'reset',
-        'scrollZoom':True,
-        # 可修改标题
-        'editable': True,
-        'showLink': False,
-        # 隐藏plotly的logo
-        'displaylogo': False,
-        'modeBarButtonsToAdd':['toggleSpikelines',]
-        }
-    # 将图表转换为HTML
-    graph_html = plotly.io.to_html(fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
-
-    # route_user = user.cookie_tokens_dict.get(session_token)
-    context = {"request": request, "graph_html": graph_html}
-    return TemplatesJinja2ScoreVisualization.TemplateResponse("score_visualization.html", context)
+from app.score_visualization.database import database_score
 
 # 获得学生的成绩
 def get_student_score_by_id(student_id_str,row_list):
@@ -280,7 +242,7 @@ def get_score_simple_semester(class_name_str,class_type_str,semester_str):
         1代表前30%的学生,2代表中间40%的学生,3代表后30%的学生
     '''
     # 执行sql语句,返回执行标志和执行数据
-    excute_sql_flag_str,excute_count_int,rows = service_score.get_score_database(class_name_str,class_type_str,semester_str)
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_score_database(class_name_str,class_type_str,semester_str)
 
     # 获得班级成绩
     class_student_score_list = get_class_student_score_by_class_name(class_name_str,rows)
@@ -458,7 +420,7 @@ def create_traces(student_score_list,top_30_percent_score_list,top_70_percent_sc
 def get_layout(traces,x_value,semester_list,college_name, class_name, course_type_name, student_count_int, class_teacher_name, width, height, y_axis_dtick):
     layout = plotly.graph_objs.Layout(
         title={
-            'text': f"{college_name}_{class_name}_{course_type_name}_可交互成绩图<br><sub>班级人数: {student_count_int}  班主任姓名: {class_teacher_name}</sub>",
+            'text': f"{college_name}_{class_name}_{course_type_name}_成绩走势图<br><sub>班级人数: {student_count_int}  班主任姓名: {class_teacher_name}</sub>",
             'x': 0.5,
             'xanchor': 'center'
         },
@@ -495,24 +457,21 @@ def get_layout(traces,x_value,semester_list,college_name, class_name, course_typ
     return layout
 
 # 将数据以折线图方式呈现
-def show_score_line_chart(class_name_str,course_type_name,semester_list):
+def show_score_line_chart(class_name_str,course_type_name,semester_list,width,height,y_axis_dtick):
 
     # 获得班级成绩,多个学期,并添加标记
     tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list,student_count_int = get_score_by_semester(class_name_str,course_type_name,semester_list)
     
     # 获得学院名称
-    excute_sql_flag_str,excute_count_int,rows = service_score.get_class_college_by_class_name(class_name_str)
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_class_college_by_class_name(class_name_str)
     college_name = rows[0].学院
 
     # 获得班级班主任姓名
-    excute_sql_flag_str,excute_count_int,rows = service_score.get_class_teacher_by_class_name(class_name_str)
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_class_teacher_by_class_name(class_name_str)
     class_teacher_name=rows[0].班主任
     # 设置y轴范围
     min_value, max_value = get_min_max_in_list(tag_class_student_average_score_list_list)
     # y_axis_range = [min_value-2, max_value+2]
-    width = 1000
-    height = 600
-    y_axis_dtick = 5
     
     # 创建轨迹，用于展示分数分布
     traces,x_value = create_traces(tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list,semester_list)
@@ -541,7 +500,7 @@ if __name__ == '__main__':
 
     # 引入模板文件
     from app.template import TemplatesJinja2ScoreVisualization
-    from app.score_visualization.service import service_score
+    from app.score_visualization.database import database_score
 
     # 查询测试
     class_name_str = '农学202001'
@@ -555,6 +514,13 @@ if __name__ == '__main__':
     # 获得班级成绩,多个学期,并添加标记
     # tag_class_student_average_score_list_list,top_30_percent_score_list,top_70_percent_score_list = get_score_by_semester(class_name_str,class_type_str,semester_list)
     
+    # 图像布局设置
+    width = 1000
+    height = 600
+    y_axis_dtick = 5
+
     # 将数据绘图为折线图
-    show_score_line_chart(class_name_str,course_type_name,semester_list)
-    
+    # fig_plotly = show_score_line_chart(class_name_str,course_type_name,semester_list,width,height,y_axis_dtick)
+
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_all_college()
+    print(rows)

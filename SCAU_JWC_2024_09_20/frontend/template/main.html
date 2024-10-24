@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-14 17:59:01
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-21 11:20:44
+ * @LastEditTime: 2024-10-24 17:42:44
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -44,6 +44,8 @@
         <nav class="nav_bar">
             <a href="#students">成绩可视化</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
+            <a href="#course_schedule">智能排课</a>
+            <hr class="nav_bar_divider"> <!-- 添加分割线 -->
             <a href="#teachers">超级查询</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
             <a href="#courses">智能问答</a>
@@ -52,14 +54,6 @@
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
         </nav>
     </div>
-    <!-- 主页面内容div -->
-    <div id="content_div">
-        <!-- <h2>欢迎使用教务管理系统</h2>
-        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p> -->
-        <iframe src="/score_visualization" width="98%" height="80%" frameborder="0"></iframe>
-        <!-- <iframe src="https://www.bilibili.com/" width="98%" height="80%" frameborder="0"></iframe> -->
-    </div>
-
     <!-- 右上角滑出的个人账户菜单 -->
     <div id="userMenu" class="slide-in-menu">
         <h4>账户设置</h4>
@@ -72,6 +66,18 @@
             <li><a href="#" id='logout_button'>退出登录</a></li>
         </ul>
     </div>
+
+    <!-- 主页面内容div -->
+    <div id="content_div">
+        <h2>欢迎使用教务管理系统</h2>
+        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p>
+
+        <!-- 子页面 -->
+        <iframe src="/score_visualization" width="98%" height="100%" frameborder="0"></iframe>
+        <!-- <iframe src="https://www.bilibili.com/" width="98%" height="80%" frameborder="0"></iframe> -->
+    </div>
+
+
 
     <!-- 退出登录js -->
     <script src="public_static_path/js/logout.js?v=main_logout_js"></script>

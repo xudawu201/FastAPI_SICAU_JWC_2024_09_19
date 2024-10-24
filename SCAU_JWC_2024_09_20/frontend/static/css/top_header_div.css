@@ -1,15 +1,16 @@
 /* 顶端横幅的文字样式 */
-#header_div h1 {
-    position: relative;
-    top: -17px;
+#header_h1 {
+    position: absolute;
+    top: -20px;
+    left: 40%;
     color: white;
     text-align: center;
-    width: 11%;
-    margin: 21px auto;
+    width: 20%;
+    height: 50px;
     /* background-color: #d41717; */
 }
 
-#header_div h1:hover{
+#header_h1:hover{
     /* background-color: #cac9c9; */
     /* color: #cac9c9; */
     color: #c1d9f1;
@@ -21,10 +22,9 @@
 }
 
 .user_info {
-    position: relative;
-    right: 40px;
-    top: -77px;
-    left: calc(100% - 250px);
+    position: absolute;
+    top: 5px;
+    left: 90%;
     width: 200px;
     height: 40px;
     /* background-color: #e91313; */
@@ -90,7 +90,8 @@
 
 .slide_div_line {
     position: absolute;
-    top: 75%; /* 第三条横线距离顶部的距离 */
+    /* 第三条横线距离顶部的距离 */
+    top: 75%; 
     left: 15%;
     width: 70%; /* 横线宽度 */
     height: 2px; /* 横线高度 */

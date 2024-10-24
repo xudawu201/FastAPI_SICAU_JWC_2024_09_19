@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-10 09:20:58
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-21 14:58:44
+ * @LastEditTime: 2024-10-24 18:11:38
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,9 +10,97 @@
         <!-- <title>可交互的折线图</title> -->
     </head>
     <body>
-        <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
-        <div>{{ graph_html | safe }}</div>
-        <!-- 传递点击页面的消息到父页面 -->
-        <script src="public_static_path/js/iframe_click_listener.js"></script>
+        <h1>学院班级筛选</h1>
+        <label for="college">学院:</label>
+        <select id="college" onchange="updateClasses()">
+            <option value="">请选择学院</option>
+        </select>
+
+        <label for="class">班级:</label>
+        <select id="class">
+            <option value="">请选择班级</option>
+        </select>
+
+        <script>
+            // 页面加载完成后自动执行以下函数
+            window.onload = async function() {
+                
+                const password = '123456';
+                
+                // 从 FastAPI 发送post请求学院和班级数据
+                const response = await fetch('/filter_score', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({password})
+            });
+                // 获得数据
+                const result = await response.json();
+
+                alert(result.test);
+
+            };
+            
+        </script>
+
+        <!-- <script>
+            let classes = {};
+            
+            // window.onload = async function(){
+                
+            // 从 FastAPI 获取学院和班级数据
+            async function fetchColleges() {
+
+                const response = await fetch('/filter_score', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            credentials: 'include',
+                        }
+                    });
+                // const response = await fetch('/filter_score');
+                // classes = await response.json();
+        
+                const result = await response.json();
+
+                alert(result.test);
+
+
+                const collegeSelect = document.getElementById('college');
+                for (const college in classes) {
+                    const option = document.createElement('option');
+                    option.value = college;
+                    option.textContent = college === 'computer' ? '计算机学院' : '商学院';
+                    collegeSelect.appendChild(option);
+                }
+
+            }
+
+            function updateClasses() {
+                const collegeSelect = document.getElementById('college');
+                const classSelect = document.getElementById('class');
+
+                const selectedCollege = collegeSelect.value;
+                classSelect.innerHTML = '<option value="">请选择班级</option>';
+
+                if (selectedCollege) {
+                    classes[selectedCollege].forEach(cls => {
+                        const option = document.createElement('option');
+                        option.value = cls;
+                        option.textContent = cls;
+                        classSelect.appendChild(option);
+                    });
+                }
+            }
+            // 页面加载时获取数据
+            window.onload = fetchColleges;
+        </script> -->
+
+    <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
+    <div>{{ graph_html | safe }}</div>
+    <!-- 传递点击页面的消息到父页面 -->
+    <script src="public_static_path/js/iframe_click_listener.js"></script>
+
     </body>
 </html>

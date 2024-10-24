@@ -3,16 +3,21 @@ body {
     /* font-family: Arial, sans-serif; */
     margin: 0;
     padding: 0;
+    /* 最顶层先设置高宽后，其他子元素的高宽才会正确设置 */
+    height: 100%;
+    width: 100%;
 }
+
 /* 顶端横幅 */
 #header_div {
-    position: absolute;
+    position: relative;
     background-color: #4CAF50;
-    top: 0px;
+    /* top: -20px; */
     /* 宽度 */
     width: 100%;
     /* 高度 */
     height: 50px;
+    padding-top: 1px;
     /* 添加阴影效果 */
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
@@ -22,10 +27,11 @@ body {
     /* 位置 */
     position: absolute;
     background-color: #333;
-    top: 50px;
-    width: 200px; /* 侧边栏的宽度 */
+    width: 10%; /* 侧边栏的宽度 */
     /* 减去顶端横幅的高度 */
-    height: calc(100% - 50px);
+    height: calc(100% - 55px);
+    /* 添加阴影效果 */
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
 
 /* 页面主内容div */
@@ -33,10 +39,11 @@ body {
     position: absolute;
     /* padding: 20px; */
     /* background-color: #3b16e0; */
-    top: 50px;
+    /* top: 8%; */
     left: 200px;
     /* 页面100%的宽度减去左侧窗口的宽度 */
     width: calc(100% - 200px);
     /* 主内容的高度 */
-    height: calc(100% - 50px);
+    height: calc(100% - 55px);
+    /* background-color: #8f54d1; */
 }

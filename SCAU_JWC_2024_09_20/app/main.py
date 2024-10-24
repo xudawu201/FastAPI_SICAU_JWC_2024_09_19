@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-10-21 15:40:18
+LastEditTime: 2024-10-24 17:50:37
 '''
 # 引入文件目录设置
 import sys
@@ -14,15 +14,15 @@ sys.path.append(module_path)
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-# 包含路由模块
 from route import route_authorization, route_main
 
 # 引入业务路由模块
-from app.score_visualization import score_visualization
+from app.score_visualization.route import route_score
 
 
 # 创建 FastAPI 应用
 app = FastAPI()
+
 
 # 获得文件夹路径
 BASE_PATH = Path(__file__).resolve().parent
@@ -39,9 +39,10 @@ app.include_router(route_authorization.router)
 app.include_router(route_main.router)
 
 # 成绩可视化模块
-app.include_router(score_visualization.router)
+app.include_router(route_score.router)
 
 # 主函数启动应用程序
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app="app.main:app", host="0.0.0.0", port=8000, reload=True)
+    # uvicorn.run(app, host="0.0.0.0", port=8000)

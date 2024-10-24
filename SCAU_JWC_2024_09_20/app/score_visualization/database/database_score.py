@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-23 16:08:45
 LastEditors: xudawu
-LastEditTime: 2024-10-23 16:09:17
+LastEditTime: 2024-10-24 14:31:45
 '''
 from service import crud
 
@@ -38,6 +38,20 @@ def get_class_teacher_by_class_name(class_name_str):
         学院和班级,列表类型,二维列表,列表内的列表为学院和班级
     '''
     select_sql_str = f"select distinct 班主任,班级 from 班级 where 班级 = '{class_name_str}'"
+    # 执行sql语句,返回执行标志和执行数据
+    excute_sql_flag_str,excute_count_int,rows = crud.select_table(select_sql_str)
+    return excute_sql_flag_str,excute_count_int,rows
+
+# 获得所有学院
+def get_all_college():
+    '''
+    数据格式要求：
+    class_name_str:
+        班级名称,字符串类型
+    返回数据：
+        学院和班级,列表类型,二维列表,列表内的列表为学院和班级
+    '''
+    select_sql_str = f"select distinct 学院,班级 from 成绩分班"
     # 执行sql语句,返回执行标志和执行数据
     excute_sql_flag_str,excute_count_int,rows = crud.select_table(select_sql_str)
     return excute_sql_flag_str,excute_count_int,rows

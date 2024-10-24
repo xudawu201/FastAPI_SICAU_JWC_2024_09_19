@@ -3,44 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>可交互的折线图</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <title>学院班级筛选</title>
 </head>
 <body>
-    <div id="myDiv" style="width: 100%; height: 100%;"></div>
+    <h1>学院班级筛选</h1>
+    <label for="college">学院:</label>
+    <select id="college" onchange="updateClasses()">
+        <option value="">请选择学院</option>
+        <option value="computer">计算机学院</option>
+        <option value="business">商学院</option>
+    </select>
+
+    <label for="class">班级:</label>
+    <select id="class">
+        <option value="">请选择班级</option>
+    </select>
+
     <script>
-        // 数据
-        var trace1 = {
-            x: [1, 2, 3, 4, 5],
-            y: [2, 3, 5, 4, 6],
-            mode: 'lines+markers',
-            type: 'scatter',
-            name: '系列1'
+        const classes = {
+            computer: ['计算机1班', '计算机2班', '计算机3班'],
+            business: ['商科1班', '商科2班', '商科3班']
         };
 
-        var trace2 = {
-            x: [1, 2, 3, 4, 5],
-            y: [1, 3, 4, 2, 5],
-            mode: 'lines+markers',
-            type: 'scatter',
-            name: '系列2'
-        };
+        function updateClasses() {
+            const collegeSelect = document.getElementById('college');
+            const classSelect = document.getElementById('class');
 
-        var data = [trace1, trace2];
+            const selectedCollege = collegeSelect.value;
+            classSelect.innerHTML = '<option value="">请选择班级</option>';
 
-        // 布局
-        var layout = {
-            title: '可交互的折线图示例',
-            xaxis: {
-                title: 'X 轴'
-            },
-            yaxis: {
-                title: 'Y 轴'
+            if (selectedCollege) {
+                classes[selectedCollege].forEach(cls => {
+                    const option = document.createElement('option');
+                    option.value = cls;
+                    option.textContent = cls;
+                    classSelect.appendChild(option);
+                });
             }
-        };
-
-        // 绘制图表
-        Plotly.newPlot('myDiv', data, layout);
+        }
     </script>
 </body>
 </html>
