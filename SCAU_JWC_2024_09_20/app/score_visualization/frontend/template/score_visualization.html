@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-10 09:20:58
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-24 18:11:38
+ * @LastEditTime: 2024-10-25 16:20:23
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -12,20 +12,28 @@
     <body>
         <h1>学院班级筛选</h1>
         <label for="college">学院:</label>
-        <select id="college" onchange="updateClasses()">
+        <select id="college" onchange="updateClasses()" style="width: 150px;">
             <option value="">请选择学院</option>
         </select>
 
         <label for="class">班级:</label>
-        <select id="class">
+        <select id="class" style="width: 150px;">
             <option value="">请选择班级</option>
         </select>
 
+        <label for="corse_type">课程性质:</label>
+        <select id="corse_type" style="width: 150px;">
+            <option value="">请选择课程性质</option>
+        </select>
+
         <script>
+            // 定义一个函数内变量,可以重新赋值
+            let college_class_dict = {};
+
             // 页面加载完成后自动执行以下函数
             window.onload = async function() {
                 
-                const password = '123456';
+                // const password = '123456';
                 
                 // 从 FastAPI 发送post请求学院和班级数据
                 const response = await fetch('/filter_score', {
@@ -33,51 +41,24 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({password})
+                // body: JSON.stringify({password})
             });
                 // 获得数据
-                const result = await response.json();
+                college_class_dict = await response.json();
 
-                alert(result.test);
-
-            };
-            
-        </script>
-
-        <!-- <script>
-            let classes = {};
-            
-            // window.onload = async function(){
-                
-            // 从 FastAPI 获取学院和班级数据
-            async function fetchColleges() {
-
-                const response = await fetch('/filter_score', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            credentials: 'include',
-                        }
-                    });
-                // const response = await fetch('/filter_score');
-                // classes = await response.json();
-        
-                const result = await response.json();
-
-                alert(result.test);
-
-
+                // 填充学院下拉框
                 const collegeSelect = document.getElementById('college');
-                for (const college in classes) {
+                for (const college in college_class_dict) {
                     const option = document.createElement('option');
                     option.value = college;
-                    option.textContent = college === 'computer' ? '计算机学院' : '商学院';
+                    option.textContent = college;
                     collegeSelect.appendChild(option);
                 }
 
-            }
-
-            function updateClasses() {
+            };
+            
+            // 填充班级下拉框
+            async function updateClasses() {
                 const collegeSelect = document.getElementById('college');
                 const classSelect = document.getElementById('class');
 
@@ -85,7 +66,7 @@
                 classSelect.innerHTML = '<option value="">请选择班级</option>';
 
                 if (selectedCollege) {
-                    classes[selectedCollege].forEach(cls => {
+                    college_class_dict[selectedCollege].forEach(cls => {
                         const option = document.createElement('option');
                         option.value = cls;
                         option.textContent = cls;
@@ -93,9 +74,52 @@
                     });
                 }
             }
-            // 页面加载时获取数据
-            window.onload = fetchColleges;
-        </script> -->
+
+        </script>
+
+        <script>
+            // 监听班级选择变化事件
+            document.getElementById('class').addEventListener('change', async function() {
+                const collegeSelect = document.getElementById('college');
+                const selectedCollege = collegeSelect.value;
+                const selectedClass = this.value;
+
+                if (selectedCollege && selectedClass) {
+                    // 将选择的学院和班级值提交到 FastAPI 后端
+                    const response = await fetch('/submit_class_name', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            college_str: selectedCollege,
+                            class_str: selectedClass
+                        })
+                    });
+
+                    // 可选：处理响应
+                    const result = await response.json();
+                    // alert(result.course_type_list)
+                    
+                    // 填充课程类型下拉框
+                    const classSelect = document.getElementById('class');
+                    const corse_type_select = document.getElementById('corse_type');
+
+                    const selected_class_name = classSelect.value;
+                    corse_type_select.innerHTML = '<option value="">请选择课程性质</option>';
+
+                    if (selected_class_name) {
+                        result.course_type_list.forEach(cls => {
+                            const option = document.createElement('option');
+                            option.value = cls;
+                            option.textContent = cls;
+                            corse_type_select.appendChild(option);
+                        });
+                    }
+                }
+
+            });
+        </script>
 
     <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
     <div>{{ graph_html | safe }}</div>
