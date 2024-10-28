@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-21 15:35:21
 LastEditors: xudawu
-LastEditTime: 2024-10-25 14:27:05
+LastEditTime: 2024-10-28 17:53:15
 '''
 import plotly
 import copy
@@ -10,7 +10,7 @@ import math
 
 # 引入自定义文件
 from app.score_visualization.database import database_score
-from app.score_visualization import public_function
+from app import public_function
 
 # 获得学生的成绩
 def get_student_score_by_id(student_id_str,row_list):
@@ -63,6 +63,8 @@ def get_average_score(score_list):
     for temp_temp_score_list in temp_score_list:
         # 初始化平均成绩
         average_score_float = None
+        # 去掉None成绩
+        temp_temp_score_list = [item for item in temp_temp_score_list if item is not None]
         # 如果有成绩再计算平均分
         if len(temp_temp_score_list) != 0:
             average_score_float = sum(temp_temp_score_list) / len(temp_temp_score_list)
@@ -89,9 +91,17 @@ def get_sorted_list_desc(score_list):
     # 初始化成绩列表,用于存储学生
     temp_scores_list = []
     for temp_this_score_list in score_list:
-        # 如果有成绩再计算平均分
-        if len(temp_this_score_list)!=1:
-            temp_scores_list.append(temp_this_score_list[1])
+        
+        # 从此学生的第一次有成绩开始算,从1开始,跳过学号
+        for temp_this_score in temp_this_score_list[1:]:
+
+            if temp_this_score == None :
+                continue
+
+            # 记录成绩
+            temp_scores_list.append(temp_this_score)
+            # 跳过后面的成绩
+            break
 
     # 对成绩列表进行降序排序（分数越高排名越前）
     temp_scores_list.sort(reverse=True)
@@ -145,9 +155,22 @@ def add_student_score_classify(score_list):
     score_copy_list = copy.deepcopy(score_list)
     # 遍历成绩列表
     for temp_this_score_list in score_list:
-        # 如果是空列表则代表无成绩
-        temp_score_float = temp_this_score_list[1]
-        if temp_score_float == []:
+        # 初始化成绩
+        temp_score_float = None
+        # 从此学生的第一次有成绩开始算,从1开始,跳过学号
+        for temp_this_score in temp_this_score_list[1:]:
+
+            # 跳过None的成绩
+            if temp_this_score == None :
+                continue
+
+            # 记录成绩
+            temp_score_float = temp_this_score
+            # 跳过后面的成绩
+            break
+
+        # 如果是无成绩
+        if temp_score_float == None:
             score_copy_list[index_int].insert(0, '无成绩')
             index_int += 1
             continue
@@ -165,8 +188,8 @@ def add_student_score_classify(score_list):
     # 返回等级标记和成绩
     return score_copy_list
 
-# 获得特定班级的所有成绩
-def get_class_student_score_by_class_name(class_name_str,row_list):
+# 获得以学号分组的所有成绩
+def get_student_score_group(row_list):
     '''
     数据格式要求：
     class_name_str:
@@ -196,45 +219,41 @@ def get_class_student_score_by_class_name(class_name_str,row_list):
     student_id_index_int = 0
     # 遍历行数据，获得学生学号和索引对应关系
     for TempRow in row_list:
-        # 班级
-        if class_name_str == TempRow.班级:
-            # 锁定学号
-            student_id_str = TempRow.学号
-            # 记录不重复的学号
-            if student_id_str not in student_id_list:
-                # 更新已记录的学号列表
-                student_id_list.append(student_id_str)
-                # 学号索引字典更新
-                student_id_index_dict[student_id_str] = student_id_index_int
-                # 学号索引增加
-                student_id_index_int += 1  
-                # 成绩表先添加学号
-                class_student_score_list.append([student_id_str])
+        # 锁定学号
+        student_id_str = TempRow.学号
+        # 记录不重复的学号
+        if student_id_str not in student_id_list:
+            # 更新已记录的学号列表
+            student_id_list.append(student_id_str)
+            # 学号索引字典更新
+            student_id_index_dict[student_id_str] = student_id_index_int
+            # 学号索引增加
+            student_id_index_int += 1  
+            # 成绩表先添加学号
+            class_student_score_list.append([student_id_str])
     
     # 遍历行数据
     for TempRow in row_list:
-        # 班级
-        if class_name_str == TempRow.班级:
-            # 锁定学号
-            student_id_str = TempRow.学号
-            # 获得学号索引
-            student_id_index_int = student_id_index_dict[student_id_str]
-            # 成绩
-            score_float = TempRow.成绩
+        # 锁定学号
+        student_id_str = TempRow.学号
+        # 获得学号索引
+        student_id_index_int = student_id_index_dict[student_id_str]
+        # 成绩
+        score_float = TempRow.成绩
 
-            # 存入成绩
-            class_student_score_list[student_id_index_int].append(score_float)
+        # 存入成绩
+        class_student_score_list[student_id_index_int].append(score_float)
     
     # 返回学生成绩表
     return class_student_score_list
 
 # 获得指定班级,指定学期,指定课程类型的成绩折线图
-def get_score_simple_semester(class_name_str,class_type_str,semester_str):
+def get_score_simple_semester(class_name_str,course_type_str,semester_str):
     '''
     数据格式要求：
     class_name_str:
         班级名称,字符串类型
-    class_type_str:
+    course_type_str:
         课程类型,字符串类型
     semester_str:
         学期,字符串类型
@@ -243,10 +262,10 @@ def get_score_simple_semester(class_name_str,class_type_str,semester_str):
         1代表前30%的学生,2代表中间40%的学生,3代表后30%的学生
     '''
     # 执行sql语句,返回执行标志和执行数据
-    excute_sql_flag_str,excute_count_int,rows = database_score.get_score_database(class_name_str,class_type_str,semester_str)
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_score_database(class_name_str,course_type_str,semester_str)
 
-    # 获得班级成绩
-    class_student_score_list = get_class_student_score_by_class_name(class_name_str,rows)
+    # 获得以学号分组的成绩
+    class_student_score_list = get_student_score_group(rows)
 
     # 获得平均分
     average_class_student_score_list = get_average_score(class_student_score_list)
@@ -261,12 +280,10 @@ def get_score_simple_semester(class_name_str,class_type_str,semester_str):
 def get_score_by_semester(class_name_str,course_type_name):
 
     # 执行sql语句,返回执行标志和执行数据,并获得学期列表
-    excute_sql_flag_str,excute_count_int,rows = database_score.get_all_semester_by_class(class_name_str)
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_all_semester_by_class_and_course_type(class_name_str,course_type_name)
 
-    # 初始化学期列表
-    semester_list = []
-    for row in rows:
-        semester_list.append(row.学期)
+    # 去掉元组嵌套
+    semester_list = public_function.remove_tuple_nest(rows)
 
     # 对学期列表进行升序排序
     order_semester_list = public_function.sort_semester_list(semester_list)
@@ -279,6 +296,8 @@ def get_score_by_semester(class_name_str,course_type_name):
     student_id_dict={}
     # 初始化学生索引
     student_index_int=0
+    # 初始化学期计数
+    semester_count_int=0
     # 遍历学期列表
     for semester_str in order_semester_list:
         # 获得班级成绩
@@ -288,14 +307,19 @@ def get_score_by_semester(class_name_str,course_type_name):
         top_30_percent_score_list.append(top_30_percent_score_float)
         top_70_percent_score_list.append(top_70_percent_score_float)
 
+        # 初始化当前学期的学生列表
+        cur_semester_student_id_dict = []
+
         # 根据学号定位到学生的成绩,并添加到列表中
         for student_score_list in average_class_student_score_list:
             # 学号
             student_id_str = student_score_list[0]
+            # 记录当前学期的学号
+            cur_semester_student_id_dict.append(student_id_str)
             # 成绩
             score_float = student_score_list[1]
-            
-            # 判断学号是否存在
+
+            # 如果是首次出现的学号
             if student_id_str not in student_id_dict:
                 # 更新学号索引字典
                 student_id_dict[student_id_str] = student_index_int
@@ -303,16 +327,34 @@ def get_score_by_semester(class_name_str,course_type_name):
                 student_index_int += 1
 
                 # 初始化学生成绩列表
-                temp_list = []
-                # 列表末尾存入学号
-                temp_list.append(student_id_str)
-                # 列表末尾存入成绩
+                temp_list = [student_id_str]
+
+                # 补足之前的学生成绩
+                for i in range(semester_count_int):
+                    temp_list.append(None)
+
+                # 存入成绩
                 temp_list.append(score_float)
+
                 # 列表末尾存入学号和成绩
                 semester_average_class_student_score_list.append(temp_list)
+
             else:
-                # 定位到学生的成绩,并添加到列表中
-                semester_average_class_student_score_list[student_id_dict.get(student_id_str)].append(score_float)
+                # 不是首次出现的学号,定位到学生的成绩
+                index_int = student_id_dict[student_id_str]
+                semester_average_class_student_score_list[index_int].append(score_float)
+
+        # 处理当前学期没有成绩的学生,将其成绩填充为None
+        for student_id_str in student_id_dict.keys():
+            # 如果学号不在当前学期的学生列表中
+            if student_id_str not in cur_semester_student_id_dict:
+                # 定位到学生的成绩
+                index_int = student_id_dict[student_id_str]
+                # 添加None到成绩占位
+                semester_average_class_student_score_list[index_int].append(None)
+
+        # 学期计数增加1
+        semester_count_int += 1
 
     # 添加分类标记
     tag_semester_class_student_average_score_list_list = add_student_score_classify(semester_average_class_student_score_list)
@@ -458,11 +500,19 @@ def show_score_line_chart(class_name_str,course_type_name,width,height,y_axis_dt
     
     # 获得学院名称
     excute_sql_flag_str,excute_count_int,rows = database_score.get_class_college_by_class_name(class_name_str)
-    college_name = rows[0].学院
+    # 如果没查询到数据
+    if len(rows) == 0:
+        college_name = None
+    else:
+        college_name = rows[0].学院
 
     # 获得班级班主任姓名
     excute_sql_flag_str,excute_count_int,rows = database_score.get_class_teacher_by_class_name(class_name_str)
-    class_teacher_name=rows[0].班主任
+    # 如果没查询到数据
+    if len(rows) == 0:
+        class_teacher_name = None
+    else:
+        class_teacher_name=rows[0].班主任
     # 设置y轴范围
     min_value, max_value = public_function.get_min_max_in_list(tag_class_student_average_score_list_list)
     # y_axis_range = [min_value-2, max_value+2]

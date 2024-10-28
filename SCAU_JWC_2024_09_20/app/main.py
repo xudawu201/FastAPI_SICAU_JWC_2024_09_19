@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-10-24 17:50:37
+LastEditTime: 2024-10-28 17:35:55
 '''
 # 引入文件目录设置
 import sys
@@ -18,7 +18,6 @@ from route import route_authorization, route_main
 
 # 引入业务路由模块
 from app.score_visualization.route import route_score
-
 
 # 创建 FastAPI 应用
 app = FastAPI()
@@ -45,4 +44,3 @@ app.include_router(route_score.router)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app="app.main:app", host="0.0.0.0", port=8000, reload=True)
-    # uvicorn.run(app, host="0.0.0.0", port=8000)

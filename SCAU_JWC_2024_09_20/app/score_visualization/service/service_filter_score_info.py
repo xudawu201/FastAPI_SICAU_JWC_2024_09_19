@@ -2,11 +2,11 @@
 Author: xudawu
 Date: 2024-10-24 14:48:41
 LastEditors: xudawu
-LastEditTime: 2024-10-25 16:19:34
+LastEditTime: 2024-10-28 11:18:20
 '''
 import collections
 from app.score_visualization.database import database_score
-from app.score_visualization import public_function
+from app import public_function
 
 # 获得所有学院班级字典
 def get_all_college_class_dict():
@@ -40,6 +40,9 @@ def get_all_college_class_dict():
 
     # 将 defaultdict 转换为普通字典
     college_class_dict = dict(college_class_dict)
+
+    # 对字典内部的列表按年级排序
+    public_function.sort_dict_by_list_value(college_class_dict)
 
     # 返回学院班级字典
     return college_class_dict
@@ -84,6 +87,27 @@ def get_all_have_score_course_type_by_class(class_name_str):
     # 返回课程类型列表
     return course_type_list
 
+# 获得该课程类型的所有学期
+def get_all_semester_by_class_and_course_type(class_name_str,course_type_name):
+    '''
+    数据格式要求：
+    class_name_str:
+        班级名称,字符串类型
+        示例：
+        class_name_str = '农学202001'
+    返回数据：
+        此班级有成绩的课程类型列表
+        示例：
+    '''
+    excute_sql_flag_str,excute_count_int,rows = database_score.get_all_semester_by_class_and_course_type(class_name_str,course_type_name)
+    # 去掉元组嵌套
+    semester_list = public_function.remove_tuple_nest(rows)
+
+    # 返回课程类型列表
+    return semester_list
+    
+
+
 if __name__ == '__main__':
     # 引入文件目录设置
     import sys
@@ -95,7 +119,7 @@ if __name__ == '__main__':
     # 引入模板文件
     from app.template import TemplatesJinja2ScoreVisualization
     from app.score_visualization.database import database_score
-    from app.score_visualization import public_function
+    from app import public_function
 
     # 查询测试
     class_name_str = '农学202001'
@@ -109,3 +133,6 @@ if __name__ == '__main__':
 
     course_type_list = get_all_have_score_course_type_by_class(class_name_str)
     print(course_type_list)
+
+    semester_list = get_all_semester_by_class_and_course_type(class_name_str,course_type_name)
+    print(semester_list)

@@ -1,130 +1,44 @@
 <!--
  * @Author: xudawu
- * @Date: 2024-10-10 09:20:58
+ * @Date: 2024-10-21 10:45:22
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-25 16:20:23
+ * @LastEditTime: 2024-10-28 10:34:44
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
     <head>
         <!-- <title>可交互的折线图</title> -->
+        <!-- 传递点击页面的消息到父页面 -->
+        <script src="public_static_path/js/iframe_click_listener.js"></script>
+
     </head>
     <body>
-        <h1>学院班级筛选</h1>
+        <h1>学院、班级、课程性质筛选</h1>
         <label for="college">学院:</label>
-        <select id="college" onchange="updateClasses()" style="width: 150px;">
+        <select id="college" onchange="update_class()" style="width: 150px;">
             <option value="">请选择学院</option>
         </select>
 
         <label for="class">班级:</label>
-        <select id="class" style="width: 150px;">
+        <select id="class" onchange="update_class_type()" style="width: 150px;">
             <option value="">请选择班级</option>
         </select>
 
         <label for="corse_type">课程性质:</label>
-        <select id="corse_type" style="width: 150px;">
+        <select id="corse_type" onchange="submit_select_info()" style="width: 150px;">
             <option value="">请选择课程性质</option>
         </select>
-
-        <script>
-            // 定义一个函数内变量,可以重新赋值
-            let college_class_dict = {};
-
-            // 页面加载完成后自动执行以下函数
-            window.onload = async function() {
-                
-                // const password = '123456';
-                
-                // 从 FastAPI 发送post请求学院和班级数据
-                const response = await fetch('/filter_score', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                // body: JSON.stringify({password})
-            });
-                // 获得数据
-                college_class_dict = await response.json();
-
-                // 填充学院下拉框
-                const collegeSelect = document.getElementById('college');
-                for (const college in college_class_dict) {
-                    const option = document.createElement('option');
-                    option.value = college;
-                    option.textContent = college;
-                    collegeSelect.appendChild(option);
-                }
-
-            };
-            
-            // 填充班级下拉框
-            async function updateClasses() {
-                const collegeSelect = document.getElementById('college');
-                const classSelect = document.getElementById('class');
-
-                const selectedCollege = collegeSelect.value;
-                classSelect.innerHTML = '<option value="">请选择班级</option>';
-
-                if (selectedCollege) {
-                    college_class_dict[selectedCollege].forEach(cls => {
-                        const option = document.createElement('option');
-                        option.value = cls;
-                        option.textContent = cls;
-                        classSelect.appendChild(option);
-                    });
-                }
-            }
-
-        </script>
-
-        <script>
-            // 监听班级选择变化事件
-            document.getElementById('class').addEventListener('change', async function() {
-                const collegeSelect = document.getElementById('college');
-                const selectedCollege = collegeSelect.value;
-                const selectedClass = this.value;
-
-                if (selectedCollege && selectedClass) {
-                    // 将选择的学院和班级值提交到 FastAPI 后端
-                    const response = await fetch('/submit_class_name', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            college_str: selectedCollege,
-                            class_str: selectedClass
-                        })
-                    });
-
-                    // 可选：处理响应
-                    const result = await response.json();
-                    // alert(result.course_type_list)
-                    
-                    // 填充课程类型下拉框
-                    const classSelect = document.getElementById('class');
-                    const corse_type_select = document.getElementById('corse_type');
-
-                    const selected_class_name = classSelect.value;
-                    corse_type_select.innerHTML = '<option value="">请选择课程性质</option>';
-
-                    if (selected_class_name) {
-                        result.course_type_list.forEach(cls => {
-                            const option = document.createElement('option');
-                            option.value = cls;
-                            option.textContent = cls;
-                            corse_type_select.appendChild(option);
-                        });
-                    }
-                }
-
-            });
-        </script>
-
-    <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
-    <div>{{ graph_html | safe }}</div>
-    <!-- 传递点击页面的消息到父页面 -->
-    <script src="public_static_path/js/iframe_click_listener.js"></script>
+        
+        <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
+        <div>{{ graph_html | safe }}</div>
 
     </body>
+
+    <!-- 获得学院和班级选项js -->
+    <script src="score_visualization_static_path/js/get_college_class_select.js"></script>
+    <!-- 根据学院和班级获得课程类型选项js -->
+    <script src="score_visualization_static_path/js/get_class_type_select.js"></script>
+    <!-- 提交学院、班级、课程类型信息js -->
+    <script src="score_visualization_static_path/js/submit_select_info.js"></script>
+    
 </html>

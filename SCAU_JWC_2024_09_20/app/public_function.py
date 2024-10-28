@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-25 14:14:57
 LastEditors: xudawu
-LastEditTime: 2024-10-25 14:30:13
+LastEditTime: 2024-10-28 09:13:55
 '''
 
 # 学期升序排序
@@ -82,3 +82,27 @@ def remove_tuple_nest(input_list):
     output_list = [item[0] for item in input_list]
 
     return output_list
+
+# 字典内部的列表按年级排序
+def sort_dict_by_list_value(dict_data):
+    '''
+    输入数据格式要求：
+    dict_data:
+        字典数据,键为字符串类型,值为列表类型
+        示例：
+        {
+            '体育学院': ['体育201601', '体育教育201602', '体育201701'], 
+            '生命科学学院': ['生工201505', '生物201601', '生物201602', '生物201603'], 
+            '林学院': ['产品设计201601', '产品设计201602', '森林保护201701', '木科201702']
+        }
+    返回数据：
+    原地修改字典不返回数据,返回字典内部列表按后6位数升序排序的列表:
+        示例：
+        ['2023-2024-1', '2023-2024-2', '2022-2023-1']
+    '''
+    # 遍历字典的键值对，将值转换为列表
+    for key, value in dict_data.items():
+        
+        # 原地改造原字典的列表
+        # 按后6位数字升序排序
+        dict_data[key]  = sorted(dict_data[key], key=lambda x: x[-6:])
