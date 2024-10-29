@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-21 10:45:22
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-28 10:34:44
+ * @LastEditTime: 2024-10-29 18:52:21
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,6 +10,9 @@
         <!-- <title>可交互的折线图</title> -->
         <!-- 传递点击页面的消息到父页面 -->
         <script src="public_static_path/js/iframe_click_listener.js"></script>
+        
+        <!-- 验证session的js -->
+        <!-- <script src="public_static_path/js/verify_session_valid.js"></script> -->
 
     </head>
     <body>
@@ -30,7 +33,10 @@
         </select>
         
         <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
-        <div>{{ graph_html | safe }}</div>
+        <!-- 班级成绩每个人 -->
+        <div id="line_chart_div">{{ line_chart_html | safe }}</div>
+        <!-- 班级成绩分组 -->
+        <div id="group_line_chart_div">{{ group_line_chart_html | safe }}</div>
 
     </body>
 

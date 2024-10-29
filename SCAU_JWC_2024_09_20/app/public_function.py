@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-25 14:14:57
 LastEditors: xudawu
-LastEditTime: 2024-10-28 09:13:55
+LastEditTime: 2024-10-29 12:06:48
 '''
 
 # 学期升序排序
@@ -104,5 +104,19 @@ def sort_dict_by_list_value(dict_data):
     for key, value in dict_data.items():
         
         # 原地改造原字典的列表
-        # 按后6位数字升序排序
-        dict_data[key]  = sorted(dict_data[key], key=lambda x: x[-6:])
+        # 按后6位数字降序排序
+        dict_data[key]  = sorted(dict_data[key], key=lambda x: x[-6:],reverse=True)
+
+# 获取列表平均分
+def get_average_from_list(score_list):
+    # 去掉 None 值
+    pure_score_list = [score for score in score_list if score is not None]
+
+    # 计算平均分
+    # 确保列表不为空
+    if len(pure_score_list)!=0:
+        avg_float = sum(pure_score_list) / len(pure_score_list)
+    else:
+        avg_float=None
+    # 返回平均分
+    return avg_float

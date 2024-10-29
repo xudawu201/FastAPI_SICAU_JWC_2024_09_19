@@ -2,9 +2,9 @@
  * @Author: xudawu
  * @Date: 2024-10-14 17:05:28
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-15 15:31:41
+ * @LastEditTime: 2024-10-29 18:55:19
  */
-window.onload = async function() {
+document.addEventListener('DOMContentLoaded', async function(){
     const response = await fetch('/verify_cookie', {
         method: 'GET',
         credentials: 'include'  // 携带 HttpOnly Cookie
@@ -20,4 +20,4 @@ window.onload = async function() {
         alert('登录状态已过期，点击确定跳转到登录页重新登录。');
         window.location.href = '/';
     }
-}
+})

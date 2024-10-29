@@ -2,10 +2,11 @@
 Author: xudawu
 Date: 2024-10-24 14:45:08
 LastEditors: xudawu
-LastEditTime: 2024-10-28 17:54:50
+LastEditTime: 2024-10-29 16:30:03
 '''
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+import fastapi
 import plotly
 
 # 引入自定义文件
@@ -16,35 +17,44 @@ from app.score_visualization.service import service_filter_score_info
 
 router = APIRouter()
 
+# 配置超参数信息
+
+# 图像布局设置
+width = 1100
+height = 600
+y_axis_dtick = 5
+
+# 修改配置
+config_dict = {
+    'displayModeBar': True,
+    'doubleClick': 'reset',
+    'scrollZoom':True,
+    # 可修改标题
+    'editable': True,
+    # 隐藏plotly的链接
+    'showLink': False,
+    # 隐藏plotly的logo
+    'displaylogo': False,
+    # 增加按钮
+    'modeBarButtonsToAdd':['toggleSpikelines',],
+    # 移除按钮
+    'modeBarButtonsToRemove': ['select2d','lasso2d'],
+    }
+
 # 成绩可视化页
 @router.get("/score_visualization", response_class=HTMLResponse)
-async def score_visualization_page(request: Request,class_name_str='农学202001',course_type_name = '必修'):
+async def score_visualization_page(request: Request,college_name_str='农学院',class_name_str='农学202001',course_type_name_str = '必修'):
     
-    # 图像布局设置
-    width = 1000
-    height = 600
-    y_axis_dtick = 5
-
     # 将数据绘图为折线图
-    fig_plotly = service_score_visualization.show_score_line_chart(class_name_str,course_type_name,width,height,y_axis_dtick)
+    line_chart_fig_plotly,group_line_chart_fig_plotly = service_score_visualization.show_score_line_chart_group_all(college_name_str,class_name_str,course_type_name_str,width,height,y_axis_dtick)
+    
+    # 将班级每个人成绩图表转换为HTML
+    line_chart_html = plotly.io.to_html(line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
 
-    # 修改配置
-    config_dict = {
-        'displayModeBar': True,
-        'doubleClick': 'reset',
-        'scrollZoom':True,
-        # 可修改标题
-        'editable': True,
-        'showLink': False,
-        # 隐藏plotly的logo
-        'displaylogo': False,
-        'modeBarButtonsToAdd':['toggleSpikelines',]
-        }
-    # 将图表转换为HTML
-    graph_html = plotly.io.to_html(fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
+    # 将班级分组成绩图表转换为HTML
+    group_line_chart_html = plotly.io.to_html(group_line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
 
-    context = {"request": request, "graph_html": graph_html}
-    # context = {"request": request,}
+    context = {"request": request, "line_chart_html": line_chart_html,'group_line_chart_html':group_line_chart_html}
     return TemplatesJinja2ScoreVisualization.TemplateResponse("score_visualization.html", context)
 
 # 获取筛选框数据
@@ -88,28 +98,20 @@ async def submit_select_info(request: Request):
     class_name_str = request_data.get("class_name_str")
     course_type_name_str = request_data.get("course_type_name_str")
 
-    # 图像布局设置
-    width = 1000
-    height = 600
-    y_axis_dtick = 5
-
     # 将数据绘图为折线图
-    fig_plotly = service_score_visualization.show_score_line_chart(class_name_str,course_type_name_str,width,height,y_axis_dtick)
+    line_chart_fig_plotly,group_line_chart_fig_plotly = service_score_visualization.show_score_line_chart_group_all(college_name_str,class_name_str,course_type_name_str,width,height,y_axis_dtick)
+    
+    # 将班级每个人成绩图表转换为HTML
+    line_chart_html = plotly.io.to_html(line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
 
-    # 修改配置
-    config_dict = {
-        'displayModeBar': True,
-        'doubleClick': 'reset',
-        'scrollZoom':True,
-        # 可修改标题
-        'editable': True,
-        'showLink': False,
-        # 隐藏plotly的logo
-        'displaylogo': False,
-        'modeBarButtonsToAdd':['toggleSpikelines',]
-        }
-    # 将图表转换为HTML
-    graph_html = plotly.io.to_html(fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
-
-    return HTMLResponse(graph_html)
+    # 将班级分组成绩图表转换为HTML
+    group_line_chart_html = plotly.io.to_html(group_line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
+    
+    # 返回图标html
+    return fastapi.responses.JSONResponse(
+        content={
+            "line_chart_html": line_chart_html,
+            "group_line_chart_html": group_line_chart_html,
+            }
+            )
 

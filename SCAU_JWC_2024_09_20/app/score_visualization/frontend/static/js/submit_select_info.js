@@ -1,3 +1,9 @@
+/*
+ * @Author: xudawu
+ * @Date: 2024-10-28 10:20:55
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-10-29 13:20:54
+ */
 // 班级选择变化执行以下函数
 async function submit_select_info() {
     // 获得元素
@@ -29,14 +35,20 @@ async function submit_select_info() {
                 course_type_name_str: course_type_select_str
             })
         });
+        
+        // 获取返回的 JSON 数据
+        const data = await response.json();
 
-        // 获取返回的 HTML
-        const graphHtml = await response.text(); 
-        const graphContainer = document.querySelector("div");
-        graphContainer.innerHTML = graphHtml; // 更新图表的 HTML
+        // 更新图表的 HTML
+        const line_chart_div = document.getElementById('line_chart_div');
+        line_chart_div.innerHTML = data.line_chart_html; // 更新第一个图表的 HTML
 
-        // 执行图标更新新插入的脚本
-        executeScripts(graphContainer);
+        const group_line_chart_div = document.getElementById('group_line_chart_div');
+        group_line_chart_div.innerHTML = data.group_line_chart_html; // 更新第二个图表的 HTML
+
+        // 执行图表更新新插入的脚本
+        executeScripts(line_chart_div);
+        executeScripts(group_line_chart_div);
 
     }
 

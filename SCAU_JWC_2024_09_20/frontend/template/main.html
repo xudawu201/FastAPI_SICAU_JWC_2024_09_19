@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-14 17:59:01
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-28 10:13:43
+ * @LastEditTime: 2024-10-29 15:26:34
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -24,6 +24,10 @@
 
     <!-- 验证session的js -->
     <script src="public_static_path/js/verify_session_valid.js?v=verify_valid_js"></script>
+
+    <!-- 成绩可视化的iframejs -->
+    <script src="public_static_path/iframe_js/score_visualization.js"></script>
+    
 </head>
 <body>
     <!-- 顶部div -->
@@ -43,15 +47,15 @@
     <!-- 左侧功能选择div -->
     <div id="left_div">
         <nav class="nav_bar">
-            <a href="#students">成绩可视化</a>
+            <a href="#score_visualization_a" onclick="show_iframe()">成绩可视化</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
-            <a href="#course_schedule">智能排课</a>
+            <a href="#course_schedule_a">智能排课</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
-            <a href="#teachers">超级查询</a>
+            <a href="#search_a">超级查询</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
-            <a href="#courses">智能问答</a>
+            <a href="#AI_QA_a">智能问答</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
-            <a href="#grades">智能工具</a>
+            <a href="#tool_a">智能工具</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
         </nav>
     </div>
@@ -70,15 +74,15 @@
 
     <!-- 主页面内容div -->
     <div id="content_div">
-        <!-- <h2>欢迎使用教务管理系统</h2>
-        <p>请选择左侧菜单中的选项来管理学生、教师、课程和成绩。</p> -->
+        <div id="welcome_message_div">
+            <h2>欢迎使用教务管理系统</h2>
+            <p>请选择左侧菜单中的功能选项使用系统。</p>
+        </div>
 
         <!-- 子页面 -->
-        <iframe src="/score_visualization" width="98%" height="100%" frameborder="0"></iframe>
+        <!-- <iframe src="/score_visualization" width="98%" height="100%" frameborder="0"></iframe> -->
         <!-- <iframe src="https://www.bilibili.com/" width="98%" height="80%" frameborder="0"></iframe> -->
     </div>
-
-
 
     </body>
 

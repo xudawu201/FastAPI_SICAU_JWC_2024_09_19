@@ -2,13 +2,12 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-24 17:36:22
+LastEditTime: 2024-10-29 17:18:48
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from security.password_utils import verify_password, get_password_hash
 from model import user
 from service import service_user
-from pydantic import BaseModel
 import secrets
 import fastapi
 
