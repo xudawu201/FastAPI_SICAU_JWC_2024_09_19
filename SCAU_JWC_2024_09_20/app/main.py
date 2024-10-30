@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-10-29 16:27:54
+LastEditTime: 2024-10-30 08:58:41
 '''
 # 引入文件目录设置
 import sys
@@ -23,7 +23,6 @@ from app.score_visualization.route import route_score
 app = FastAPI()
 # 部署项目时关闭api文档
 # app = FastAPI(openapi_url=None)
-
 
 # 获得文件夹路径
 BASE_PATH = Path(__file__).resolve().parent
@@ -49,5 +48,5 @@ if __name__ == "__main__":
     uvicorn.run(app="app.main:app", host="0.0.0.0", port=8000, reload=True)
     # 仅绑定到本地回环接口,只能被本地计算机访问
     # uvicorn.run(app="app.main:app", host="127.0.0.1", port=8000, reload=True)
-    # 绑定到特定的 IP 地址,为本机的固定ip,可以被局域网内其他计算机访问
+    # 绑定到特定的 IP 地址,为本机的固定ip,可以被局域网内其他能访问到此IP地址的计算机访问
     # uvicorn.run(app="app.main:app", host="10.128.42.18", port=8000, reload=True)

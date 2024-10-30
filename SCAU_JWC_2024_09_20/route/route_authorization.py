@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-29 17:18:48
+LastEditTime: 2024-10-30 09:28:19
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from security.password_utils import verify_password, get_password_hash
@@ -119,9 +119,18 @@ async def logout(response: Response, session_token: str = Cookie(None)):
     response.delete_cookie("session_token")  # 删除session_token cookie
     return {"message": "Logout successful."}
 
-# 验证cookie有效性
+# 登录页验证cookie有效性
+@router.get("/verify_cookie_login")
+async def verify_cookie_login(ver_user: str = Depends(get_current_user)):
+    if ver_user:
+        return fastapi.responses.RedirectResponse(url="/main")
+    else:
+        HTTPException(status_code=401, detail="Invalid session token")
+
+# 其他页面验证cookie有效性
 @router.get("/verify_cookie")
 async def verify_cookie(ver_user: str = Depends(get_current_user)):
     if ver_user:
         return {"message": f"Welcome back, {ver_user}!"}
-    raise HTTPException(status_code=401, detail="Invalid session token")
+    else:
+        return fastapi.responses.RedirectResponse(url="/")
