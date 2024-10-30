@@ -1,8 +1,12 @@
 # 使用官方的 Python镜像作为基础镜像
-FROM python:3.12
+FROM python:3.12.6
 
 # 设置工作目录
-WORKDIR /app
+WORKDIR /
+
+# 安装 unixODBC 和相关库, 并清理缓存
+RUN apt-get update && apt-get install -y unixodbc unixodbc-dev && rm -rf /var/lib/apt/lists/*
+
 
 # 将 requirements.txt 文件复制到工作目录
 COPY requirements.txt .

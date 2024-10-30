@@ -2,13 +2,13 @@
 Author: xudawu
 Date: 2024-10-15 10:29:13
 LastEditors: xudawu
-LastEditTime: 2024-10-30 08:39:10
+LastEditTime: 2024-10-30 12:59:16
 '''
 from fastapi import APIRouter, Cookie, Request
 from fastapi.responses import HTMLResponse
 from model import user
-from app.template import TemplatesJinja2Login
-from app.template import TemplatesJinja2Public
+from template import TemplatesJinja2Login
+from template import TemplatesJinja2Public
 
 router = APIRouter()
 

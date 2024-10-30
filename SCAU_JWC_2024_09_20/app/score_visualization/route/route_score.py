@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-24 14:45:08
 LastEditors: xudawu
-LastEditTime: 2024-10-29 16:30:03
+LastEditTime: 2024-10-30 12:59:29
 '''
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -10,7 +10,7 @@ import fastapi
 import plotly
 
 # 引入自定义文件
-from app.template import TemplatesJinja2ScoreVisualization
+from template import TemplatesJinja2ScoreVisualization
 from app.score_visualization.service import service_score_visualization
 from app.score_visualization.service import service_filter_score_info
 
