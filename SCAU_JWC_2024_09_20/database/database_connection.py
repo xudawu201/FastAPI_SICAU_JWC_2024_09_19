@@ -2,14 +2,14 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-10-21 10:23:26
+LastEditTime: 2024-11-01 16:21:42
 '''
 import pyodbc
 
-# DRIVER:驱动名称,SERVER:服务器名称,DATABASE:数据库名称,UID:用户名,PWD:密码
-# database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=JWC_SCAU_2024_10_08;UID=sa;PWD=123'
+# DRIVER:驱动名称,SERVER:服务器url,DATABASE:数据库名称,UID:用户名,PWD:密码
+# database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=SCAU_JWC_2024_11_01;UID=sa;PWD=scau_jwc_sqlserver123'
 # 教务处数据库
-database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=123'
+database_url = 'DRIVER={ODBC Driver 17 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=scau_jwc_sqlserver123'
 
 # 连接到数据库
 def get_database_connection_cursor():
@@ -31,21 +31,22 @@ if __name__ == "__main__":
     if DatabaseConnection and DatabaseCursor:
         try:
             # 执行SQL语句
-            select_sql_str = 'select * from user_2024_10_16'
+            select_sql_str = 'select * from aa财务'
             # select_sql_str = 'select * from Student_2024_10_08'
             DatabaseCursor.execute(select_sql_str)
             row = DatabaseCursor.fetchone()
             print(row)
-            print('- '*20)
-            print(row.cursor_description)
-            print('- '*20)
-            print(row.cursor_description[0][0])
-            print(row.cursor_description[0][1])
-            print('- '*20)
-            print(row[0])
-            column_name_str = row.cursor_description[1][0]
-            print(column_name_str)
-            print(row.password)
+            print(row.姓名)
+            # print('- '*20)
+            # print(row.cursor_description)
+            # print('- '*20)
+            # print(row.cursor_description[0][0])
+            # print(row.cursor_description[0][1])
+            # print('- '*20)
+            # print(row[0])
+            # column_name_str = row.cursor_description[1][0]
+            # print(column_name_str)
+            # print(row.password)
         except pyodbc.Error as e:
             print(f"SQL Error: {e}")
         finally:
