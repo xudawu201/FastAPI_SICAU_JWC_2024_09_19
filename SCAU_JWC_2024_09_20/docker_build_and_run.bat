@@ -1,2 +1,0 @@
-docker build -t scau_jwc_v1 .
-docker run --restart always --name scau_jwc_v1 --network docker_bridge_network -p 8000:8000 -v C:\xudawu\DockerData2024_09_29\scau_jwc_2024_11_01:/scau_jwc/data -d scau_jwc_v1
