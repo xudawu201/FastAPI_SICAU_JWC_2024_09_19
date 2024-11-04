@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-10-30 13:00:42
+LastEditTime: 2024-11-01 20:10:35
 '''
 # 引入文件目录设置
 # import sys
@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from route import route_authorization, route_main
+import uvicorn
 
 # 引入业务路由模块
 from app.score_visualization.route import route_score
@@ -43,7 +44,6 @@ app.include_router(route_score.router)
 
 # 主函数启动应用程序
 if __name__ == "__main__":
-    import uvicorn
     # 绑定到所有可用的网络接口,可以被任何 IP 地址访问
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
     # 仅绑定到本地回环接口,只能被本地计算机访问

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 10:29:05
 LastEditors: xudawu
-LastEditTime: 2024-10-30 09:28:19
+LastEditTime: 2024-11-04 16:43:09
 '''
 from fastapi import APIRouter, Depends, HTTPException, Cookie, Response
 from security.password_utils import verify_password, get_password_hash
@@ -52,7 +52,7 @@ async def login(request: fastapi.Request,response: Response):
         if verify_password(password_str, UserInfo.哈希密码):
             token = secrets.token_hex(16)
             user.cookie_tokens_dict[token] = username_str  # 将生成的token与用户名关联起来
-            print("active_tokens:", user.cookie_tokens_dict)
+            # print("active_tokens:", user.cookie_tokens_dict)
             # 设置cookie的有效时间，max_age的秒数
             response.set_cookie(key="session_token", value=token, max_age=cookie_token_expire_second_int, httponly=True)
             # 返回登录成功的信息

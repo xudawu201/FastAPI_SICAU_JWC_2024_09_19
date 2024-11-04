@@ -4,8 +4,19 @@ FROM python:3.12.6
 # 设置工作目录
 WORKDIR /scau_jwc
 
-# 安装 unixODBC 和相关库, 并清理缓存
-RUN apt-get update && apt-get install -y unixodbc unixodbc-dev && rm -rf /var/lib/apt/lists/*
+# 安装 unixODBC 和sqlserver驱动, 并清理缓存
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y msodbcsql18 mssql-tools unixodbc-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# 安装 unixODBC 和 PostgreSQL ODBC 驱动
+# RUN apt-get update && \
+#     apt-get install -y unixodbc unixodbc-dev odbc-postgresql && \
+#     rm -rf /var/lib/apt/lists/*
 
 
 # 将 requirements.txt 文件复制到工作目录

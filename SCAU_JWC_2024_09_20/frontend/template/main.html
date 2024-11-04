@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-14 17:59:01
  * @LastEditors: xudawu
- * @LastEditTime: 2024-10-30 12:54:32
+ * @LastEditTime: 2024-11-04 12:17:28
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -27,6 +27,22 @@
 
     <!-- 成绩可视化的iframejs -->
     <script src="public_static_path/iframe_js/score_visualization.js"></script>
+
+    <style>
+        #loading_div {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+    </style>
     
 </head>
 <body>
@@ -46,8 +62,8 @@
     </div>
     <!-- 左侧功能选择div -->
     <div id="left_div">
-        <nav class="nav_bar">
-            <a href="#score_visualization_a" onclick="show_iframe()">成绩可视化</a>
+        <nav class="nav_bar" id="nav_bar">
+            <a href="#score_visualization_a" id="score_visualization_link" onclick="show_iframe()" >成绩可视化</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
             <a href="#course_schedule_a">智能排课</a>
             <hr class="nav_bar_divider"> <!-- 添加分割线 -->
@@ -80,6 +96,12 @@
         </div>
 
         <!-- 子页面 -->
+        <div id="iframe_div">
+            <div id="loading_div">
+                <p>加载中，请稍候...</p>
+            </div>
+        </div>
+
         <!-- <iframe src="/score_visualization" width="98%" height="100%" frameborder="0"></iframe> -->
         <!-- <iframe src="https://www.bilibili.com/" width="98%" height="80%" frameborder="0"></iframe> -->
     </div>
