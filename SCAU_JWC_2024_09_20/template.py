@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 15:11:37
 LastEditors: xudawu
-LastEditTime: 2024-10-30 12:57:49
+LastEditTime: 2024-11-05 16:08:07
 '''
 from fastapi.templating import Jinja2Templates
 

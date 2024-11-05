@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-21 10:45:22
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-04 09:26:11
+ * @LastEditTime: 2024-11-05 10:43:30
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -31,11 +31,16 @@
         <select id="corse_type" onchange="submit_select_info()" style="width: 150px;">
             <option value="">请选择课程性质</option>
         </select>
+        <h3>班级成绩每个人成绩走势图</h3>
+        <h5>每位学生以第一次有当前课程性质学期的该课程性质平均成绩参与班级排名，排名前30%（含）的标记为绿色，排名30%（不含）-70%（含）标记为蓝色，剩下的标记为红色</h5>
         
         <!-- | safe 是一个过滤器，用于告诉模板引擎，graph_html 的内容是安全的，可以直接插入到 HTML 中，而不会被转义 -->
         <!-- 班级成绩每个人 -->
         <div id="line_chart_div">{{ line_chart_html | safe }}</div>
+
         <!-- 班级成绩分组 -->
+        <h3>班级成绩分组成绩走势图</h3>
+        <h5>每位学生以第一次有当前课程性质学期的该课程性质平均成绩参与班级排名，排名前30%（含）的标记为绿色组，排名30%（不含）-70%（含）标记为蓝色组，剩下的标记为红色组<br>每组分别计算每学期平均分</h5>
         <div id="group_line_chart_div">{{ group_line_chart_html | safe }}</div>
 
     </body>

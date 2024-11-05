@@ -2,17 +2,17 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-11-04 16:39:43
+LastEditTime: 2024-11-05 16:39:37
 '''
 import pyodbc
 
 # DRIVER:驱动名称,SERVER:服务器url,DATABASE:数据库名称,UID:用户名,PWD:密码,Encrypt=no不使用加密连接
 # database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=SCAU_JWC_2024_11_01;UID=sa;PWD=scau_jwc_sqlserver123;Encrypt=no'
 # 使用sqlserver本地调试数据库
-# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=scau_jwc_sqlserver123;Encrypt=no'
+database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=jxgl_all;UID=sa;PWD=scau_jwc_sqlserver123;Encrypt=no'
 
 # 使用sqlserver部署容器数据库
-database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=sqlserver2022;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=scau_jwc_sqlserver123;Encrypt=no'
+# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=sqlserver2022;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=scau_jwc_sqlserver123;Encrypt=no'
 
 # 使用postgres本地调试数据库
 # database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=localhost;PORT=5432;DATABASE=SCAU_JWC_2024_11_4;UID=postgres;PWD=docker_postgres;'

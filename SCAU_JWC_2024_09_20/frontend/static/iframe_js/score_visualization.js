@@ -2,14 +2,14 @@
  * @Author: xudawu
  * @Date: 2024-10-29 15:25:37
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-04 12:21:43
+ * @LastEditTime: 2024-11-05 12:22:50
  */
 async function show_iframe() {
 
     // 禁用链接
-    const link = document.getElementById("score_visualization_link");
-    link.style.pointerEvents = "none"; // 禁用点击
-    link.style.opacity = "0.5"; // 可选：更改链接透明度以表示禁用状态
+    const button = document.getElementById("score_visualization_button");
+    button.style.pointerEvents = "none"; // 禁用点击
+    button.style.opacity = "0.5"; // 可选：更改链接透明度以表示禁用状态
 
     // 显示加载提示
     const loadingDiv = document.getElementById('loading_div');
@@ -36,9 +36,9 @@ async function show_iframe() {
 
         // 重新启用链接
         // 启用点击
-        link.style.pointerEvents = "auto"; 
+        button.style.pointerEvents = "auto"; 
         // 恢复透明度
-        link.style.opacity = "1";
+        button.style.opacity = "1";
     };
 
 
