@@ -1,0 +1,149 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-10-14 17:59:01
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-06 17:51:12
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教务管理系统</title>
+    
+    <!-- 主页面css -->
+    <link rel="stylesheet" href="public_static_path/css/main.css">
+    <!-- 顶部div的css -->
+    <link rel='stylesheet' href="public_static_path/css/top_header_div.css"></link>
+    <!-- 左侧窗口css -->
+    <link rel='stylesheet' href="public_static_path/css/left_menu_div.css"></link>
+    <!-- 主内容css -->
+    <link rel='stylesheet' href="public_static_path/css/content_div.css"></link>
+    <!-- 右侧滑出窗口css -->
+    <link rel='stylesheet' href="public_static_path/css/right_slide_menu.css"></link>
+
+    <!-- 验证session的js -->
+    <script src="public_static_path/js/verify_session.js"></script>
+
+    <!-- 成绩可视化的iframejs -->
+    <script src="public_static_path/iframe_js/score_visualization.js"></script>
+
+    <!-- 超级查询的iframejs -->
+    <script src="public_static_path/iframe_js/super_search.js"></script>
+
+    
+</head>
+<body>
+    <!-- 顶部div -->
+    <div id="header_div">
+        <h1 id="header_h1">教务管理系统</h1>
+        <div class="user_info">
+            {% if user %}
+                <span class="welcome_span">欢迎, {{ user }}</span>
+                <button id="user_info_button" class="line_button">
+                    <div class="slide_div_line"></div>
+                </button>
+            {% else %}
+                <a href="/">登录</a>
+            {% endif %}
+        </div>
+    </div>
+    <!-- 左侧功能选择div -->
+    <div id="left_div">
+        <ul class="left_menu_ul">
+            <li class="left_menu_item_li">
+                <button id="score_visualization_button" onclick="show_score_visualization_iframe()">
+                    成绩可视化
+                    <!-- <span>▾</span> -->
+                </button>
+                <hr class="nav_bar_divider">
+            </li>
+
+            <li class="left_menu_item_li">
+                <button>
+                    智能排课
+                    <!-- <span>▾</span> -->
+                </button>
+                <hr class="nav_bar_divider">
+            </li>
+            <li>
+                <button id="super_search_button" onclick="show_super_search_iframe()">
+                    超级查询
+                    <!-- <span>▾</span> -->
+                </button>
+                <hr class="nav_bar_divider">
+            </li>
+            <li class="left_menu_item_li">
+                <button>
+                    智能问答
+                    <!-- <span>▾</span> -->
+                </button>
+                <hr class="nav_bar_divider">
+            </li>
+            <li class="left_menu_item_li">
+                <button onclick="toggleMenu(this)">
+                    智能工具
+                    <span>▾</span>
+                </button>
+                <ul class="left_submenu_ul">
+                    <hr class="nav_bar_divider">
+                    <li><a href="http://localhost:8080"id="main_tools_a">PDF处理工具</a></li>
+                    <hr class="nav_bar_divider">
+                    <li><a href="#">excel合并（待开发）</a></li>
+                    <hr class="nav_bar_divider">
+                </ul>
+                <hr class="nav_bar_divider">
+            </li>
+        </ul>
+    </div>
+    
+    <!-- 右上角滑出的个人账户菜单 -->
+    <div id="userMenu" class="slide-in-menu">
+        <h4>账户设置</h4>
+        <ul>
+            <hr class="divider"> <!-- 添加分割线 -->
+            <li><a href="#">个人资料</a></li>
+            <li><a href="#">修改密码</a></li>
+            <li><a href="#">消息中心</a></li>
+            <hr class="divider"> <!-- 添加分割线 -->
+            <li><a href="#" id='logout_button'>退出登录</a></li>
+        </ul>
+    </div>
+
+    <!-- 主页面内容div -->
+    <div id="content_div">
+        <div id="welcome_message_div">
+            <h2>欢迎使用教务管理系统</h2>
+            <p>请选择左侧菜单中的功能选项使用系统。</p>
+        </div>
+
+        <!-- 子页面 -->
+        <div id="iframe_div">
+            <div id="loading_div">
+                <p>加载中，请稍候...</p>
+            </div>
+        </div>
+
+        <!-- <iframe src="/score_visualization" width="98%" height="100%" frameborder="0"></iframe> -->
+        <!-- <iframe src="https://www.bilibili.com/" width="98%" height="80%" frameborder="0"></iframe> -->
+    </div>
+
+    </body>
+
+    <!-- 退出登录js -->
+    <script src="public_static_path/js/logout.js?v=main_logout_js"></script>
+    <!-- 滑出个人账户设置窗口js -->
+    <script src="public_static_path/js/slide_menu.js"></script>
+    <!-- 返回main页面js -->
+    <script src="public_static_path/js/go_main_page.js"></script>
+
+    <script>
+        function toggleMenu(button) {
+            const submenu = button.nextElementSibling;
+            if (submenu && submenu.classList.contains('left_submenu_ul')) {
+                submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+            }
+         }
+    </script>
+
+</html>

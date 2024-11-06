@@ -1,0 +1,86 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-11-06 17:58:25
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-06 18:02:53
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级查询</title>
+    <script>
+        async function searchTables() {
+            const query = document.getElementById("search").value;
+            const response = await fetch(`/search?query=${query}`);
+            const data = await response.json();
+
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "";
+
+            data.tables.forEach(table => {
+                const tableDiv = document.createElement("div");
+                tableDiv.innerHTML = `<strong>${table.table_name}</strong>`;
+                
+                table.columns.forEach(column => {
+                    const columnDiv = document.createElement("div");
+                    columnDiv.innerHTML = column;
+                    tableDiv.appendChild(columnDiv);
+                });
+
+                tableDiv.onclick = () => viewTableData(table.table_name);
+                resultsDiv.appendChild(tableDiv);
+            });
+        }
+
+        async function viewTableData(tableName) {
+            const response = await fetch(`/table/${tableName}`);
+            const data = await response.json();
+            const tableDiv = document.getElementById("tableData");
+            tableDiv.innerHTML = `<h3>Table: ${data.table_name}</h3>`;
+
+            const table = document.createElement("table");
+            const headerRow = document.createElement("tr");
+            Object.keys(data.data[0]).forEach(col => {
+                const th = document.createElement("th");
+                th.innerText = col;
+                headerRow.appendChild(th);
+            });
+            table.appendChild(headerRow);
+
+            data.data.forEach(row => {
+                const tr = document.createElement("tr");
+                Object.values(row).forEach(value => {
+                    const td = document.createElement("td");
+                    td.innerText = value;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+
+            tableDiv.appendChild(table);
+        }
+
+        async function viewRelatedTables(tableName) {
+            const response = await fetch(`/related_tables/${tableName}`);
+            const data = await response.json();
+            const relatedTablesDiv = document.getElementById("relatedTables");
+            relatedTablesDiv.innerHTML = "<h3>Related Tables</h3>";
+
+            data.related_tables.forEach(table => {
+                const tableDiv = document.createElement("div");
+                tableDiv.innerText = table;
+                relatedTablesDiv.appendChild(tableDiv);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>超级查询</h1>
+    <input type="text" id="search" placeholder="请输入查询关键词" oninput="searchTables()">
+    <div id="results"></div>
+    <div id="tableData"></div>
+    <div id="relatedTables"></div>
+</body>
+</html>
