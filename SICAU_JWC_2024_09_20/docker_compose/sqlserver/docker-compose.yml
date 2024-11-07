@@ -1,0 +1,16 @@
+services:
+
+  # 定义服务名,也是容器名
+  sqlserver2022:
+    container_name: sqlserver2022
+    image: mcr.microsoft.com/mssql/server
+    restart: always
+    environment:
+      ACCEPT_EULA:Y
+      MSSQL_SA_PASSWORD:sicau_jwc_sqlserver123
+    # 暴露端口
+    ports:
+      - "1433:1433"  # 将容器的 8000 端口映射到主机的 8000 端口
+    # 挂载数据目录
+    volumes:
+      - C:\xudawu\DockerData2024_09_29\SqlServer_2024_10_30:/var/opt/mssql/data  # 将主机目录挂载到容器内的数据目录

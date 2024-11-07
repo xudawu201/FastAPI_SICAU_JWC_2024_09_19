@@ -4,6 +4,16 @@ FROM python:3.12.6
 # 设置工作目录
 WORKDIR /scau_jwc
 
+# 更新unixODB包列表并安装必要的工具
+# RUN apt-get update \
+#     && apt-get install -y \
+#     unixodbc \
+#     unixodbc-dev \
+#     curl \
+#     gnupg \
+#     lsb-release \
+#     && apt-get clean
+
 # 安装 unixODBC 和sqlserver驱动, 并清理缓存
 RUN apt-get update && \
     apt-get install -y curl && \
@@ -18,7 +28,7 @@ RUN apt-get update && \
 #     apt-get install -y unixodbc unixodbc-dev odbc-postgresql && \
 #     rm -rf /var/lib/apt/lists/*
 
-
+    
 # 将 requirements.txt 文件复制到工作目录
 COPY requirements.txt .
 

@@ -1,0 +1,17 @@
+# Use root/example as user/password credentials
+services:
+
+  mysql910:
+    container_name: mysql910
+    image: mysql:9.1.0
+    restart: always
+    environment:
+      #root用户的密码 
+      MYSQL_ROOT_PASSWORD: sicau_jwc_mysql123
+    # 暴露端口
+    ports:
+      - "3306:3306"  # 将容器的 8000 端口映射到主机的 8000 端口
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci  # 设置字符集和排序规则
+    # 挂载数据目录
+    volumes:
+      - C:\xudawu\DockerData2024_09_29\mysql_2024_11_07:/var/lib/mysql  # 将主机目录挂载到容器内的数据目录

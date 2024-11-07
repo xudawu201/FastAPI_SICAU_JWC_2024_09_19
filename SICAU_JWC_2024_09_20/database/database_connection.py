@@ -2,12 +2,12 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-11-06 16:55:14
+LastEditTime: 2024-11-07 14:29:45
 '''
 import pyodbc
 
 # DRIVER:驱动名称,SERVER:服务器url,DATABASE:数据库名称,UID:用户名,PWD:密码,Encrypt=no不使用加密连接
-# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=SCAU_JWC_2024_11_01;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no;TrustServerCertificate=yes'
+# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=SICAU_JWC;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no;TrustServerCertificate=yes'
 # 使用sqlserver本地调试数据库
 database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no;TrustServerCertificate=yes'
 
@@ -16,10 +16,13 @@ database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;PORT=143
 # database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=172.18.0.1;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no;TrustServerCertificate=yes'
 
 # 使用postgres本地调试数据库
-# database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=localhost;PORT=5432;DATABASE=SCAU_JWC_2024_11_4;UID=postgres;PWD=docker_postgres;'
+# database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=localhost;PORT=5432;DATABASE=SICAU_JWC;UID=postgres;PWD=docker_postgres;'
 
 # 使用postgres部署容器数据库
-# database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=postgres17;PORT=5432;DATABASE=SCAU_JWC_2024_11_4;UID=postgres;PWD=docker_postgres;'
+# database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=postgres17;PORT=5432;DATABASE=SICAU_JWC;UID=postgres;PWD=docker_postgres;'
+
+# 使用mysql本地调试数据库
+# database_url = 'DRIVER={MySQL ODBC 9.1 Unicode Driver};SERVER=localhost;PORT=3306;DATABASE=SICAU_JWC;UID=root;PWD=sicau_jwc_mysql123;'
 
 # 连接到数据库
 def get_database_connection_cursor():

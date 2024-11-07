@@ -1,3 +1,9 @@
+'''
+Author: xudawu
+Date: 2024-09-30 15:33:46
+LastEditors: xudawu
+LastEditTime: 2024-11-07 08:58:01
+'''
 from fastapi import FastAPI, Query, Request
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -96,3 +102,4 @@ async def get_related_tables(table_name: str):
 if __name__ == "__main__":
     # 绑定到所有可用的网络接口,可以被任何 IP 地址访问
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
+
