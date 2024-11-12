@@ -1,0 +1,170 @@
+/* 基本容器样式 */
+.container_div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    /* padding: 20px; */
+}
+
+.top_section_div {
+    /* 横向排列 */
+    display: flex;
+    /* 横向间隔 */
+    gap: 20px;
+}
+
+/* 结果显示框 */
+.content_box {
+    border: 1px solid #ddd;
+    padding: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+/* 调整文字位置 */
+.content_box p {
+    /* 调整上边距 */
+    margin-top: -5px;
+}
+
+.content_box h3 {
+    /* 调整上边距 */
+    margin-top: -5px;
+}
+
+.content_box h5 {
+    margin-top: -5px;
+}
+
+#table_match_content_div, #database_match_content_div {
+    height: 200px;
+    width: 50%;
+    padding: 10px;
+}
+
+#table_data_div {
+    height: 700px;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* 搜索框div */
+#search_table_div{
+    position: relative;
+    margin-bottom: 5px;
+    /* background-color: #5ee3e7; */
+    width: 30%;
+}
+
+#search_database_div{
+    position: absolute;
+    top: 9.4%;
+    left: 50.6%;
+    /* background-color: #e64d4d; */
+    width: 30%;
+    border-radius: 5px;
+    /* border: 1px solid #ccc; */
+}
+
+#search_table_input , #search_database_input,#search_filter_input {
+    border-radius: 5px;
+    border: 1px solid #adadad;
+    height: 20px;
+}
+
+#filterDescription {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+/* 搜索结果的样式 */
+#table_match_content_div div {
+    cursor: pointer;
+    transition: color 0.3s, background-color 0.3s;
+    padding: 5px;
+}
+
+#table_match_content_div div:hover {
+    color: #007bff;
+    background-color: #f1f1f1;
+}
+
+#database_match_content_div div {
+    cursor: pointer;
+    transition: color 0.3s, background-color 0.3s;
+    padding: 5px;
+}
+
+#database_match_content_div div:hover {
+    color: #007bff;
+    background-color: #f1f1f1;
+}
+
+
+/* 表格的样式 */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+    font-size: 13px; /* 缩小字体 */
+}
+
+th, td {
+    padding: 5px; /* 减小内边距 */
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+    line-height: 1.2; /* 调整行间距 */
+}
+
+th {
+    background-color: #007bff;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* 分页按钮样式 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.pagination button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.pagination button:disabled {
+    cursor: not-allowed;
+    background-color: #e9ecef;
+    border-color: #ddd;
+}
+
+.pagination button.current-page {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}

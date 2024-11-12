@@ -2,17 +2,7 @@
 FROM python:3.12.6
 
 # 设置工作目录
-WORKDIR /scau_jwc
-
-# 更新unixODB包列表并安装必要的工具
-# RUN apt-get update \
-#     && apt-get install -y \
-#     unixodbc \
-#     unixodbc-dev \
-#     curl \
-#     gnupg \
-#     lsb-release \
-#     && apt-get clean
+WORKDIR /sicau_jwc
 
 # 安装 unixODBC 和sqlserver驱动, 并清理缓存
 RUN apt-get update && \
@@ -40,10 +30,10 @@ RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua
 
 # 将项目代码复制到工作目录
 # 第一次参数是相对于Dockerfile的路径，第二次参数是相对于WORKDIR的路径
-COPY . /scau_jwc
+COPY . /sicau_jwc
 
 # 创建数据存储目录
-RUN mkdir -p /scau_jwc/data
+RUN mkdir -p /sicau_jwc/data
 
 # 声明容器在运行时将使用的端口
 EXPOSE 8000

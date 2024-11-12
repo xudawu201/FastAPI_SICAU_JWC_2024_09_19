@@ -1,0 +1,44 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-11-05 12:09:40
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-12 17:11:48
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Demo</title>
+</head>
+<body>
+    <h1>实时消息</h1>
+    <div id="messages"></div>
+    <button onclick="startProcess()">开始循环</button>
+
+    <script>
+        const ws = new WebSocket("/ws");
+
+        // 监听从WebSocket接收到的消息
+        ws.onmessage = function(event) {
+            const messageDiv = document.getElementById("messages");
+            messageDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
+        };
+
+        // 连接成功时
+        ws.onopen = function() {
+            console.log("连接已建立");
+        };
+
+        // 连接关闭时
+        ws.onclose = function() {
+            console.log("连接已关闭");
+        };
+
+        // 向服务器发送消息，启动循环
+        function startProcess() {
+            ws.send("start");
+        }
+    </script>
+</body>
+</html>

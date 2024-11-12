@@ -1,125 +1,44 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-11-05 12:09:40
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-12 17:11:48
+-->
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>导航菜单</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        #left_div {
-            width: 200px;
-        }
-        .menu {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-        .menu li {
-            position: relative;
-            border-bottom: 1px solid #ddd;
-        }
-        .menu li > button {
-            width: 100%;
-            background: none;
-            border: none;
-            padding: 10px;
-            text-align: left;
-            font-size: 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .menu li > button .icon {
-            margin-right: 10px;
-            font-size: 18px;
-        }
-        .submenu {
-            display: none;
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-            padding-left: 20px;
-            background-color: #f9f9f9;
-        }
-        .submenu li {
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
-        }
-        .submenu li:last-child {
-            border-bottom: none;
-        }
-        .menu li.open .submenu {
-            display: block;
-        }
-        .nav_bar_divider {
-            border: none;
-            border-top: 1px solid #ddd;
-            margin: 0;
-        }
-    </style>
+    <title>WebSocket Demo</title>
 </head>
 <body>
+    <h1>实时消息</h1>
+    <div id="messages"></div>
+    <button onclick="startProcess()">开始循环</button>
 
-<div id="left_div">
-    <ul class="menu">
-        <li>
-            <button onclick="show_iframe(); toggleMenu(this)">
-                <span class="icon">📊</span> 成绩可视化
-                <span>▾</span>
-            </button>
-            <hr class="nav_bar_divider">
-        </li>
-        <li>
-            <button onclick="toggleMenu(this)">
-                <span class="icon">📅</span> 智能排课
-                <span>▾</span>
-            </button>
-            <ul class="submenu">
-                <li><a href="#schedule_sub1">排课子项1</a></li>
-                <li><a href="#schedule_sub2">排课子项2</a></li>
-            </ul>
-            <hr class="nav_bar_divider">
-        </li>
-        <li>
-            <button onclick="toggleMenu(this)">
-                <span class="icon">🔍</span> 超级查询
-                <span>▾</span>
-            </button>
-            <ul class="submenu">
-                <li><a href="#search_sub1">查询子项1</a></li>
-                <li><a href="#search_sub2">查询子项2</a></li>
-            </ul>
-            <hr class="nav_bar_divider">
-        </li>
-        <li>
-            <button onclick="toggleMenu(this)">
-                <span class="icon">🤖</span> 智能问答
-                <span>▾</span>
-            </button>
-            <ul class="submenu">
-                <li><a href="#qa_sub1">问答子项1</a></li>
-                <li><a href="#qa_sub2">问答子项2</a></li>
-            </ul>
-            <hr class="nav_bar_divider">
-        </li>
-        <li>
-            <button onclick="window.location.href='http://localhost:8080'">
-                <span class="icon">🛠️</span> 智能工具
-            </button>
-            <hr class="nav_bar_divider">
-        </li>
-    </ul>
-</div>
+    <script>
+        const ws = new WebSocket("/ws");
 
-<script>
-    function toggleMenu(button) {
-        const menuItem = button.parentElement;
-        menuItem.classList.toggle('open');
-    }
-</script>
+        // 监听从WebSocket接收到的消息
+        ws.onmessage = function(event) {
+            const messageDiv = document.getElementById("messages");
+            messageDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
+        };
 
+        // 连接成功时
+        ws.onopen = function() {
+            console.log("连接已建立");
+        };
+
+        // 连接关闭时
+        ws.onclose = function() {
+            console.log("连接已关闭");
+        };
+
+        // 向服务器发送消息，启动循环
+        function startProcess() {
+            ws.send("start");
+        }
+    </script>
 </body>
 </html>

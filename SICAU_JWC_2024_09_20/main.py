@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-11-06 17:33:29
+LastEditTime: 2024-11-11 17:18:26
 '''
 # 引入文件目录设置
 # import sys
@@ -20,8 +20,6 @@ import uvicorn
 # 引入业务路由模块
 from app.score_visualization.route import route_score
 from app.super_search.route import route_super_search
-
-
 
 # 创建 FastAPI 应用
 app = FastAPI()

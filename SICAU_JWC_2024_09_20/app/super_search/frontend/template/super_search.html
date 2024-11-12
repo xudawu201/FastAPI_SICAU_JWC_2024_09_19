@@ -1,330 +1,60 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-11-06 17:27:48
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-12 16:24:08
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>超级查询</title>
-    <style>
-        /* 基本容器样式 */
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;  /* 减少上下间隔 */
-            width: 100%;
-            padding: 20px;
-        }
+
+    <!-- 验证session的js -->
+    <script src="public_static_path/js/verify_session.js"></script>
     
-        .top-section {
-            display: flex;
-            gap: 20px;
-        }
-    
-        .content-box {
-            border: 1px solid #ddd;
-            padding: 10px;
-            background-color: #f9f9f9;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-        }
-    
-        /* 结果和字段的显示区域 */
-        #results, #columns {
-            height: 200px;
-            width: 45%;
-            padding: 15px;
-        }
-    
-        /* 表格容器样式 */
-        #tableData {
-            height: 800px;
-            overflow-y: auto;
-            padding: 15px;
-        }
-    
-        /* 表格的样式 */
-        table {
-            width: 100%;
-            /* height: 100%; */
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: #fff;
-        }
-    
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
-    
-        th {
-            background-color: #007bff;
-            color: white;
-            position: sticky;
-            top: 0;  /* 使表头固定在顶部 */
-            z-index: 1;  /* 确保表头在滚动内容之上 */
-        }
-    
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-    
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-    
-        /* 分页按钮样式 */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-    
-        .pagination button {
-            padding: 5px 10px;
-            cursor: pointer;
-            background-color: #f8f9fa;  /* 默认背景颜色 */
-            border: 1px solid #ddd;     /* 边框 */
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .pagination button:hover {
-            background-color: #007bff;  /* 鼠标悬浮时的背景颜色 */
-            color: white;               /* 鼠标悬浮时文字变为白色 */
-        }
-
-        .pagination button:disabled {
-            cursor: not-allowed;        /* 禁用按钮时变为禁用状态 */
-            background-color: #e9ecef;  /* 禁用状态的背景颜色 */
-            border-color: #ddd;         /* 边框颜色 */
-        }
-
-        .pagination button.current-page {
-            background-color: #007bff;  /* 当前页的背景颜色 */
-            color: white;               /* 当前页的文字颜色 */
-            font-weight: bold;          /* 当前页文字加粗 */
-        }
-    
-    
-        #filterInput {
-            width: 300px;
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-    
-        #filterDescription {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 8px;  /* 减少描述与输入框的间隔 */
-        }
-
-        /* 给表格名称添加悬浮提示 */
-        #results div {
-            cursor: pointer;  /* 鼠标悬浮时显示手型 */
-            transition: color 0.3s, background-color 0.3s;  /* 增加过渡效果 */
-            padding: 5px;
-        }
-
-        #results div:hover {
-            color: #007bff;  /* 鼠标悬浮时文字变蓝 */
-            background-color: #f1f1f1;  /* 鼠标悬浮时背景色变浅 */
-        }
-    </style>
-    
-    
-    <script>
-        let currentPage = 1;
-        const pageLimit = 10;
-        let totalPages = 1;
-        let currentFilter = '';  // 保存当前筛选条件
-
-        async function searchTables() {
-            const query = document.getElementById("search").value;
-
-            console.log("Searching for: ", query);  // 调试信息，查看输入的查询关键词
-
-            if (!query.trim()) {
-                document.getElementById("results").innerHTML = "";
-                return;
-            }
-
-            const response = await fetch(`/search?query=${query}`);
-            const data = await response.json();
-
-            const resultsDiv = document.getElementById("results");
-            resultsDiv.innerHTML = "";
-
-            data.tables.forEach(table => {
-                const tableDiv = document.createElement("div");
-                tableDiv.innerHTML = `<strong>${table.table_name}:</strong>`;
-
-                if (table.columns.length > 0) {
-                    tableDiv.innerHTML += ` ${table.columns.join(", ")}`;
-                }
-
-                tableDiv.onclick = () => viewTableColumns(table.table_name);
-                resultsDiv.appendChild(tableDiv);
-            });
-        }
-
-        async function viewTableColumns(tableName) {
-            currentTable = tableName;  // 保持当前表名
-            const response = await fetch(`/table/${tableName}/columns`);
-            const data = await response.json();
-            const columnsDiv = document.getElementById("columns");
-            columnsDiv.innerHTML = `<h3>表: ${data.table_name}</h3>`;
-
-            data.columns.forEach(column => {
-                const columnDiv = document.createElement("div");
-                columnDiv.innerHTML = `${column.column_name} (${column.data_type})`;
-                columnsDiv.appendChild(columnDiv);
-            });
-
-            currentPage = 1;
-            loadTableData(tableName, currentPage);
-        }
-
-        async function loadTableData(tableName, page) {
-            const filterValue = currentFilter;  // 获取当前筛选条件
-            console.log("Loading data with filter: ", filterValue);  // 调试信息，查看筛选条件
-
-            const response = await fetch(`/table/${tableName}/data?page=${page}&limit=${pageLimit}&filter=${filterValue}`);
-            const data = await response.json();
-            const tableDiv = document.getElementById("tableData");
-            tableDiv.innerHTML = `<h3>表内容: ${data.table_name}</h3>`;
-
-            if (data.data.length === 0) {
-                tableDiv.innerHTML = "<p>没有数据</p>";  // 显示没有数据
-                return;
-            }
-
-            const table = document.createElement("table");
-            const headerRow = document.createElement("tr");
-
-            // 添加表头
-            Object.keys(data.data[0]).forEach(col => {
-                const th = document.createElement("th");
-                th.innerText = col;
-                headerRow.appendChild(th);
-            });
-            table.appendChild(headerRow);
-
-            // 填充表格内容
-            data.data.forEach(row => {
-                const tr = document.createElement("tr");
-                Object.values(row).forEach(value => {
-                    const td = document.createElement("td");
-                    td.innerText = value;
-                    tr.appendChild(td);
-                });
-                table.appendChild(tr);
-            });
-
-            tableDiv.appendChild(table);
-            totalPages = data.total_pages;
-
-            renderPagination(tableName);
-            applyFilter();  // 在加载数据后应用筛选
-        }
-
-        function renderFilterInput() {
-            const filterContainer = document.getElementById("filterContainer");
-            const filterInput = document.createElement("input");
-            filterInput.type = "text";
-            filterInput.id = "filterInput";
-            filterInput.placeholder = "筛选表格内容";
-            filterInput.value = currentFilter;  // 保持筛选框的输入值
-            filterInput.oninput = () => {
-                currentFilter = filterInput.value;
-            };
-
-            const description = document.createElement("div");
-            description.id = "filterDescription";
-            description.innerHTML = "请输入关键词来筛选表格中的内容";
-
-            filterContainer.innerHTML = "";  // 清空现有的筛选框
-            filterContainer.appendChild(description);
-            filterContainer.appendChild(filterInput);
-
-            const queryButton = document.createElement("button");
-            queryButton.innerText = "查询";
-            queryButton.onclick = () => {
-                console.log("Query button clicked!");  // 调试信息，确认点击事件是否触发
-                currentPage = 1;  // 查询时跳转到第一页
-                loadTableData(currentTable, currentPage);  // 加载第一页数据
-            };
-
-            filterContainer.appendChild(queryButton);
-        }
-
-        function renderPagination(tableName) {
-            const paginationDiv = document.createElement("div");
-            paginationDiv.className = "pagination";
-            paginationDiv.innerHTML = "";
-
-            const prevButton = document.createElement("button");
-            prevButton.innerText = "上一页";
-            prevButton.disabled = currentPage === 1;
-            prevButton.onclick = () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadTableData(tableName, currentPage);
-                }
-            };
-            paginationDiv.appendChild(prevButton);
-
-            const halfRange = 5;
-            let start = Math.max(1, currentPage - halfRange);
-            let end = Math.min(totalPages, currentPage + halfRange);
-
-            if (end - start < 9) {
-                start = Math.max(1, end - 9);
-            }
-
-            for (let i = start; i <= end; i++) {
-                const button = document.createElement("button");
-                button.innerText = i;
-                button.onclick = () => {
-                    currentPage = i;
-                    loadTableData(tableName, i);
-                };
-                if (i === currentPage) {
-                    button.classList.add("current-page");  // 添加当前页的样式
-                }
-                paginationDiv.appendChild(button);
-            }
-
-            const nextButton = document.createElement("button");
-            nextButton.innerText = "下一页";
-            nextButton.disabled = currentPage === totalPages;
-            nextButton.onclick = () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadTableData(tableName, currentPage);
-                }
-            };
-            paginationDiv.appendChild(nextButton);
-
-            document.getElementById("tableData").appendChild(paginationDiv);
-        }
-
-        window.onload = () => {
-            renderFilterInput();  // 页面加载时渲染筛选框
-        }
-    </script>
+    <!-- 页面样式css -->
+    <link rel="stylesheet" href="super_search_static_path/css/super_search.css">
+    <!-- 数据处理js -->
+    <script src="super_search_static_path/js/super_search.js"></script>
 </head>
 <body>
     <h1>超级查询</h1>
-    <input type="text" id="search" placeholder="请输入查询关键词" oninput="searchTables()">
-    <div class="container">
-        <div class="top-section">
-            <div id="results" class="content-box">相关表格</div>
-            <div id="columns" class="content-box">相关字段</div>
+    
+    <div class="button-group" id="search_table_div">
+        单数据表列查询:
+        <input type="text" id="search_table_input" placeholder="输入查询关键词">
+        <button onclick="search_table_js()">查询</button>
+    </div>
+
+    <div class="button-group" id="search_database_div">
+        全数据库查询:
+        <input type="text" id="search_database_input" placeholder="输入数据库查询关键词">
+        <button onclick="search_database_js()">查询</button>
+    </div>
+
+    <div class="container_div">
+        <div class="top_section_div">
+            <div id="table_match_content_div" class="content_box">
+                <h3>相关表格</h3>
+                <h5>只搜索数据库相关的表名和列名，点击表名显示完整信息</h5>
+            </div>
+            <div id="database_match_content_div" class="content_box">
+                <h3>相关字段</h3>
+                <h5>全数据库搜索相关字段，不搜索相关表名和列名，只显示第一条相关字段和对应的列名和表名，点击表名显示完整信息</h5>
+            </div>
         </div>
-        <div id="filterContainer"></div>  <!-- 独立的筛选框 -->
-        <div id="tableData" class="content-box">表格内容</div>
+
+        <div class="button-group" id="search_filter_div">
+            表数据筛选:
+            <input type="text" id="search_filter_input" placeholder="输入筛选关键词">
+            <button onclick="search_filter_js()">筛选</button>
+        </div>
+        
+        <div id="table_data_div" class="content_box">
+            <h3>数据表内容</h3>
+        </div>
     </div>
 </body>
 </html>
