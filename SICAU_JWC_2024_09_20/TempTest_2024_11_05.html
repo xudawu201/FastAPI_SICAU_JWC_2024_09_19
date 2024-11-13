@@ -2,43 +2,101 @@
  * @Author: xudawu
  * @Date: 2024-11-05 12:09:40
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-12 17:11:48
+ * @LastEditTime: 2024-11-13 09:11:08
 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Demo</title>
-</head>
-<body>
-    <h1>实时消息</h1>
-    <div id="messages"></div>
-    <button onclick="startProcess()">开始循环</button>
+// 全数据库查询
+async function search_database_js() {
+    
+    // 获取输入框的值
+    const search_keyword = document.getElementById("search_database_input").value;
+    if (!search_keyword.trim()) {
+        return;
+    }
 
-    <script>
-        const ws = new WebSocket("/ws");
+    // 重置筛选框和筛选条件
+    resetFilter();
 
-        // 监听从WebSocket接收到的消息
-        ws.onmessage = function(event) {
-            const messageDiv = document.getElementById("messages");
-            messageDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
-        };
+    // 禁用三个输入框和按钮
+    disable_element("search_table_div");
+    disable_element('search_database_div');
+    disable_element('search_filter_div');
+    
+    const resultsDiv = document.getElementById("database_match_content_div");
+    // 锁定 resultsDiv，禁用用户交互
+    disable_element('database_match_content_div');
+    // 清空之前的结果
+    resultsDiv.innerHTML = "";
 
-        // 连接成功时
-        ws.onopen = function() {
-            console.log("连接已建立");
-        };
 
-        // 连接关闭时
-        ws.onclose = function() {
-            console.log("连接已关闭");
-        };
+    // 建立WebSocket连接
+    const ws = new WebSocket('/ws_search_database');
+    // WebSocket 打开后发送搜索关键词
+    ws.onopen = function() {
+        ws.send(search_keyword);
+    };
 
-        // 向服务器发送消息，启动循环
-        function startProcess() {
-            ws.send("start");
+    // 实时显示查询进度
+    ws.onmessage = function(event) {
+
+        // 检查是否是搜索完成标志
+        if (event.data === 'search_done') {
+            // 等待接收到排序后的完整数据,用新接收的数据重新渲染页面数据
+            ws.onmessage = function(event) {
+                // 解析接收到的 JSON 数据
+                const response_data = JSON.parse(event.data);
+                const tables = response_data.tables;
+                
+                // 清空之前显示的实时结果
+                resultsDiv.innerHTML = "";
+
+                Object.keys(tables).forEach(tableName => {
+                    // 创建一个新的 div 来显示新的一行信息
+                    const tableDiv = document.createElement("div");
+                    tableDiv.innerHTML = `<strong>${tableName}:</strong>`;
+
+                    const columns = tables[tableName];
+                    Object.keys(columns).forEach(columnName => {
+                        const columnContent = columns[columnName];
+                        // 列内容换行
+                        tableDiv.innerHTML += `${columnName}<br>`;
+                        tableDiv.innerHTML += `${columnContent}<br>`;
+                    });
+                    // 绑定点击事件
+                    tableDiv.onclick = () => loadTableData(tableName, 1, true);
+                    resultsDiv.appendChild(tableDiv);
+                });
+                // 更新滚动条滚动到最顶上位置
+                resultsDiv.scrollTop = 0;
+                
+                // 解锁 resultsDiv
+                // 启用三个输入框和按钮
+                enable_element('database_match_content_div')
+                enable_element("search_table_div");
+                enable_element('search_database_div');
+                enable_element('search_filter_div');
+                // 关闭 WebSocket 连接
+                // ws.close();
+            }
         }
-    </script>
-</body>
-</html>
+        else {
+            // 显示实时结果
+            // const response_data = JSON.parse(event.data);
+            // // 提取发送过来的字段
+            // const table_name_str = response_data.table_name;
+            // const column_str = response_data.column;
+            // const content_str = response_data.content;
+
+            // 创建一个新的 div 来显示新的一行信息
+            // const tableDiv = document.createElement("div");
+            resultsDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
+            // tableDiv.innerHTML = `<span><strong>表名:</strong> ${table_name_str}</span> `;
+            // tableDiv.innerHTML += `<span><strong>列名:</strong> ${column_str}</span> <br>`;
+            // tableDiv.innerHTML += `<span><strong>相关内容:</strong> ${content_str}</span> <br>`;
+
+            // resultsDiv.appendChild(tableDiv);
+            // 更新滚动条到底端位置,以显示最新的信息
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+    }
+
+}

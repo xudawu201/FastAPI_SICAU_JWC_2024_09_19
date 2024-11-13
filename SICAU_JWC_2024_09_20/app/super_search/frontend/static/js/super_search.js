@@ -125,15 +125,15 @@ async function search_database_js() {
                 resultsDiv.scrollTop = 0;
                 
                 // 解锁 resultsDiv
-                // 启用三个输入框和按钮
                 enable_element('database_match_content_div')
+                // 启用三个输入框和按钮
                 enable_element("search_table_div");
                 enable_element('search_database_div');
                 enable_element('search_filter_div');
                 // 关闭 WebSocket 连接
                 // ws.close();
-            };
-        } 
+            }
+        }
         else {
             // 显示实时结果
             const response_data = JSON.parse(event.data);
@@ -144,6 +144,8 @@ async function search_database_js() {
 
             // 创建一个新的 div 来显示新的一行信息
             const tableDiv = document.createElement("div");
+            // 显示消息
+            // resultsDiv.innerHTML += `<p>${event.data}</p>`;
             tableDiv.innerHTML = `<span><strong>表名:</strong> ${table_name_str}</span> `;
             tableDiv.innerHTML += `<span><strong>列名:</strong> ${column_str}</span> <br>`;
             tableDiv.innerHTML += `<span><strong>相关内容:</strong> ${content_str}</span> <br>`;
@@ -152,7 +154,7 @@ async function search_database_js() {
             // 更新滚动条到底端位置,以显示最新的信息
             resultsDiv.scrollTop = resultsDiv.scrollHeight;
         }
-    };
+    }
 
 }
 

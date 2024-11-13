@@ -5,6 +5,7 @@ from pypinyin import pinyin, Style
 from template import TemplatesJinja2SuperSearch
 # 引入数据库模块
 from database import database_connection
+import asyncio
 
 router = APIRouter()
 
@@ -199,23 +200,26 @@ async def database_search(websocket: WebSocket):
             
             # 遍历列并检查是否包含关键词
             for column, column_type in zip(columns, column_types):
-                # 如果列类型是 image，则跳过
-                if column_type == 'image':
+                # 检查列的类型，跳过bytearray类型的列内容
+                if str(column_type) == "<class 'bytearray'>":
+                    # print(f"跳过列 {column}，类型为 bytearray")
                     continue
-                
-                # 强制转换列为字符串类型，避免类型不匹配
-                try:
-                    # 使用方括号包裹列名，以处理特殊字符
-                    DatabaseCursor.execute(f"SELECT [{column}] FROM [{table_name}] WHERE CAST([{column}] AS NVARCHAR(MAX)) LIKE ?", ('%' + search_keyword + '%',))
-                    result = DatabaseCursor.fetchone()  # 只获取第一条相关数据
+
+                try: 
+                    # 执行查询并实时发送匹配结果
+                    # DatabaseCursor.execute() 和 fetchone() 是阻塞操作，如果查询需要时间，后端会被阻塞，导致 WebSocket 无法及时发送更新信息
+                    # 使用 asyncio.to_thread() 将阻塞的数据库查询放到单独的线程中，这样事件循环就可以继续处理其他任务（比如发送 WebSocket 消息）
+                    query = f"SELECT [{column}] FROM [{table_name}] WHERE CAST([{column}] AS NVARCHAR(MAX)) LIKE ?"
+                    results = await asyncio.to_thread(DatabaseCursor.execute, query, ('%' + search_keyword + '%',))
+                    # 只获取第一条相关数据
+                    result = await asyncio.to_thread(DatabaseCursor.fetchone)
                     
                     if result:
                         # print(f"表名: {table_name}, 列名: {column}, 相关内容: {result[0]}")
 
                         # 将匹配的内容发送给前端实时显示
                         await websocket.send_json({'table_name': table_name,'column': column, 'content': result[0]})
-                        # 强制刷新缓冲区，立即发送数据
-                        await websocket.flush()
+                        # await websocket.send_text(f"表名: {table_name}, 列名: {column}, 相关内容: {result[0]}")
                         # 将匹配的内容存储到字典中
                         select_tables_dict[table_name] = {column:result[0]}
                         break  # 每个表只显示第一条相关信息
@@ -231,17 +235,12 @@ async def database_search(websocket: WebSocket):
         await websocket.send_text('search_done')
         # 将字典转换为 JSON 格式并发送给前端
         await websocket.send_json(response_dict)
-        # 强制刷新缓冲区，立即发送数据
-        await websocket.flush()
 
     except WebSocketDisconnect:
         pass
     finally:
-        # manager.disconnect(websocket)
-        await websocket.close()
-        await WebSocketConnectionManager.disconnect(websocket)
-
-
+        manager.disconnect(websocket)
+        
     # 关闭游标和连接
     DatabaseCursor.close()
     DatabaseConnection.close()
