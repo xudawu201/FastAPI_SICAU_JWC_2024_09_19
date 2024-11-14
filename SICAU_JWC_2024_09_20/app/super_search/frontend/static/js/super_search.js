@@ -72,7 +72,7 @@ async function search_database_js() {
     // 重置筛选框和筛选条件
     resetFilter();
 
-    // 禁用三个输入框和按钮
+    // 禁用三个输入框和内部按钮
     disable_element("search_table_div");
     disable_element('search_database_div');
     disable_element('search_filter_div');
@@ -289,4 +289,17 @@ function renderPagination(tableName) {
 function resetFilter() {
     document.getElementById("search_filter_input").value = "";  // 清空筛选框
     currentFilter = "";  // 重置筛选条件
+}
+
+// 下载按钮事件处理
+async function download_data_to_excel() {
+    // 检查是否有当前选中的表
+    if (!currentTable) {
+        alert('请先选择一个表');
+        return;
+    }
+    // 有选择的表,下载此表的内容
+    else {
+        window.location.href = `/download_excel/${currentTable}?filter=${encodeURIComponent(currentFilter)}`;
+    }
 }

@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Request,WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse,FileResponse,StreamingResponse
 from pypinyin import pinyin, Style
 # 保持模板导入
 from template import TemplatesJinja2SuperSearch
 # 引入数据库模块
 from database import database_connection
 import asyncio
+
+# 下载文件相关库
+import openpyxl
+from io import BytesIO
+import urllib.parse
 
 router = APIRouter()
 
@@ -245,6 +250,67 @@ async def database_search(websocket: WebSocket):
     DatabaseCursor.close()
     DatabaseConnection.close()
 
+# 下载数据为Excel
+@router.get("/download_excel/{table_name}")
+async def download_excel(table_name: str, filter: str = ''):
+    # 获取数据库连接和游标
+    DatabaseConnection, DatabaseCursor = database_connection.get_database_connection_cursor()
+
+    # 获取表的列名
+    DatabaseCursor.execute(f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ?", table_name)
+    columns = [row[0] for row in DatabaseCursor.fetchall()]
+
+    # 构建查询条件，逐列查询
+    where_clauses = []
+    params = []
+
+    if filter:  # 如果有筛选条件
+        for column in columns:
+            where_clauses.append(f"{column} LIKE ?")  # 每列条件使用 LIKE
+            params.append(f"%{filter}%")  # 对每列使用筛选条件
+        where_condition = " OR ".join(where_clauses)
+    else:
+        where_condition = ""  # 没有筛选条件时，不加 WHERE
+
+    # 获取表的数据
+    query = f"SELECT * FROM {table_name}"
+    if where_condition:
+        query += f" WHERE {where_condition}"
+
+    DatabaseCursor.execute(query, params)  # 执行查询，传入参数
+    rows = DatabaseCursor.fetchall()
+
+    # 获取表结构信息
+    columns = [col[0] for col in DatabaseCursor.description]  # 从描述中提取列名
+
+    # 将查询结果写入Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = table_name
+
+    # 写入列名
+    ws.append(columns)
+
+    # 将 Excel 文件写入内存
+    for row in rows:
+        # 将 pyodbc.Row 转换为 list 或 tuple
+        ws.append(list(row))  # 或者使用 ws.append(tuple(row))
+
+    # 将 Excel 文件写入内存
+    file_stream = BytesIO()
+    wb.save(file_stream)
+    file_stream.seek(0)
+
+    # 关闭游标和连接
+    DatabaseCursor.close()
+    DatabaseConnection.close()
+
+    # 对文件名进行 URL 编码，避免特殊字符引发编码错误
+    encoded_filename = urllib.parse.quote(f"{table_name}.xlsx")
+
+    return StreamingResponse(file_stream, 
+                            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+                            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"})
 
 if __name__ == '__main__':
     # 引入文件目录设置
@@ -255,6 +321,4 @@ if __name__ == '__main__':
     sys.path.append(module_path)
 
     from template import TemplatesJinja2SuperSearch
-
-    select_tables_dict = get_database('专业')
 

@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-10-14 17:59:01
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-13 17:46:07
+ * @LastEditTime: 2024-11-14 10:50:37
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -30,6 +30,9 @@
 
     <!-- 超级查询的iframejs -->
     <script src="public_static_path/iframe_js/super_search.js"></script>
+
+    <!-- 排课系统的iframejs -->
+    <script src="public_static_path/iframe_js/course_schedule.js"></script>
 
     
 </head>
@@ -60,8 +63,8 @@
             </li>
 
             <li class="left_menu_item_li">
-                <button>
-                    智能排课
+                <button id="course_schedule_button" onclick="show_course_schedule_iframe()">
+                    排课系统
                     <!-- <span>▾</span> -->
                 </button>
                 <hr class="nav_bar_divider">

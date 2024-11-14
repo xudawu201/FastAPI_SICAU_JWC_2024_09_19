@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-11-11 17:18:26
+LastEditTime: 2024-11-14 10:44:57
 '''
 # 引入文件目录设置
 # import sys
@@ -20,6 +20,8 @@ import uvicorn
 # 引入业务路由模块
 from app.score_visualization.route import route_score
 from app.super_search.route import route_super_search
+from app.course_schedule.route import route_course_schedule
+
 
 # 创建 FastAPI 应用
 app = FastAPI()
@@ -36,6 +38,7 @@ app.mount("/public_static_path", StaticFiles(directory= "frontend/static"))
 app.mount("/login_static_path", StaticFiles(directory="app/login/frontend/static"))
 app.mount("/score_visualization_static_path", StaticFiles(directory="app/score_visualization/frontend/static"))
 app.mount("/super_search_static_path", StaticFiles(directory="app/super_search/frontend/static"))
+app.mount("/course_schedule_static_path", StaticFiles(directory="app/course_schedule/frontend/static"))
 
 
 # 包含路由模块
@@ -46,6 +49,8 @@ app.include_router(route_main.router)
 app.include_router(route_score.router)
 # 超级查询模块
 app.include_router(route_super_search.router)
+# 排课系统模块
+app.include_router(route_course_schedule.router)
 
 # 主函数启动应用程序
 if __name__ == "__main__":

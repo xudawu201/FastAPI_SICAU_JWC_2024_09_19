@@ -1,51 +1,57 @@
-<!--
- * @Author: xudawu
- * @Date: 2024-11-05 12:09:40
- * @LastEditors: xudawu
- * @LastEditTime: 2024-11-13 14:40:21
--->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket Demo</title>
+    <title>排课系统</title>
+    <style>
+        #logs {
+            white-space: pre-wrap;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+    </style>
 </head>
 <body>
-    <h1>实时消息</h1>
-    <div id="messages"></div>
-    <button onclick="startProcess()">开始循环</button>
+    <h1>排课系统</h1>
+    <button id="startBtn">开始排课</button>
+    <div id="logs"></div>
 
-    <!-- <script>
-        const ws = new WebSocket("/ws");
-
-        // 监听从WebSocket接收到的消息
-        ws.onmessage = function(event) {
-            const messageDiv = document.getElementById("messages");
-            messageDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
-        };
-
-        // 向服务器发送消息，启动循环
-        function startProcess() {
-            ws.send("start");
-        }
-    </script> -->
     <script>
-        
-        // 向服务器发送消息，启动循环
-        function startProcess() {
-            const ws = new WebSocket("/ws_search_database");
-            // 在 WebSocket 连接打开时发送消息
-            ws.onopen = function() {
-                ws.send("专业");
+        const startBtn = document.getElementById("startBtn");
+        const logsDiv = document.getElementById("logs");
+
+        let socket = null;
+
+        // 连接到 WebSocket
+        function connectWebSocket() {
+            socket = new WebSocket("/ws");
+
+            socket.onopen = function () {
+                console.log("WebSocket 连接已建立。");
             };
 
-            // 监听从WebSocket接收到的消息
-            ws.onmessage = function(event) {
-                const messageDiv = document.getElementById("messages");
-                messageDiv.innerHTML += `<p>${event.data}</p>`;  // 显示消息
+            socket.onmessage = function (event) {
+                logsDiv.textContent += event.data + "\n";
+                logsDiv.scrollTop = logsDiv.scrollHeight;  // 滚动到最新消息
+            };
+
+            socket.onclose = function () {
+                console.log("WebSocket 连接已关闭。");
             };
         }
+
+        startBtn.addEventListener("click", function () {
+            fetch("/start-scheduling", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    connectWebSocket();  // 启动 WebSocket 连接
+                });
+        });
     </script>
 </body>
 </html>

@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-11-06 17:27:48
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-12 16:24:08
+ * @LastEditTime: 2024-11-14 09:26:20
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -50,11 +50,17 @@
             表数据筛选:
             <input type="text" id="search_filter_input" placeholder="输入筛选关键词">
             <button onclick="search_filter_js()">筛选</button>
+            <!-- 下载按钮 -->
+            <div class="button-group" id="download_button_div">
+                <button id="downloadButton" onclick="download_data_to_excel()">下载表数据</button>
+            </div>
         </div>
         
+        <!-- 表数据显示div -->
         <div id="table_data_div" class="content_box">
             <h3>数据表内容</h3>
         </div>
+
     </div>
 </body>
 </html>

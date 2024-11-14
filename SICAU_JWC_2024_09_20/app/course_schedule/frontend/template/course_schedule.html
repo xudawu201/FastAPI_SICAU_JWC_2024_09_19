@@ -1,0 +1,254 @@
+<!--
+ * @Author: xudawu
+ * @Date: 2024-11-12 10:49:26
+ * @LastEditors: xudawu
+ * @LastEditTime: 2024-11-14 17:52:49
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <title>排课系统</title> -->
+    <style>
+        /* 排课过程显示框 */
+        #generation_progress_div {    
+            height: 300px;
+            width: 800px;
+            margin-top: 5px;
+
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* 使内容可滚动 */
+            overflow-y: auto;
+        }
+
+        /* 排课信息显示框 */
+        #schedule_info_div {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* 使内容可滚动 */
+            overflow-y: auto;
+        }
+        .show_course_schedule_div h3{
+            /* 调整上边距 */
+            margin-top: 10px;
+            /* 调整左边距 */
+            margin-left: 10px;
+        }
+
+        /* 分页功能 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .pagination {
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .pagination button {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+
+        .pagination button:hover {
+            background-color: #f2f2f2;
+        }
+
+        .pagination .current-page {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>排课系统</h1>
+    <button id="start_course_schedule_button" onclick="start_course_schedule()">开始排课</button>
+    <button id="stop_course_schedule_button" onclick="stop_course_schedule()">停止排课</button>
+    <div id="generation_progress_div" class="show_course_schedule_div">
+        <h3>排课过程</h3>
+    </div>
+
+    <!-- 用于显示具体的排课信息 -->
+    <div id="schedule_info_div" class="show_course_schedule_div">
+        <h3>排课信息</h3>
+    </div>
+    <script>
+
+        let WSocket = null;  // WebSocket对象全局变量
+        // 初始化全局变量，用于存储排课信息,使用map保证是顺序不乱
+        let generation_info_dict =new Map();
+        let current_page = 1;
+        const items_per_page = 10;  // 每页显示的排课信息条目数
+
+        // 实时显示排课信息
+        async function start_course_schedule() {
+            
+            // 建立WebSocket连接
+            WSocket = new WebSocket('/ws_course_schedule');
+
+            const generation_progress_div = document.getElementById("generation_progress_div");
+            // 清空结果显示区域
+            generation_progress_div.innerHTML = "";
+
+            // const messageDiv = document.getElementById("messages");
+
+            // 实时显示查询进度
+            WSocket.onmessage = function(event) {
+                // 解析接收到的 JSON 数据
+                const response_data = JSON.parse(event.data);
+                const generation_int = response_data.generation;
+                const best_fitness_float = response_data.best_fitness;
+
+                // 添加排课信息到字典中,直接用当前代数做字典的键，值为当前代的排课信息
+                // 向 Map 中添加数据
+                generation_info_dict.set(generation_int, response_data.current_generation_info_dict)
+
+                // 创建一个新的 div 来显示新的一行信息
+                const progress_content_div = document.createElement("div");
+                progress_content_div.innerHTML = `当前进化代数:${generation_int}`;
+                progress_content_div.innerHTML += `，当前代最高适应度:${best_fitness_float}`;
+
+                // 将新的 div 添加到结果显示区域
+                generation_progress_div.appendChild(progress_content_div);
+                // 绑定点击事件
+                progress_content_div.onclick = () => show_course_schedule_info(generation_int);
+                // 更新滚动条到底端位置,以显示最新的信息
+                generation_progress_div.scrollTop = generation_progress_div.scrollHeight;
+            }
+        }
+
+        // 停止排课
+        async function stop_course_schedule() {
+
+            // 关闭连接
+            if (WSocket) {
+                // WSocket.send(JSON.stringify({ action: "stop_course_schedule" }));
+
+                // 关闭WebSocket连接
+                WSocket.close();
+            }
+
+        }
+
+        // 显示具体的排课信息
+        async function show_course_schedule_info(generation_int) {
+            const schedule_info_div = document.getElementById("schedule_info_div");
+            schedule_info_div.innerHTML = ""; // 清空现有内容
+
+            // 获取当前代数的排课信息
+            const CurrentScheduleInfo = generation_info_dict.get(generation_int);
+            if (CurrentScheduleInfo) {
+
+                // 获得所有已排课程数
+                const total_assigned_class_numer_int = CurrentScheduleInfo["total_assigned_course_number"];
+                
+                // 计算分页的起始和结束索引
+                const start_index = (current_page - 1) * items_per_page;
+                const end_index = start_index + items_per_page;
+                // 创建表格
+                const schedule_table = document.createElement("table");
+
+                // 创建表头
+                const header = schedule_table.insertRow();
+                const headers = ["上课时间", "上课教室", "课程名称", "授课教师", "课程优先级", "选课学生", "上课时间冲突学生", "教师不可上课时间备注"];
+                headers.forEach(header_text => {
+                    const th = document.createElement("th");
+                    th.innerHTML = header_text;
+                    header.appendChild(th);
+                });
+                
+                // 获取所有的键并按字母和数字顺序排序
+                const sortedKeys = Object.keys(CurrentScheduleInfo.room_assigned_course_schedule_dict)
+                .sort((a, b) => {
+                    // 使用正则表达式将字符串按数字进行排序
+                    const numA = a.match(/\d+/) ? parseInt(a.match(/\d+/)[0], 10) : 0;
+                    const numB = b.match(/\d+/) ? parseInt(b.match(/\d+/)[0], 10) : 0;
+                    
+                    // 按数字排序，如果数字相等，则按字母排序
+                    if (numA === numB) {
+                    return a.localeCompare(b); // 字母排序
+                    }
+                    return numA - numB; // 数字排序
+                });
+
+            
+                // 遍历字典的键值对
+                Object.entries(CurrentScheduleInfo['room_assigned_course_schedule_dict']).forEach(([key, schedule_dict]) => {
+
+                // ScheduleInfo['room_assigned_course_schedule_dict'].forEach(cls => {
+                // for (schedule_dict in ScheduleInfo['room_assigned_course_schedule_dict']) {
+                    const row = schedule_table.insertRow();
+                    row.insertCell(0).innerHTML = schedule_dict.time;
+                    row.insertCell(1).innerHTML = schedule_dict.room;
+                    row.insertCell(2).innerHTML = schedule_dict.course;
+                    row.insertCell(3).innerHTML = schedule_dict.teacher;
+                    
+                    row.insertCell(4).innerHTML = schedule_dict.priority;
+                    row.insertCell(5).innerHTML = schedule_dict.enrolled_student;
+                    row.insertCell(6).innerHTML = schedule_dict.conflict;
+                    row.insertCell(7).innerHTML = schedule_dict.availability;
+                // }
+                }); 
+                    
+                // 将排课表格添加到页面中
+                schedule_info_div.appendChild(schedule_table);
+                // 显示分页
+                show_pagination(total_class_number_int);
+            } 
+            else {
+                schedule_info_div.innerHTML = `未找到第 ${generation_int} 代的排课信息。`;
+            }
+        }
+
+// 显示分页
+function show_pagination(total_items) {
+    const total_pages = Math.ceil(total_items / items_per_page);
+    const pagination_div = document.createElement("div");
+    pagination_div.classList.add("pagination");
+
+    // 创建页码按钮
+    for (let i = 1; i <= total_pages; i++) {
+        const button = document.createElement("button");
+        button.innerHTML = i;
+        button.onclick = function() {
+            current_page = i;
+            show_course_schedule_info(Object.keys(generation_info_dict).length);
+        };
+        if (i === current_page) {
+            button.classList.add("current-page");
+        }
+        pagination_div.appendChild(button);
+    }
+
+    // 清除旧的分页
+    const existing_pagination = document.querySelector(".pagination");
+    if (existing_pagination) {
+        existing_pagination.remove();
+    }
+
+    // 将分页信息添加到页面中
+    document.getElementById("schedule_info_div").appendChild(pagination_div);
+}
+        
+    </script>
+</body>
+</html>
