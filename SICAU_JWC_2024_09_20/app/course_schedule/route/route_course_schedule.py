@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-14 18:01:32
+LastEditTime: 2024-11-15 16:20:25
 '''
 # 遗传算法随机库
 import random
@@ -168,7 +168,7 @@ class Schedule:
             # 初始化当前代排课信息
             "room_assigned_course_schedule_dict": {},
             # 初始化未安排的教室和时间段
-            "unassigned_room_time_list": [],
+            "unassigned_time_list": [],
             # 初始化未安排的教师
             "unassigned_teacher_list": [],
             # 初始化未安排的教室
@@ -177,7 +177,17 @@ class Schedule:
             'unassigned_student_list': []
         }
 
+        # 初始化排课索引
+        schedule_index_int = 0
+        # 初始化未安排时间列表
+        unassigned_time_list = []
+        # 初始化上课时间冲突教师列表
+        schedule_conflict_time_teachers_list = []
+        # 初始化上课时间冲突学生列表
+        schedule_conflict_time_student_list = []
         for (cur_timeslot_str, cur_room_str), CurCourse in self.schedule_dict.items():
+            # 初始化当前排课信息
+            room_course_schedule_str=''
             # 如果课程为非空,则打印课程信息
             if CurCourse is not None:
                 # 初始化本门课的选课学生列表
@@ -191,57 +201,87 @@ class Schedule:
                         unassigned_students.discard(CurStudent.name_str)
                 enrolled_course_student_str = ", ".join(enrolled_course_student_name_list) if enrolled_course_student_name_list else "No student enrolled"
 
+                # 初始化教师不可上课信息
+                availability_str = ''
                 # 检查教师是否在不可上课时间
-                teacher_unavailable = cur_timeslot_str in CurCourse.unavailable_timeslots_list
-                availability_str = " Teacher unavailable during this time" if teacher_unavailable else ""
+                if cur_timeslot_str in CurCourse.unavailable_timeslots_list:
+                    availability_str = " Teacher unavailable during this time"
+                    # 添加教师上课时间冲突表
+                    schedule_conflict_time_teachers_list.append(CurCourse.teacher_str)
 
 
-                # 初始化冲突信息
+                # 初始化学生上课时间冲突信息
                 conflict_str = ""
                 for conflict_info_tuple in self.conflict_info_list:
                     if conflict_info_tuple[1] == CurCourse.name_str and conflict_info_tuple[2] == cur_timeslot_str:
-                        conflict_str = f"Conflict: {conflict_info_tuple[0]}"
+                        conflict_str = f"{conflict_info_tuple[0]}"
+
+                        # 添加学生上课时间冲突表
+                        schedule_conflict_time_student_list.append(conflict_info_tuple[0])
 
                 # 排课时间、教师、课程名、授课教师、课程优先级、选课学生、冲突信息、不可上课信息
-                room_course_schedule_str = f"{cur_timeslot_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.teacher_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str}{conflict_str}{availability_str}"
-                print(room_course_schedule_str)
-                # 添加到字典中,使用课程名作为键,值为排课信息
-                current_generation_info_dict["room_assigned_course_schedule_dict"][CurCourse.name_str]={"time":cur_timeslot_str,"room":cur_room_str,"course":CurCourse.name_str,"teacher":CurCourse.teacher_str,"priority":CurCourse.priority_float,"enrolled_student":enrolled_course_student_str,"conflict":conflict_str,"availability":availability_str}
+                # room_course_schedule_str = f"{cur_timeslot_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.teacher_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str}{conflict_str}{availability_str}"
+                # 添加到字典中,使用排课安排索引作为键,值为排课信息
+                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={"time":cur_timeslot_str,"room":cur_room_str,"course":CurCourse.name_str,"teacher":CurCourse.teacher_str,"priority":CurCourse.priority_float,"enrolled_student":enrolled_course_student_str,"conflict":conflict_str,"availability":availability_str}
 
                 # 从未安排列表中移除教师和教室
                 unassigned_teachers.discard(CurCourse.teacher_str)
                 unassigned_rooms.discard(cur_room_str)
+
             else:
                 # 未安排教室和时间段
-                unassigned_room_time_str = f"{cur_timeslot_str} in {cur_room_str}: Free"
-                # 添加到字典中
-                current_generation_info_dict["unassigned_room_time_list"].append(unassigned_room_time_str)
-                print(unassigned_room_time_str)
+                unassigned_time_list.append(cur_timeslot_str)
+                # room_course_schedule_str = f"{cur_timeslot_str} in {cur_room_str}: Free"
+                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={"time":cur_timeslot_str,"room":cur_room_str,"course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',"availability":''}
+            
+            # 更新排课安排索引
+            schedule_index_int += 1
+            # 打印排课信息
+            # print(room_course_schedule_str)
 
+        # 打印上课时间冲突的教师
+        conflict_teacher_str = "" + ", ".join(schedule_conflict_time_teachers_list)
+        # print(conflict_teacher_str)
+        # 添加到字典中
+        current_generation_info_dict["schedule_conflict_time_teacher"]=conflict_teacher_str
+
+        # 打印上课时间冲突的学生
+        conflict_student_str = "" + ", ".join(schedule_conflict_time_student_list)
+        # print(conflict_student_str)
+        # 添加到字典中
+        current_generation_info_dict["schedule_conflict_time_student"]=conflict_student_str
+
+        # 打印未安排的时间段
+        unassigned_time_str = "Unassigned Time Slots: " + ", ".join(unassigned_time_list)
+        # print(unassigned_time_str)
+
+        # 添加到字典中
+        current_generation_info_dict["unassigned_time_list"]=unassigned_time_str
         # 打印未安排的教师、教室和学生
         if unassigned_teachers:
             unassigned_teachers_str = "Unassigned Teachers: " + ", ".join(unassigned_teachers)
         else:
             unassigned_teachers_str = "All teachers assigned."
         # 添加到字典中
-        current_generation_info_dict["unassigned_teacher_list"].append(unassigned_teachers_str)
-        print(unassigned_teachers_str)
+        current_generation_info_dict["unassigned_teacher_list"]=unassigned_teachers_str
+        # print(unassigned_teachers_str)
 
         if unassigned_rooms:
             unassigned_room_str = "Unassigned Rooms: " + ", ".join(unassigned_rooms)
         else:
             unassigned_room_str = "All rooms assigned."
         # 添加到字典中
-        current_generation_info_dict["unassigned_room_list"].append(unassigned_room_str)
-        print(unassigned_room_str)
+        current_generation_info_dict["unassigned_room_list"]=unassigned_room_str
+        # print(unassigned_room_str)
 
+        # 未安排学生
         if unassigned_students:
-            unassigned_student_str = "Unassigned Students: " + ", ".join(unassigned_students)
+            unassigned_student_str = "" + ", ".join(unassigned_students)
         else:
             unassigned_student_str = "All students enrolled."
         # 添加到字典中
-        current_generation_info_dict["unassigned_student_list"].append(unassigned_student_str)
-        print(unassigned_student_str)
+        current_generation_info_dict["unassigned_student_list"]=unassigned_student_str
+        # print(unassigned_student_str)
 
         return current_generation_info_dict
 
@@ -326,7 +366,7 @@ async def ws_course_schedule(websocket: WebSocket):
         ))
 
     # 生成时间段和教室
-    timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
+    # timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
     timeslots_list = [f'time{i}' for i in range(1,7)]
     room_list = [f'Room{i}' for i in range(1, 31)]
 
@@ -368,7 +408,7 @@ async def ws_course_schedule(websocket: WebSocket):
 
         # 打印当前代的最优适应度
         generation_int += 1
-        print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
+        # print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
         # 获得当前代的排课信息
         # current_generation_info_dict = await asyncio.to_thread(BestSchedule.display)
         current_generation_info_dict = BestSchedule.display()
@@ -382,8 +422,8 @@ async def ws_course_schedule(websocket: WebSocket):
         await websocket.send_json({"generation": generation_int,"best_fitness":best_fitness_float,'current_generation_info_dict':current_generation_info_dict})
 
         # 如果达到了适应度要求，退出循环
-        if best_fitness_float >= fitness_threshold_float:
-            break
+        # if best_fitness_float >= fitness_threshold_float:
+        #     break
 
     # print(f"best_fitness_float:{best_fitness_float},Final Best Schedule:")
     # 将内容发送给前端实时显示

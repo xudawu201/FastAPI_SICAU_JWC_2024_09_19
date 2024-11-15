@@ -1,0 +1,118 @@
+/* 排课过程显示框 */
+#generation_progress_div {   
+    position: relative; 
+    height: 200px;
+    width: 750px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* 允许垂直滚动 */
+}
+
+/* 排课过程显示框中div鼠标悬浮显示 */
+#generation_progress_div div:hover {
+    /* 鼠标指针样式 */
+    cursor: pointer;
+    /* 字体颜色 */
+    color: #007bff;
+    /* 背景颜色 */
+    background-color: #f1f1f1;
+}
+
+/* 当前代排课总览信息显示框 */
+#generation_schedule_summary_info_div {
+    position: absolute;
+    left: 770px;
+    top: 113px;
+    height: 200px;
+    width: 800px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* 允许垂直滚动 */
+}
+
+
+/* 排课信息显示框 */
+#schedule_info_div {
+    position: relative;
+    width: 100%;
+    height: 580px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* 允许垂直滚动 */
+}
+
+/* 内容框内的文字样式 */
+.show_course_schedule_div h3 {
+    position: absolute;
+    left: 5px;
+    top: -12px;
+    /* font-size: 20px; */
+}
+
+/* 表格样式 */
+table {
+    width: 100%;
+    border-collapse: collapse; /* 合并表格单元格边框 */
+    /* background-color: #eb0808; */
+    /* 字体大小 */
+    font-size: 14px; 
+}
+
+
+th, td {
+    padding: 5px;
+    border: 1px solid #ddd;
+}
+
+/* 设置表头样式，使其固定 */
+th {
+    background-color: #f2f2f2;
+    position: sticky; /* 固定表头 */
+    top: 0; /* 固定在顶部 */
+    z-index: 1; /* 确保表头在上面 */
+}
+
+/* 表格行鼠标悬浮样式 */
+tr:hover {
+    /* 鼠标指针样式 */
+    cursor: pointer;
+    /* 字体颜色 */
+    color: #007bff;
+    /* 背景颜色 */
+    background-color: #f1f1f1;
+}
+
+/* 分页功能容器样式 */
+.pagination {
+    display: flex;
+    justify-content: center; /* 居中显示分页按钮 */
+    gap: 10px; /* 分页按钮之间的间距 */
+    margin-top: 5px;
+}
+
+/* 分页按钮样式 */
+.pagination button {
+    padding: 5px 10px;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* 鼠标悬停时按钮的背景色 */
+.pagination button:hover {
+    background-color: #007bff; /* 蓝色背景 */
+    color: white; /* 白色文字 */
+}
+
+/* 当前页的按钮样式 */
+.pagination .current-page {
+    background-color: #007bff; /* 蓝色背景 */
+    color: white; /* 白色文字 */
+    font-weight: bold; /* 加粗文字 */
+}
