@@ -30,6 +30,9 @@ async function start_course_schedule() {
 
         // 自动滚动到最新的进度信息
         generation_progress_div.scrollTop = generation_progress_div.scrollHeight;
+        
+        // 实时显示排课信息
+        visualize_schedule(generation_int);
     }
 }
 
@@ -53,26 +56,39 @@ async function show_generation_course_schedule_summary_info(generation_int) {
     total_assigned_course_number_int = CurrentScheduleInfo["total_assigned_course_number"];
     unassigned_room_list = CurrentScheduleInfo["unassigned_room_list"];
     unassigned_time_list = CurrentScheduleInfo["unassigned_time_list"];
-    unassigned_teacher_list = CurrentScheduleInfo["unassigned_teacher_list"];
+    unassigned_course_dict = CurrentScheduleInfo["unassigned_course_dict"];
     unassigned_student_list = CurrentScheduleInfo["unassigned_student_list"];
     schedule_conflict_time_teacher = CurrentScheduleInfo["schedule_conflict_time_teacher"];
     schedule_conflict_time_student = CurrentScheduleInfo["schedule_conflict_time_student"];
 
-    // 调整所有教室都被安排了的字符串
-    if (unassigned_room_list =='All rooms assigned.'){
-        unassigned_room_list = '';
-    }
-
     // 创建进度显示内容
     const summary_content_div = document.createElement("div");
+    // 为进度显示内容添加样式类名
+    summary_content_div.className = "schedule_summary_div";
+
     summary_content_div.innerHTML = `<strong>当前代数:</strong>${generation_int}，<strong>适应度:</strong>${fitness_float} <br>`;
     summary_content_div.innerHTML += `<strong>总排课课程数:</strong>${total_assigned_course_number_int} <br>`;
-    summary_content_div.innerHTML += `<strong>未安排课程教室:</strong>${unassigned_room_list} <br>`;
-    summary_content_div.innerHTML += `<strong>未安排课程时间:</strong>${unassigned_time_list} <br>`;
-    summary_content_div.innerHTML += `<strong>未安排上课教师:</strong>${unassigned_teacher_list} <br>`;
-    summary_content_div.innerHTML += `<strong>未安排上课学生:</strong>${unassigned_student_list} <br>`;
-    summary_content_div.innerHTML += `<strong>上课时间冲突教师:</strong>${schedule_conflict_time_teacher} <br>`;
-    summary_content_div.innerHTML += `<strong>上课时间冲突学生:</strong>${schedule_conflict_time_student} <br>`;
+
+    summary_content_div.innerHTML += `<strong>未安排课程教室:</strong><br>`;
+    summary_content_div.innerHTML += `${unassigned_room_list} <br>`;
+
+    summary_content_div.innerHTML += `<strong>未安排课程时间:</strong><br>`;
+    summary_content_div.innerHTML += `${unassigned_time_list} <br>`;
+
+    summary_content_div.innerHTML += `<strong>未安排排课课程:</strong><br>`;
+    // 遍历字典添加数据
+    Object.entries(unassigned_course_dict).forEach(([key, value]) => {
+        summary_content_div.innerHTML += `${value} <br>`;
+    });
+
+    summary_content_div.innerHTML += `<strong>未安排上课学生:</strong><br>`;
+    summary_content_div.innerHTML += `${unassigned_student_list} <br>`;
+
+    summary_content_div.innerHTML += `<strong>上课时间冲突教师:</strong><br>`;
+    summary_content_div.innerHTML += `${schedule_conflict_time_teacher} <br>`;
+    
+    summary_content_div.innerHTML += `<strong>上课时间冲突学生:</strong><br>`;
+    summary_content_div.innerHTML += `${schedule_conflict_time_student} <br>`;
 
     // 将新的进度信息添加到排课过程显示框
     generation_schedule_summary_info_div.appendChild(summary_content_div);
@@ -84,6 +100,9 @@ async function show_course_schedule_info(generation_int) {
 
     // 显示当前代排课总览
     show_generation_course_schedule_summary_info(generation_int)
+
+    // 调用可视化函数
+    visualize_schedule(generation_int);
 
     // 显示当前代详细排课信息    
     const schedule_info_div = document.getElementById("schedule_info_div");
@@ -98,6 +117,7 @@ async function show_course_schedule_info(generation_int) {
         const end_index = start_index + show_per_page;
         
         // 创建并显示当前代数和适应度信息
+        const fitness_float = CurrentScheduleInfo["fitness_float"];
         const top_generation_info_div = document.createElement("div");
         top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float}`;
         // 将当前代数和适应度信息添加到排课信息显示框的左上角
@@ -107,7 +127,7 @@ async function show_course_schedule_info(generation_int) {
 
         // 创建表头
         const header = schedule_table.insertRow();
-        const headers = ["上课时间", "上课教室", "课程名称", "授课教师", "课程优先级", "选课学生", "上课时间冲突学生", "教师不可上课时间备注"];
+        const headers = ["上课时间", "上课教室", "课程名称", "授课教师", "课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
         headers.forEach(header_text => {
             const th = document.createElement("th");
             th.innerHTML = header_text;
@@ -128,8 +148,10 @@ async function show_course_schedule_info(generation_int) {
 
             row.insertCell(4).innerHTML = schedule_dict.priority;
             row.insertCell(5).innerHTML = schedule_dict.enrolled_student;
-            row.insertCell(6).innerHTML = schedule_dict.conflict;
-            row.insertCell(7).innerHTML = schedule_dict.availability;
+            row.insertCell(6).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+
+            row.insertCell(7).innerHTML = schedule_dict.conflict;
+            row.insertCell(8).innerHTML = schedule_dict.availability;
         });
 
         // 将排课表格添加到页面中
@@ -191,4 +213,116 @@ function show_pagination(total_items, generation_int) {
 
     // 添加分页到排课信息显示框
     schedule_info_div.appendChild(pagination_div);
+}
+
+
+// 可视化排课信息
+async function visualize_schedule(generation_int) {
+    const schedule_visualization_div = document.getElementById("schedule_visualization_div");
+    schedule_visualization_div.innerHTML = ""; // 清空现有内容
+    
+    
+    // 获取当前代数的排课信息
+    const CurrentScheduleInfo = generation_info_dict.get(generation_int);
+    if (!CurrentScheduleInfo) {
+        schedule_visualization_div.innerHTML = `<div class="schedule-header">未找到第 ${generation_int} 代的排课信息。</div>`;
+        return;
+    }
+    
+    // 创建并显示当前代数和适应度信息
+    const fitness_float = CurrentScheduleInfo["fitness_float"];
+    const visualize_top_generation_info_div = document.createElement("div");
+    visualize_top_generation_info_div.className = "visualize_top_generation_info_div";
+
+    visualize_top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float} <br>`;
+    visualize_top_generation_info_div.innerHTML += `淡蓝色:正常，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
+    // 将当前代数和适应度信息添加到排课信息显示框的左上角
+    schedule_visualization_div.appendChild(visualize_top_generation_info_div);
+
+    const assigned_schedule = Object.values(CurrentScheduleInfo['room_assigned_course_schedule_dict']);
+    const unique_rooms = [...new Set(assigned_schedule.map(s => s.room))];
+    const unique_times = [...new Set(assigned_schedule.map(s => s.time))];
+
+    unique_rooms.sort();
+    unique_times.sort();
+
+    // 创建动态网格容器
+    const gridContainer = document.createElement("div");
+    gridContainer.className = "schedule-grid";
+
+    // 设置网格布局：列数等于教室数 + 1（左侧时间列）
+    gridContainer.style.gridTemplateColumns = `repeat(${unique_rooms.length + 1}, auto)`;
+
+    // 填充横纵坐标和数据
+    gridContainer.appendChild(createHeaderCell("time/room", "schedule-header")); // 左上角标题
+    unique_rooms.forEach(room => gridContainer.appendChild(createHeaderCell(room, "schedule-header-horizontal"))); // 横坐标（教室）
+
+    unique_times.forEach(time => {
+        gridContainer.appendChild(createHeaderCell(time, "schedule-header-vertical")); // 纵坐标（时间）
+        unique_rooms.forEach(room => {
+            const cellData = assigned_schedule.find(s => s.time === time && s.room === room);
+            if (cellData) {
+                let conflicts_info_dict = {
+                    // 初始化默认值为 false
+                    teacher_is_unavailable: false,
+                    student_is_conflict: false,
+                    // teacherConflict: cellData.conflict === "teacher",
+                };
+                // 如果有冲突信息，则更新冲突状态
+                if(cellData.availability !='') {
+                    conflicts_info_dict.teacher_is_unavailable = true;
+                }
+                if(cellData.conflict !='') {
+                    conflicts_info_dict.student_is_conflict = true;
+                }
+                gridContainer.appendChild(createScheduleCell(cellData.course, cellData.teacher, conflicts_info_dict));
+            } 
+            else {
+                gridContainer.appendChild(createEmptyCell());
+            }
+        });
+    });
+
+    schedule_visualization_div.appendChild(gridContainer);
+}
+
+// 创建标题单元格（横纵坐标）
+function createHeaderCell(content, className) {
+    const headerCell = document.createElement("div");
+    headerCell.className = className;
+    headerCell.innerText = content;
+    return headerCell;
+}
+
+// 创建不同的颜色样式
+function createScheduleCell(course, teacher, conflicts_info_dict) {
+    const cell = document.createElement("div");
+    cell.className = "schedule-cell";
+
+    // 根据冲突情况动态分配样式
+    const { teacher_is_unavailable, student_is_conflict } = conflicts_info_dict;
+
+    if (teacher_is_unavailable && student_is_conflict) {
+        cell.classList.add("schedule-cell-multiple-conflicts");
+    } 
+    else if (teacher_is_unavailable) {
+        cell.classList.add("schedule-cell-unavailable");
+    } 
+    else if (student_is_conflict) {
+        cell.classList.add("schedule-cell-student-conflict");
+    } 
+    else {
+        cell.classList.add("schedule-cell-normal");
+    }
+
+    // 填充课程和教师信息
+    cell.innerHTML = `<strong>${course}</strong><br>${teacher}`;
+    return cell;
+}
+
+// 创建空单元格
+function createEmptyCell() {
+    const cell = document.createElement("div");
+    cell.className = "schedule-cell schedule-cell-empty";
+    return cell;
 }

@@ -33,6 +33,16 @@
     overflow-y: auto; /* 允许垂直滚动 */
 }
 
+/* 当前代排课总览信息显示框字符串过长自动换行 */
+.schedule_summary_div {
+    white-space: pre-wrap; /* 保留换行并自动换行 */
+    word-wrap: break-word; /* 对长单词换行 */
+    word-break: break-word; /* 防止单词超出边界 */
+    max-width: 100%; /* 可选，限制最大宽度 */
+    overflow-wrap: break-word; /* 兼容性更好的换行 */
+    margin-bottom: 10px; /* 添加间距以便多个块分隔 */
+}
+
 
 /* 排课信息显示框 */
 #schedule_info_div {
@@ -53,6 +63,147 @@
     top: -12px;
     /* font-size: 20px; */
 }
+
+/* 排课可视化div */
+#schedule_visualization_div {
+    position: relative;
+    margin-top: 10px;
+    /* border: 1px solid #ccc; */
+    width: 100%;
+    height: 500px;
+    overflow: auto;
+    /* display: flex; */
+    justify-content: center;
+    align-items: flex-start;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 说明文字设置 */
+#schedule_visualization_div p {
+    position: relative;
+    top: 40px;
+    margin-left:10px;
+    font-size: 15px; /* 设置字体大小 */
+}
+
+.visualize_top_generation_info_div{
+    position: absolute;
+    left: 5px;
+    /* background-color: #db16ec; */
+}
+
+/* 网格容器样式 */
+.schedule-grid {
+    position: absolute;
+    top: 48px;
+    display: grid;
+    width: 100%;
+    /* 网格间距 */
+    grid-gap: 2px;
+    /* background-color: #e70b0b; */
+    /* border: 1px solid #ddd; */
+    /* padding: 5px; */
+    /* border-radius: 10px; */
+}
+
+/* 横纵坐标标题样式 */
+.schedule-header {
+    font-weight: bold;
+    background-color: #004085; /* 深蓝背景 */
+    color: white;
+    text-align: center;
+    padding: 8px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* 横坐标标题样式（教室） */
+.schedule-header-horizontal {
+    background-color: #0069d9; /* 蓝色背景 */
+    font-size: 13px;
+    /* 启用弹性布局 */
+    display: flex;
+    /* 水平居中 */
+    justify-content: center;
+    /* 垂直居中 */
+    align-items: center;
+    /* padding: 6px; */
+    color: #fff;
+    border-radius: 5px;
+}
+
+/* 纵坐标标题样式（时间） */
+.schedule-header-vertical {
+    background-color: #17a2b8; /* 青色背景 */
+    font-size: 13px;
+    /* 启用弹性布局 */
+    display: flex;
+    /* 水平居中 */
+    justify-content: center;
+    /* 垂直居中 */
+    align-items: center;
+    /* padding: 6px; */
+    color: #fff;
+    border-radius: 5px;
+}
+
+/* 单元格样式 */
+.schedule-cell {
+    /* width: 120px; */
+    /* height: 50px; */
+    border: 1px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: rgba(0, 128, 255, 0.1);
+    color: #333;
+    font-size: 13px;
+    /* font-family: Arial, sans-serif; */
+    margin: 2px;
+    border-radius: 5px;
+}
+
+/* 单元格内部内容样式 */
+.schedule-cell strong {
+    /* 减少课程名与教师名之间的间距 */
+    margin-bottom: -10px;
+}
+
+/* 空单元格样式 */
+.schedule-cell-empty {
+    background-color: rgba(7, 1, 1, 0.1);
+}
+
+/* 正常课程单元格 */
+.schedule-cell-normal {
+    background-color: rgba(0, 128, 255, 0.1);
+    color: #333;
+}
+
+/* 不可上课时间的课程 */
+.schedule-cell-unavailable {
+    background-color: rgba(255, 69, 0, 0.2); /* 橙红色背景 */
+    color: #ff4500;
+    font-weight: bold;
+}
+
+/* 有学生冲突的课程 */
+.schedule-cell-student-conflict {
+    background-color: rgba(255, 215, 0, 0.2); /* 金黄色背景 */
+    color: #ffbf00;
+    font-weight: bold;
+}
+
+/* 存在多重冲突的课程 */
+.schedule-cell-multiple-conflicts {
+    background-color: rgba(123, 104, 238, 0.2); /* 紫罗兰色背景 */
+    color: #7b68ee;
+    font-weight: bold;
+}
+
 
 /* 表格样式 */
 table {

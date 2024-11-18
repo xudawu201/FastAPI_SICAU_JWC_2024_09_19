@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-11-12 10:49:26
  * @LastEditors: xudawu
- * @LastEditTime: 2024-11-15 16:31:04
+ * @LastEditTime: 2024-11-18 16:59:48
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- 验证session的js -->
-    <script src="public_static_path/js/verify_session.js"></script>
+    <!-- <script src="public_static_path/js/verify_session.js"></script> -->
     
     <!-- 页面样式css -->
     <link rel="stylesheet" href="course_schedule_static_path/css/course_schedule.css">
@@ -30,11 +30,24 @@
     <div id="generation_schedule_summary_info_div" class="show_course_schedule_div">
         <h3>当前代排课信息总览</h3>
     </div>
+    
+    <!-- 排课过程可视化 -->
+    <div id="schedule_visualization_div" class="show_course_schedule_div">
+        <h3>排课过程可视化</h3>
+        <!-- <p><strong>说明:</strong></p> -->
+        <p>1. 正常排课单元格为淡蓝色</p>
+        <p>2. 存在教师不可上课时间单元格为橙红色</p>
+        <p>3. 存在学生上课时间冲突单元格为金黄色</p>
+        <p>4. 存在以上两种冲突单元格为紫色</p>
+        
+    </div>
 
     <!-- 用于显示具体的排课信息 -->
     <div id="schedule_info_div" class="show_course_schedule_div">
         <h3>详细排课信息</h3>
     </div>
+
+
 
     <!-- 数据处理js -->
     <script src="course_schedule_static_path/js/course_schedule.js"></script>
