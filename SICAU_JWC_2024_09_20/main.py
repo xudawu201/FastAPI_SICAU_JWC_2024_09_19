@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-15 08:52:34
 LastEditors: xudawu
-LastEditTime: 2024-11-14 10:44:57
+LastEditTime: 2024-11-19 15:53:16
 '''
 # 引入文件目录设置
 # import sys
@@ -24,9 +24,9 @@ from app.course_schedule.route import route_course_schedule
 
 
 # 创建 FastAPI 应用
-app = FastAPI()
+# app = FastAPI()
 # 部署项目时关闭api文档
-# app = FastAPI(openapi_url=None)
+app = FastAPI(openapi_url=None)
 
 # 获得文件夹路径
 BASE_PATH = Path(__file__).resolve().parent

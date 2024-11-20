@@ -1,8 +1,10 @@
 /* 排课过程显示框 */
 #generation_progress_div {   
     position: relative; 
+    /* height: 200px; */
+    /* width: 750px; */
     height: 200px;
-    width: 750px;
+    width: 40%;
     margin-top: 5px;
     border: 1px solid #ddd;
     background-color: #f9f9f9;
@@ -23,10 +25,11 @@
 /* 当前代排课总览信息显示框 */
 #generation_schedule_summary_info_div {
     position: absolute;
-    left: 770px;
+    left: 40.7%;
+    margin-left: auto;
     top: 113px;
     height: 200px;
-    width: 800px;
+    width: 50%;
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -132,6 +135,9 @@
     /* padding: 6px; */
     color: #fff;
     border-radius: 5px;
+    position: sticky; /* 固定表头 */
+    top: 0; /* 固定在顶部 */
+    z-index: 1; /* 确保表头在上面 */
 }
 
 /* 纵坐标标题样式（时间） */
@@ -147,6 +153,9 @@
     /* padding: 6px; */
     color: #fff;
     border-radius: 5px;
+    position: sticky; /* 固定表头 */
+    left: 0; /* 固定在的位置 */
+    z-index: 1; /* 确保表头在上面 */
 }
 
 /* 单元格样式 */

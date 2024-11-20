@@ -2,17 +2,18 @@
 Author: xudawu
 Date: 2024-11-06 16:28:23
 LastEditors: xudawu
-LastEditTime: 2024-11-18 10:06:04
+LastEditTime: 2024-11-20 15:04:37
 '''
-# 示例字典
-data = {'a': 1, 'b': 2, 'c': 3}
+# 快速排序
+def quick_sort(arr):
+    if len(arr) < 2:
+        return arr
+    else:
+        pivot = arr[0]
+        less = [i for i in arr[1:] if i <= pivot]
+        greater = [i for i in arr[1:] if i > pivot]
+        return quick_sort(less) + [pivot] + quick_sort(greater)
+    
 
-# 删除键 'b' 并获取其值
-removed_value = data.pop('b')
-removed_value = data.pop('b')
 
-c=str(data)
-
-print(data)           # 输出: {'a': 1, 'c': 3}
-print(removed_value)  # 输出: 2
-print(c)
+print(quick_sort([10, 5, 2, 3]))

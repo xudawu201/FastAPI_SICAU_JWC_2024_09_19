@@ -13,8 +13,9 @@ body {
     position: relative;
     background-color: #4CAF50;
     /* top: -20px; */
+    /* margin: auto; */
     /* 宽度 */
-    width: 100%;
+    width: 99.5%;
     /* 高度 */
     height: 50px;
     padding-top: 1px;
@@ -27,7 +28,9 @@ body {
     /* 位置 */
     position: absolute;
     background-color: #333;
-    width: 10%; /* 侧边栏的宽度 */
+    /* 侧边栏的宽度 */
+    /* width: 10%;  */
+    width: 200px;
     /* 减去顶端横幅的高度 */
     height: calc(100% - 55px);
     /* 添加阴影效果 */

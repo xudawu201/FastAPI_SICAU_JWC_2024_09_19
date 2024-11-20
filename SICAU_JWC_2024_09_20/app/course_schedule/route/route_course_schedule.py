@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-18 16:23:20
+LastEditTime: 2024-11-19 14:38:25
 '''
 # 遗传算法随机库
 import random
@@ -394,9 +394,9 @@ def genetic_evolution(population_list,retention_number_int):
         next_generation_list.append(child1)
         next_generation_list.append(child2)
 
-    # 子代和父代有概率变异,这里的概率为50%
+    # 子代和父代有概率变异(随机变异一个基因点),这里的概率为30%
     for ChildsChedule in next_generation_list:
-        if random.random() < 0.9:
+        if random.random() < 0.3:
             ChildsChedule.mutate()
 
     return next_generation_list
@@ -420,7 +420,7 @@ async def ws_course_schedule(websocket: WebSocket):
     
     # 生成课程样本
     Course_list = []
-    teachers = [f'teacher{i}' for i in range(1, 21)]
+    teachers = [f'teacher{i}' for i in range(1, 31)]
     for i in range(1, 101):  # 生成100门课程
         unavailable_timeslots = random.sample(["time1", "time2", "time3", "time4", "time5", "time6"], random.randint(0, 2))
         Course_list.append(Course(
@@ -433,7 +433,7 @@ async def ws_course_schedule(websocket: WebSocket):
 
     # 生成时间段和教室
     # timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
-    timeslots_list = [f'time{i}' for i in range(1,7)]
+    timeslots_list = [f'time{i}' for i in range(1,8)]
     room_list = [f'Room{i}' for i in range(1, 31)]
 
     # 生成学生样本

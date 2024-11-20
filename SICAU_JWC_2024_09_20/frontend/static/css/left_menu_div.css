@@ -4,10 +4,10 @@
     position: relative;
     /* position: absolute; */
     /* 固定在页面顶部 */
-    top: -1.5%;
+    top: -10px;
     /* 固定在页面左侧 */
     left: -26%;
-    width: 200px;
+    width: 210px;
     /* 高度减去顶部边距 */
     /* height: calc(100% - 5px); */
     /* 顶部内边距 */

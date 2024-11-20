@@ -84,7 +84,7 @@ async function show_generation_course_schedule_summary_info(generation_int) {
     summary_content_div.innerHTML += `<strong>未安排上课学生:</strong><br>`;
     summary_content_div.innerHTML += `${unassigned_student_list} <br>`;
 
-    summary_content_div.innerHTML += `<strong>上课时间冲突教师:</strong><br>`;
+    summary_content_div.innerHTML += `<strong>被安排在教师不可上课时间的教师:</strong><br>`;
     summary_content_div.innerHTML += `${schedule_conflict_time_teacher} <br>`;
     
     summary_content_div.innerHTML += `<strong>上课时间冲突学生:</strong><br>`;
