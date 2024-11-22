@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-30 15:33:46
 LastEditors: xudawu
-LastEditTime: 2024-11-14 10:38:50
+LastEditTime: 2024-11-21 17:45:02
 '''
 # 设置模板目录为当前工作目录
 import random

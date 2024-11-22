@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-12 08:22:18
 LastEditors: xudawu
-LastEditTime: 2024-11-12 10:19:08
+LastEditTime: 2024-11-22 16:17:33
 '''
 from service import crud
 import passlib.context
@@ -71,6 +71,9 @@ def update_single_password(employee_no_int,password_str):
     print(f'{employee_no_int},{excute_sql_flag_str},{hashed_password_str}')
 
 if __name__ == '__main__':
+
+    # 修改所有用户密码为身份证号后六位
+    # update_all_password()
 
     # 修改徐大武密码为test
     employee_no_int = '73294'

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-08 11:23:17
 LastEditors: xudawu
-LastEditTime: 2024-10-09 08:36:36
+LastEditTime: 2024-11-20 17:35:03
 '''
 import pyodbc
 

@@ -223,7 +223,7 @@ table {
     font-size: 14px; 
 }
 
-
+/* 表头和单元格 */
 th, td {
     padding: 5px;
     border: 1px solid #ddd;
@@ -237,7 +237,7 @@ th {
     z-index: 1; /* 确保表头在上面 */
 }
 
-/* 表格行鼠标悬浮样式 */
+/* （tr）表格行鼠标悬浮样式 */
 tr:hover {
     /* 鼠标指针样式 */
     cursor: pointer;
