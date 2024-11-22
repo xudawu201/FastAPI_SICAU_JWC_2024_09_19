@@ -10,7 +10,8 @@ window.onload = async function() {
     headers: {
         'Content-Type': 'application/json'
     },
-});
+    })
+
     // 获得数据
     college_class_dict = await response.json();
 

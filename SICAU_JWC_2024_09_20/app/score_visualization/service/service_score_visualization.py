@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-21 15:35:21
 LastEditors: xudawu
-LastEditTime: 2024-11-06 08:31:38
+LastEditTime: 2024-11-22 16:35:29
 '''
 import plotly
 import copy
@@ -359,6 +359,7 @@ def get_score_by_semester(class_name_str,course_type_name):
     tag_semester_class_student_average_score_list_list = add_student_score_classify(semester_average_class_student_score_list)
     # 学生人数
     student_count_int = len(student_id_dict)
+    # print(f'学生人数：{student_count_int}')
     # 返回数据
     return tag_semester_class_student_average_score_list_list,baseline_list,student_count_int,semester_list
 

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-24 14:45:08
 LastEditors: xudawu
-LastEditTime: 2024-10-30 12:59:29
+LastEditTime: 2024-11-22 16:52:11
 '''
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
@@ -48,13 +48,22 @@ async def score_visualization_page(request: Request,college_name_str='农学院'
     # 将数据绘图为折线图
     line_chart_fig_plotly,group_line_chart_fig_plotly = service_score_visualization.show_score_line_chart_group_all(college_name_str,class_name_str,course_type_name_str,width,height,y_axis_dtick)
     
+    # print('数据处理完成')
+
     # 将班级每个人成绩图表转换为HTML
     line_chart_html = plotly.io.to_html(line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
+
+    # print('班级图表转换完成')
 
     # 将班级分组成绩图表转换为HTML
     group_line_chart_html = plotly.io.to_html(group_line_chart_fig_plotly, full_html=False, include_plotlyjs='cdn', config=config_dict)
 
+    # print('分组图表转换完成')
+
     context = {"request": request, "line_chart_html": line_chart_html,'group_line_chart_html':group_line_chart_html}
+
+    # print('返回消息设置完成')
+    
     return TemplatesJinja2ScoreVisualization.TemplateResponse("score_visualization.html", context)
 
 # 获取筛选框数据
@@ -66,8 +75,12 @@ async def filter_score(request: Request):
     #     "business": ["商科1班", "商科2班", "商科3班"]
     # }
 
+    # print('开始获取所有学院和班级')
+    
     # 获取所有学院和班级
     college_class_dict = service_filter_score_info.get_all_college_class_dict()
+
+    # print('获取所有学院和班级完成')
 
     # 返回响应
     return college_class_dict
