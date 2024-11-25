@@ -9,7 +9,7 @@
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; /* 允许垂直滚动 */
+    overflow: auto; /* 允许垂直滚动 */
 }
 
 /* 排课过程显示框中div鼠标悬浮显示 */
@@ -33,7 +33,7 @@
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; /* 允许垂直滚动 */
+    overflow: auto; /* 允许滚动 */
 }
 
 /* 当前代排课总览信息显示框字符串过长自动换行 */
@@ -56,7 +56,7 @@
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; /* 允许垂直滚动 */
+    overflow: auto; /* 允许垂直滚动 */
 }
 
 /* 内容框内的文字样式 */

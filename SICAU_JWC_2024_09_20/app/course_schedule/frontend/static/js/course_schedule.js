@@ -127,7 +127,7 @@ async function show_course_schedule_info(generation_int) {
 
         // 创建表头
         const header = schedule_table.insertRow();
-        const headers = ["上课时间", "上课教室", "课程名称", "授课教师", "课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
+        const headers = ["上课周数","上课星期","上课时间", "上课教室", "课程名称", "授课教师", "课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
         headers.forEach(header_text => {
             const th = document.createElement("th");
             th.innerHTML = header_text;
@@ -141,17 +141,20 @@ async function show_course_schedule_info(generation_int) {
         // 创建表格行，填充排课信息
         paginated_schedule.forEach(([key, schedule_dict]) => {
             const row = schedule_table.insertRow();
-            row.insertCell(0).innerHTML = schedule_dict.time;
-            row.insertCell(1).innerHTML = schedule_dict.room;
-            row.insertCell(2).innerHTML = schedule_dict.course;
-            row.insertCell(3).innerHTML = schedule_dict.teacher;
+            row.insertCell(0).innerHTML = schedule_dict.week;
+            row.insertCell(1).innerHTML = schedule_dict.day;
+            row.insertCell(2).innerHTML = schedule_dict.time;
 
-            row.insertCell(4).innerHTML = schedule_dict.priority;
-            row.insertCell(5).innerHTML = schedule_dict.enrolled_student;
-            row.insertCell(6).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+            row.insertCell(3).innerHTML = schedule_dict.room;
+            row.insertCell(4).innerHTML = schedule_dict.course;
+            row.insertCell(5).innerHTML = schedule_dict.teacher;
 
-            row.insertCell(7).innerHTML = schedule_dict.conflict;
-            row.insertCell(8).innerHTML = schedule_dict.availability;
+            row.insertCell(6).innerHTML = schedule_dict.priority;
+            row.insertCell(7).innerHTML = schedule_dict.enrolled_student;
+            row.insertCell(8).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+
+            row.insertCell(9).innerHTML = schedule_dict.conflict;
+            row.insertCell(10).innerHTML = schedule_dict.availability;
         });
 
         // 将排课表格添加到页面中
@@ -241,7 +244,9 @@ async function visualize_schedule(generation_int) {
 
     const assigned_schedule = Object.values(CurrentScheduleInfo['room_assigned_course_schedule_dict']);
     const unique_rooms = [...new Set(assigned_schedule.map(s => s.room))];
-    const unique_times = [...new Set(assigned_schedule.map(s => s.time))];
+    // const unique_times = [...new Set(assigned_schedule.map(s => s.time))];
+    // 将时间的周数、天数、时段组合成完整时间
+    const unique_times = [...new Set(assigned_schedule.map(s => `${s.week}, ${s.day}, ${s.time}`))];
 
     unique_rooms.sort();
     unique_times.sort();
@@ -260,13 +265,13 @@ async function visualize_schedule(generation_int) {
     unique_times.forEach(time => {
         gridContainer.appendChild(createHeaderCell(time, "schedule-header-vertical")); // 纵坐标（时间）
         unique_rooms.forEach(room => {
-            const cellData = assigned_schedule.find(s => s.time === time && s.room === room);
+            // const cellData = assigned_schedule.find(s => s.time === time && s.room === room);
+            const cellData = assigned_schedule.find(s => `${s.week}, ${s.day}, ${s.time}` === time && s.room === room);
             if (cellData) {
                 let conflicts_info_dict = {
                     // 初始化默认值为 false
                     teacher_is_unavailable: false,
                     student_is_conflict: false,
-                    // teacherConflict: cellData.conflict === "teacher",
                 };
                 // 如果有冲突信息，则更新冲突状态
                 if(cellData.availability !='') {

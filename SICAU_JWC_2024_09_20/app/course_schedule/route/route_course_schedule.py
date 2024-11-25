@@ -2,16 +2,16 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-22 17:01:42
+LastEditTime: 2024-11-25 17:58:22
 '''
 # 遗传算法随机库
 import random
 
 # fastapi相关
 from fastapi import APIRouter, Request,WebSocket
-# 引入模板模块
+# # 引入模板模块
 from template import TemplatesJinja2CourseSchedule
-# 引入数据库模块
+# # 引入数据库模块
 from database import database_connection
 import asyncio
 
@@ -24,16 +24,22 @@ router = APIRouter()
 is_stop_schedule = False
 
 
-
+# 课程类
 class Course:
-    def __init__(self, name_str, teacher_str, duration_float, priority_float=1, unavailable_timeslots_list=[]):
+    def __init__(self, name_str, CourseTeacher, duration_float, priority_float=1):
         self.name_str = name_str
-        self.teacher_str = teacher_str
+        self.CourseTeacher = CourseTeacher
         self.duration_float = duration_float
         self.priority_float = priority_float
-        # 不可用的时间列表
-        self.unavailable_timeslots_list = unavailable_timeslots_list if unavailable_timeslots_list else []
 
+# 教师类
+class Teacher:
+    def __init__(self, name_str,teacher_id,unavailable_timeslot_list=[]):
+        self.name_str = name_str
+        self.teacher_id = teacher_id
+        # 不可用的时间列表
+        self.unavailable_timeslot_list = unavailable_timeslot_list if unavailable_timeslot_list else []
+# 学生类
 class Student:
     def __init__(self, name_str):
         self.name_str = name_str
@@ -41,20 +47,32 @@ class Student:
         # 记录学生的上课时间段
         self.time_slots_list = []
 
+    # 选课方法
     def enroll(self, course):
         self.enrolled_courses_list.append(course)
 
+# 时间类
+class TimeSlot:
+    def __init__(self, week_time_str, day_time_str,slot_time_str):
+        # 周时间
+        self.week_time_str = week_time_str
+        # 天时间
+        self.day_time_str = day_time_str
+        # 时段时间
+        self.slot_time_str = slot_time_str
+
+# 排课类
 class Schedule:
-    def __init__(self, Course_list, timeslots_list, room_list, student_list):
+    def __init__(self, Course_list, TimeSlot_list, room_list, Student_list):
         self.Course_list = Course_list
-        self.timeslots_list = timeslots_list
+        self.TimeSlot_list = TimeSlot_list
         self.room_list = room_list
-        self.student_list = student_list
+        self.student_list = Student_list
         # 时段和教室的组合作为键，课程作为值,课程初始化为None
         self.schedule_dict = {}
-        for cur_timeslot_str in self.timeslots_list:
+        for CurTimeSlot_str in self.TimeSlot_list:
             for cur_room_str in self.room_list:
-                self.schedule_dict[(cur_timeslot_str, cur_room_str)] = None
+                self.schedule_dict[(CurTimeSlot_str, cur_room_str)] = None
 
     # 基因变异操作
     def mutate(self):
@@ -85,8 +103,8 @@ class Schedule:
                 child2_schedule_dict[schedule_key_tuple] = self.schedule_dict[schedule_key_tuple]
 
         # 初始化两个子代类的基因
-        Child1Schedule = Schedule(self.Course_list, self.timeslots_list, self.room_list, self.student_list)
-        Child2Schedule = Schedule(self.Course_list, self.timeslots_list, self.room_list, self.student_list)
+        Child1Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
+        Child2Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
         # 赋予子代基因
         Child1Schedule.schedule_dict = child1_schedule_dict
         Child2Schedule.schedule_dict = child2_schedule_dict
@@ -111,44 +129,44 @@ class Schedule:
 
         # 每个教师和课程被安排的次数初始化为0
         for CurCourse in self.Course_list:
-            teacher_assigned_dict[CurCourse.teacher_str] = 0
+            teacher_assigned_dict[CurCourse.CourseTeacher] = 0
             course_assigned_dict[CurCourse.name_str] = 0
         
-        for (cur_timeslot_str, cur_room_str), CurCourse in self.schedule_dict.items():
+        for (CurTimeSlot, cur_room_str), CurCourse in self.schedule_dict.items():
             # 如果当前时段有课程安排,则进行判断
             if CurCourse is not None:
                 # 同一课程同一时间不能安排在多个教室,同一时间同一课程名代表有冲突
                 # 在安排中则代表有冲突
-                if (cur_timeslot_str, CurCourse.name_str) in course_time_dict:
+                if (CurTimeSlot, CurCourse.name_str) in course_time_dict:
                     fitness_float -= 6
                 else:
                     # 没有在安排表中，记录此次安排
-                    course_time_dict[(cur_timeslot_str, CurCourse.name_str)] = cur_room_str
+                    course_time_dict[(CurTimeSlot, CurCourse.name_str)] = cur_room_str
                     # 安排此课,适应度分值加上优先级分值
                     fitness_float += CurCourse.priority_float
                     # 统计教师被安排的次数
-                    teacher_assigned_dict[CurCourse.teacher_str] += 1
+                    teacher_assigned_dict[CurCourse.CourseTeacher] += 1
                     course_assigned_dict[CurCourse.name_str] +=1 
 
                     # 学生不能同时上两门及以上课程,进行冲突检测
                     for CurStudent in self.student_list:
                         if CurCourse in CurStudent.enrolled_courses_list:
-                            if cur_timeslot_str in CurStudent.time_slots_list:
+                            if CurTimeSlot in CurStudent.time_slots_list:
                                 # 有冲突大幅降低适应度
                                 fitness_float -= 6
                                 # 记录冲突信息
-                                self.conflict_info_list.append((CurStudent.name_str, CurCourse.name_str, cur_timeslot_str))
+                                self.conflict_info_list.append((CurStudent.name_str, CurCourse.name_str, CurTimeSlot))
                             
                             # 更新学生的时间段表,增加此上课时间到学生的上课时间表中
                             else:
-                                CurStudent.time_slots_list.append(cur_timeslot_str)
+                                CurStudent.time_slots_list.append(CurTimeSlot)
 
                 # 如果此门课程的安排时间在教师不可以上课的时间列表中，适应度大幅降低
-                if cur_timeslot_str in CurCourse.unavailable_timeslots_list:
+                if CurTimeSlot in CurCourse.CourseTeacher.unavailable_timeslot_list:
                     fitness_float -= 6
 
         # 教师排课均衡性评分
-        for course_teacher_name_str, teacher_assigned_count in teacher_assigned_dict.items():
+        for CourseTeacher, teacher_assigned_count in teacher_assigned_dict.items():
             # 教师没有被分配到课程
             if teacher_assigned_count == 0:
                 fitness_float -= 2
@@ -174,22 +192,6 @@ class Schedule:
         # 返回适应度
         return fitness_float
 
-    # 列表去重并拼接
-    def list_remove_duplicate_joint(self, cur_list):
-        # 用集合去重
-        cur_set=set(cur_list)
-        # 再转为列表
-        unique_list=list(cur_set)
-
-        # 列表拼接为字符串
-        unique_list_str=''
-        for cur_item in unique_list:
-            unique_list_str+=str(cur_item)
-            unique_list_str+=','
-        
-        # 返回列表拼接后的字符串
-        return unique_list_str
-        
 
     def display(self):
 
@@ -207,7 +209,7 @@ class Schedule:
 
         # 添加未安排的课程信息
         for CurCourse in self.Course_list:
-            cur_course_str = f'course_name:{CurCourse.name_str},teacher_name:{CurCourse.teacher_str},priority:{CurCourse.priority_float},unavailable_timeslots:{CurCourse.unavailable_timeslots_list}'
+            cur_course_str = f'course_name:{CurCourse.name_str},teacher_name:{CurCourse.CourseTeacher.name_str},priority:{CurCourse.priority_float},unavailable_timeslots:{CurCourse.CourseTeacher.unavailable_timeslot_list}'
             # 添加字典数据
             unassigned_Course_dict[CurCourse.name_str]=cur_course_str
 
@@ -236,7 +238,7 @@ class Schedule:
         schedule_conflict_time_teachers_list = []
         # 初始化上课时间冲突学生列表
         schedule_conflict_time_student_list = []
-        for (cur_timeslot_str, cur_room_str), CurCourse in self.schedule_dict.items():
+        for (CurTimeSlot, cur_room_str), CurCourse in self.schedule_dict.items():
             # 初始化当前排课信息
             room_course_schedule_str=''
             # 如果课程为非空,则打印课程信息
@@ -255,25 +257,33 @@ class Schedule:
                 # 初始化教师不可上课信息
                 availability_str = ''
                 # 检查教师是否在不可上课时间
-                if cur_timeslot_str in CurCourse.unavailable_timeslots_list:
+                if CurTimeSlot in CurCourse.CourseTeacher.unavailable_timeslot_list:
                     availability_str = "teacher unavailable during this time"
                     # 添加教师上课时间冲突表
-                    schedule_conflict_time_teachers_list.append(CurCourse.teacher_str)
+                    schedule_conflict_time_teachers_list.append(CurCourse.CourseTeacher.name_str)
 
 
                 # 初始化学生上课时间冲突信息
                 conflict_str = ""
                 for conflict_info_tuple in self.conflict_info_list:
-                    if conflict_info_tuple[1] == CurCourse.name_str and conflict_info_tuple[2] == cur_timeslot_str:
+                    if conflict_info_tuple[1] == CurCourse.name_str and conflict_info_tuple[2] == CurTimeSlot:
                         conflict_str = f"{conflict_info_tuple[0]}"
 
                         # 添加学生上课时间冲突表
                         schedule_conflict_time_student_list.append(conflict_info_tuple[0])
-
+                
                 # 排课时间、教师、课程名、授课教师、课程优先级、选课学生、冲突信息、是否处于教师不可上课时间、不可上课信息
-                # room_course_schedule_str = f"{cur_timeslot_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.teacher_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str}{conflict_str}{availability_str}"
+                # room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.CourseTeacher.name_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str} | student_conflict:{conflict_str} | teacher_availability:{availability_str}"
+                
+                # 初始化处理教师不可上课时间为列表
+                teatcher_unavailable_timeslot_list=[]
+                if CurCourse.CourseTeacher.unavailable_timeslot_list != []:
+                    for ThisCurTimeSlot in CurCourse.CourseTeacher.unavailable_timeslot_list:
+                        this_cur_time_slot_list=[f'week:{ThisCurTimeSlot.week_time_str},day:{ThisCurTimeSlot.day_time_str},time:{ThisCurTimeSlot.slot_time_str}']
+                        teatcher_unavailable_timeslot_list.append(this_cur_time_slot_list)
+
                 # 添加到字典中,使用排课安排索引作为键,值为排课信息
-                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={"time":cur_timeslot_str,"room":cur_room_str,"course":CurCourse.name_str,"teacher":CurCourse.teacher_str,"priority":CurCourse.priority_float,"enrolled_student":enrolled_course_student_str,"conflict":conflict_str,"availability":availability_str,'unavailable_timeslots_teacher':CurCourse.unavailable_timeslots_list}
+                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={'week':CurTimeSlot.week_time_str,'day':CurTimeSlot.day_time_str,"time":CurTimeSlot.slot_time_str,"room":cur_room_str,"course":CurCourse.name_str,"teacher":CurCourse.CourseTeacher.name_str,"priority":CurCourse.priority_float,"enrolled_student":enrolled_course_student_str,"conflict":conflict_str,"availability":availability_str,'unavailable_timeslots_teacher':teatcher_unavailable_timeslot_list}
 
                 # 从未安排列表中移除教师和教室
                 # unassigned_teachers.discard(CurCourse.teacher_str)
@@ -287,9 +297,9 @@ class Schedule:
 
             else:
                 # 未安排教室和时间段
-                unassigned_time_list.append(cur_timeslot_str)
-                # room_course_schedule_str = f"{cur_timeslot_str} in {cur_room_str}: Free"
-                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={"time":cur_timeslot_str,"room":cur_room_str,"course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',"availability":''}
+                unassigned_time_list.append(CurTimeSlot)
+                # room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: Free"
+                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={'week':CurTimeSlot.week_time_str,'day':CurTimeSlot.day_time_str,"time":CurTimeSlot.slot_time_str,"room":cur_room_str,"course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',"availability":'','unavailable_timeslots_teacher':[]}
             
             # 更新排课安排索引
             schedule_index_int += 1
@@ -297,14 +307,13 @@ class Schedule:
             # print(room_course_schedule_str)
         
         # 打印上课时间冲突的教师
-        # conflict_teacher_str = "" + ", ".join(schedule_conflict_time_teachers_list)
-        # print(conflict_teacher_str)
         # 获得去重的字符串
-        unique_conflict_time_teachers_list_str =self.list_remove_duplicate_joint(schedule_conflict_time_teachers_list)
+        unique_conflict_time_teachers_list_str =list_remove_duplicate_joint(schedule_conflict_time_teachers_list)
         if unique_conflict_time_teachers_list_str == '':
             unique_conflict_time_teachers_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_teacher"]=unique_conflict_time_teachers_list_str
+        # print('unique_conflict_time_teachers_list_str:',unique_conflict_time_teachers_list_str)
 
         # 未安排的排课课程添加到字典中
         # 如果全部排课完成,则为空字典
@@ -314,23 +323,23 @@ class Schedule:
         current_generation_info_dict["unassigned_course_dict"]=unassigned_Course_dict
 
         # 打印上课时间冲突的学生
-        # conflict_student_str = "" + ", ".join(schedule_conflict_time_student_list)
-        # print(conflict_student_str)
         # 获得去重的字符串
-        unique_conflict_time_student_list_str =self.list_remove_duplicate_joint(schedule_conflict_time_student_list)
+        unique_conflict_time_student_list_str =list_remove_duplicate_joint(schedule_conflict_time_student_list)
         if unique_conflict_time_student_list_str == '':
             unique_conflict_time_student_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_student"]=unique_conflict_time_student_list_str
+        # print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
 
         # 打印未安排的时间段
         # unassigned_time_str = "" + ", ".join(unassigned_time_list)
         # print(unassigned_time_str)
-        unique_unassigned_time_list_str =self.list_remove_duplicate_joint(unassigned_time_list)
+        unique_unassigned_time_list_str =list_remove_duplicate_joint(unassigned_time_list)
         if unique_unassigned_time_list_str == '':
             unique_unassigned_time_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_time_list"]=unique_unassigned_time_list_str
+        # print('unique_unassigned_time_list_str:',unique_unassigned_time_list_str)
 
         if unassigned_rooms:
             unassigned_room_str = "Unassigned Rooms: " + ", ".join(unassigned_rooms)
@@ -338,7 +347,7 @@ class Schedule:
             unassigned_room_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_room_list"]=unassigned_room_str
-        # print(unassigned_room_str)
+        # print('unassigned_room_str:',unassigned_room_str)
 
         # 未安排学生
         if unassigned_students:
@@ -347,59 +356,73 @@ class Schedule:
             unassigned_student_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_student_list"]=unassigned_student_str
-        # print(unassigned_student_str)
+        # print('unassigned_student_str:',unassigned_student_str)
 
         return current_generation_info_dict
 
+# 列表去重并拼接
+def list_remove_duplicate_joint(cur_list):
+    # 用集合去重
+    cur_set=set(cur_list)
+    # 再转为列表
+    unique_list=list(cur_set)
+
+    # 列表拼接为字符串
+    unique_list_str=''
+    for cur_item in unique_list:
+        unique_list_str+=str(cur_item)
+        unique_list_str+=','
         
+    # 返回列表拼接后的字符串
+    return unique_list_str
 
 # 初始化种群
-def initialize_population(Course_list, timeslots_list, room_list, student_list, population_size=100):
+def initialize_population(Course_list, TimeSlot_list, room_list, Student_list, population_size=100):
     # 种群列表初始化
-    population_list = []
+    Population_list = []
     for _ in range(population_size):
         # 实例化一个个体
-        SingleSchedule = Schedule(Course_list, timeslots_list, room_list, student_list)
+        SingleSchedule = Schedule(Course_list, TimeSlot_list, room_list, Student_list)
         # 对个体的基因进行随机初始化
         for schedule_key_tuple in SingleSchedule.schedule_dict.keys():
-             # 随机一个基因(对时间段和教室的组合随机选择一门课)
+            # 随机一个基因(对时间段和教室的组合随机选择一门课)
             SingleSchedule.schedule_dict[schedule_key_tuple] = random.choice(Course_list)
 
         # 将初始化后的个体加入种群列表
-        population_list.append(SingleSchedule)
+        Population_list.append(SingleSchedule)
 
     # 返回初始化的种群列表
-    return population_list
+    return Population_list
 
 # 交叉和变异获得下一代种群
-def genetic_evolution(population_list,retention_number_int):
+def genetic_evolution(Population_list,retention_number_int):
     
     # 计算适应度,并对种群列表进行倒序排序
-    population_list.sort(key=lambda x: x.fitness(), reverse=True)
+    Population_list.sort(key=lambda x: x.fitness(), reverse=True)
 
     # 初始化下一代个体列表
-    next_generation_list = []
+    NextGeneration_list = []
     # 保留最优的部分个体
     for i in range(retention_number_int):
-        next_generation_list.append(population_list[i])
+        NextGeneration_list.append(Population_list[i])
 
     # 选择和交叉,直到达到种群大小
-    while len(next_generation_list) < len(population_list):
+    while len(NextGeneration_list) < len(Population_list):
         # 随机在适应度最高的部分中选择父母
-        parent1 = random.choice(population_list[:10])
-        parent2 = random.choice(population_list[:10])
+        Parent1 = random.choice(Population_list[:10])
+        Parent2 = random.choice(Population_list[:10])
         # 对父母基因进行交叉,得到两个子代
-        child1, child2 = parent1.crossover(parent2)
+        Child1, Child2 = Parent1.crossover(Parent2)
         # 将两个子代加入下一代个体列表
-        next_generation_list.append(child1)
-        next_generation_list.append(child2)
+        NextGeneration_list.append(Child1)
+        NextGeneration_list.append(Child2)
 
     # 子代和父代有概率变异(随机变异一个基因点),这里的概率为30%
-    for ChildsChedule in next_generation_list:
+    for ChildsChedule in NextGeneration_list:
         if random.random() < 0.3:
             ChildsChedule.mutate()
 
-    return next_generation_list
+    return NextGeneration_list
 
 # 渲染前端页面的路由
 @router.get("/course_schedule")
@@ -410,38 +433,49 @@ async def course_schedule(request: Request):
 @router.websocket("/ws_course_schedule")
 async def ws_course_schedule(websocket: WebSocket):
   
-    # 示例课程（课程名、任课教师、课时长(单位小时)、优先级(数字越高优先级越高)、不可上课时间）
-    # course_list = [
-    #     Course(
-    #         name_str="class1", teacher_str='teacher1', duration_float=1, 
-    #         priority_float=1, unavailable_timeslots_list=["time2", "time4"]
-    #         ),
-    # ]
+    # 定义周、天和时间段
+    week_range = range(1, 3)
+    day_range = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday','saturday','sunday']  # 一周工作日
+    slot_time_range = range(1, 4)
+    # 初始化列表
+    TimeSlot_list = []
+
+    # 生成时间段
+    for week in week_range:
+        for day in day_range:
+            for slot_time in slot_time_range:
+                timeslot = TimeSlot(week, day, slot_time)
+                TimeSlot_list.append(timeslot)
+
+    # 初始化教室
+    room_list = [f'Room{i}' for i in range(1, 21)]
     
+    # 生成教师样本
+    Teacher_list = []
+    for i in range(1, 15):
+        # 随机采样不可上课时间,返回列表
+        unavailable_timeslot_list = random.sample(TimeSlot_list, random.randint(0, 2))
+        # 教师姓名、id、不可上课时间列表
+        teacher = Teacher(f'teacher{i}',i,unavailable_timeslot_list)
+        Teacher_list.append(teacher)
+
     # 生成课程样本
     Course_list = []
-    teachers = [f'teacher{i}' for i in range(1, 31)]
-    for i in range(1, 101):  # 生成100门课程
-        unavailable_timeslots = random.sample(["time1", "time2", "time3", "time4", "time5", "time6"], random.randint(0, 2))
+    for i in range(1, 51):  # 生成100门课程
+        # 随机采样不可上课时间,返回列表
         Course_list.append(Course(
             name_str=f'class{i}',
-            teacher_str=random.choice(teachers),
+            CourseTeacher=random.choice(Teacher_list),
             duration_float=random.uniform(1, 3),  # 课时长为1到3小时
             priority_float=random.randint(1, 3),  # 优先级为1到3
-            unavailable_timeslots_list=unavailable_timeslots
         ))
-
-    # 生成时间段和教室
-    # timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
-    timeslots_list = [f'time{i}' for i in range(1,8)]
-    room_list = [f'Room{i}' for i in range(1, 31)]
-
+    
     # 生成学生样本
-    student_list = [Student(f'student{i}') for i in range(1, 101)]  # 生成100个学生
+    Student_list = [Student(f'student{i}') for i in range(1, 51)]
 
     # 学生选课
-    for student in student_list:
-        courses_to_enroll = random.sample(Course_list, random.randint(1, 5))  # 随机选择1到5门课程
+    for student in Student_list:
+        courses_to_enroll = random.sample(Course_list, random.randint(1, 3))  # 随机选择1到5门课程
         for course in courses_to_enroll:
             student.enroll(course)
 
@@ -453,7 +487,7 @@ async def ws_course_schedule(websocket: WebSocket):
     retention_number_int=5
 
     # 获得初始化的种群
-    PopulationList = initialize_population(Course_list, timeslots_list, room_list, student_list, population_size_int)
+    PopulationList = initialize_population(Course_list, TimeSlot_list, room_list, Student_list, population_size_int)
 
     # 初始化进化次数
     generation_int = 0
@@ -497,38 +531,62 @@ async def ws_course_schedule(websocket: WebSocket):
     # best_schedule.display()
 
 if __name__ == "__main__":
-    # 示例课程（课程名、任课教师、课时长(单位小时)、优先级(数字越高优先级越高)、不可上课时间）
-    Course_list = [
-        Course(
-            name_str="class1", teacher_str='teacher1', duration_float=1, 
-            priority_float=1, unavailable_timeslots_list=["time2", "time4"]
-            ),
-    ]
+    # 定义周、天和时间段
+    week_range = range(1, 2)
+    day_range = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday','saturday','sunday']  # 一周工作日
+    slot_time_range = range(1, 3)
+    # 初始化列表
+    TimeSlot_list = []
+
+    # 生成时间段
+    for week in week_range:
+        for day in day_range:
+            for slot_time in slot_time_range:
+                timeslot = TimeSlot(week, day, slot_time)
+                TimeSlot_list.append(timeslot)
+
+    # 初始化教室
+    room_list = [f'Room{i}' for i in range(1, 3)]
     
+    # 示例课程（课程名、任课教师、课时长(单位小时)、优先级(数字越高优先级越高)、不可上课时间）
+    # Course_list = [
+    #     Course(
+    #         name_str="class1", teacher_str='teacher1', duration_float=1, 
+    #         priority_float=1, unavailable_timeslots_list=["time2", "time4"]
+    #         ),
+    # ]
+    
+    # 生成教师样本
+    # teachers = [f'teacher{i}' for i in range(1, 15)]
+    Teacher_list = []
+    for i in range(1, 15):
+        # 随机采样不可上课时间,返回列表
+        unavailable_timeslot_list = random.sample(TimeSlot_list, random.randint(0, 2))
+        # 教师姓名、id、不可上课时间列表
+        teacher = Teacher(f'teacher{i}',i,unavailable_timeslot_list)
+        Teacher_list.append(teacher)
+
     # 生成课程样本
     Course_list = []
-    teachers = [f'teacher{i}' for i in range(1, 21)]
-    for i in range(1, 101):  # 生成100门课程
-        unavailable_timeslots = random.sample(["time1", "time2", "time3", "time4", "time5", "time6"], random.randint(0, 2))
+    for i in range(1, 21):  # 生成100门课程
+        # 随机采样不可上课时间,返回列表
         Course_list.append(Course(
             name_str=f'class{i}',
-            teacher_str=random.choice(teachers),
+            CourseTeacher=random.choice(Teacher_list),
             duration_float=random.uniform(1, 3),  # 课时长为1到3小时
             priority_float=random.randint(1, 3),  # 优先级为1到3
-            unavailable_timeslots_list=unavailable_timeslots
         ))
 
     # 生成时间段和教室
-    timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
-    timeslots_list = [f'time{i}' for i in range(1,7)]
-    room_list = [f'Room{i}' for i in range(1, 31)]
-
+    # timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
+    timeslot_list = [f'time{i}' for i in range(1,7)]
+    
     # 生成学生样本
-    student_list = [Student(f'student{i}') for i in range(1, 101)]  # 生成100个学生
+    Student_list = [Student(f'student{i}') for i in range(1, 31)]
 
     # 学生选课
-    for student in student_list:
-        courses_to_enroll = random.sample(Course_list, random.randint(1, 5))  # 随机选择1到5门课程
+    for student in Student_list:
+        courses_to_enroll = random.sample(Course_list, random.randint(1, 3))  # 随机选择1到5门课程
         for course in courses_to_enroll:
             student.enroll(course)
 
@@ -540,16 +598,16 @@ if __name__ == "__main__":
     retention_number_int=5
 
     # 获得初始化的种群
-    population_list = initialize_population(Course_list, timeslots_list, room_list, student_list, population_size_int)
+    PopulationList = initialize_population(Course_list, TimeSlot_list, room_list, Student_list, population_size_int)
 
     # 初始化进化次数
     generation_int = 0
     while True:
         # 交叉和变异获得下一代种群
-        population_list = genetic_evolution(population_list,retention_number_int)
+        PopulationList = genetic_evolution(PopulationList,retention_number_int)
 
         # 获取最优个体
-        best_schedule = max(population_list, key=lambda x: x.fitness())
+        best_schedule = max(PopulationList, key=lambda x: x.fitness())
         best_fitness_float = best_schedule.fitness()
 
         # 打印当前代的最优适应度
@@ -564,7 +622,3 @@ if __name__ == "__main__":
 
     print(f"best_fitness_float:{best_fitness_float},Final Best Schedule:")
     best_schedule.display()
-
-    # import uvicorn
-    # uvicorn.run(app="route_course_schedule:app", host="0.0.0.0", port=8000, reload=True)
-
