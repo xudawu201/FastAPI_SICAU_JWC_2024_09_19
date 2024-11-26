@@ -2,20 +2,20 @@
 Author: xudawu
 Date: 2024-10-15 10:14:52
 LastEditors: xudawu
-LastEditTime: 2024-11-26 08:50:06
+LastEditTime: 2024-11-26 09:11:26
 '''
 import pyodbc
 
 # DRIVER:驱动名称,SERVER:服务器url,DATABASE:数据库名称,UID:用户名,PWD:密码,Encrypt=no不使用加密连接
 # database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=localhost;DATABASE=SICAU_JWC;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no;TrustServerCertificate=yes'
 # 使用sqlserver本地调试数据库
-# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=127.0.0.1;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no'
+database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=127.0.0.1;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no'
 
 # 使用sqlserver容器部署数据库
 # database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=172.18.0.1;PORT=1433;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no'
 
 # 使用信教中心sqlserver容器部署数据库
-database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=10.99.84.138;PORT=32120;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no'
+# database_url = 'DRIVER={ODBC Driver 18 for SQL Server};SERVER=10.99.84.138;PORT=32120;DATABASE=jxgl_all;UID=sa;PWD=sicau_jwc_sqlserver123;Encrypt=no'
 
 # 使用postgres本地调试数据库
 # database_url = 'DRIVER={PostgreSQL Unicode(x64)};SERVER=localhost;PORT=5432;DATABASE=SICAU_JWC;UID=postgres;PWD=docker_postgres;'

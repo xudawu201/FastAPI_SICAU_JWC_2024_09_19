@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-25 17:58:22
+LastEditTime: 2024-11-26 16:01:52
 '''
 # 遗传算法随机库
 import random
@@ -10,9 +10,9 @@ import random
 # fastapi相关
 from fastapi import APIRouter, Request,WebSocket
 # # 引入模板模块
-from template import TemplatesJinja2CourseSchedule
+# from template import TemplatesJinja2CourseSchedule
 # # 引入数据库模块
-from database import database_connection
+# from database import database_connection
 import asyncio
 
 
@@ -273,7 +273,7 @@ class Schedule:
                         schedule_conflict_time_student_list.append(conflict_info_tuple[0])
                 
                 # 排课时间、教师、课程名、授课教师、课程优先级、选课学生、冲突信息、是否处于教师不可上课时间、不可上课信息
-                # room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.CourseTeacher.name_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str} | student_conflict:{conflict_str} | teacher_availability:{availability_str}"
+                room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: {CurCourse.name_str} by {CurCourse.CourseTeacher.name_str} (Priority: {CurCourse.priority_float}) | Enrolled: {enrolled_course_student_str} | student_conflict:{conflict_str} | teacher_availability:{availability_str}"
                 
                 # 初始化处理教师不可上课时间为列表
                 teatcher_unavailable_timeslot_list=[]
@@ -298,13 +298,13 @@ class Schedule:
             else:
                 # 未安排教室和时间段
                 unassigned_time_list.append(CurTimeSlot)
-                # room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: Free"
+                room_course_schedule_str = f"week:{CurTimeSlot.week_time_str},day:{CurTimeSlot.day_time_str},time:{CurTimeSlot.slot_time_str} in {cur_room_str}: Free"
                 current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={'week':CurTimeSlot.week_time_str,'day':CurTimeSlot.day_time_str,"time":CurTimeSlot.slot_time_str,"room":cur_room_str,"course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',"availability":'','unavailable_timeslots_teacher':[]}
             
             # 更新排课安排索引
             schedule_index_int += 1
             # 打印排课信息
-            # print(room_course_schedule_str)
+            print(room_course_schedule_str)
         
         # 打印上课时间冲突的教师
         # 获得去重的字符串
@@ -313,7 +313,7 @@ class Schedule:
             unique_conflict_time_teachers_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_teacher"]=unique_conflict_time_teachers_list_str
-        # print('unique_conflict_time_teachers_list_str:',unique_conflict_time_teachers_list_str)
+        print('unique_conflict_time_teachers_list_str:',unique_conflict_time_teachers_list_str)
 
         # 未安排的排课课程添加到字典中
         # 如果全部排课完成,则为空字典
@@ -329,17 +329,15 @@ class Schedule:
             unique_conflict_time_student_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_student"]=unique_conflict_time_student_list_str
-        # print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
+        print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
 
         # 打印未安排的时间段
-        # unassigned_time_str = "" + ", ".join(unassigned_time_list)
-        # print(unassigned_time_str)
         unique_unassigned_time_list_str =list_remove_duplicate_joint(unassigned_time_list)
         if unique_unassigned_time_list_str == '':
             unique_unassigned_time_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_time_list"]=unique_unassigned_time_list_str
-        # print('unique_unassigned_time_list_str:',unique_unassigned_time_list_str)
+        print('unique_unassigned_time_list_str:',unique_unassigned_time_list_str)
 
         if unassigned_rooms:
             unassigned_room_str = "Unassigned Rooms: " + ", ".join(unassigned_rooms)
@@ -347,7 +345,7 @@ class Schedule:
             unassigned_room_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_room_list"]=unassigned_room_str
-        # print('unassigned_room_str:',unassigned_room_str)
+        print('unassigned_room_str:',unassigned_room_str)
 
         # 未安排学生
         if unassigned_students:
@@ -356,7 +354,7 @@ class Schedule:
             unassigned_student_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_student_list"]=unassigned_student_str
-        # print('unassigned_student_str:',unassigned_student_str)
+        print('unassigned_student_str:',unassigned_student_str)
 
         return current_generation_info_dict
 
@@ -435,8 +433,8 @@ async def ws_course_schedule(websocket: WebSocket):
   
     # 定义周、天和时间段
     week_range = range(1, 3)
-    day_range = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday','saturday','sunday']  # 一周工作日
-    slot_time_range = range(1, 4)
+    day_range = ['星期1', '星期2', '星期3', '星期4', '星期5','星期6','星期7']
+    slot_time_range =['第1讲','第2讲','第3讲','第4讲','第5讲']
     # 初始化列表
     TimeSlot_list = []
 
@@ -530,11 +528,8 @@ async def ws_course_schedule(websocket: WebSocket):
     # await websocket.send_json({"generation": generation_int,"best_fitness":best_fitness_float})
     # best_schedule.display()
 
-if __name__ == "__main__":
-    # 定义周、天和时间段
-    week_range = range(1, 2)
-    day_range = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday','saturday','sunday']  # 一周工作日
-    slot_time_range = range(1, 3)
+# 上课时间初始化
+def initialize_time(week_range, day_range, slot_time_range):
     # 初始化列表
     TimeSlot_list = []
 
@@ -544,6 +539,20 @@ if __name__ == "__main__":
             for slot_time in slot_time_range:
                 timeslot = TimeSlot(week, day, slot_time)
                 TimeSlot_list.append(timeslot)
+
+    return TimeSlot_list
+
+
+if __name__ == "__main__":
+
+    # 定义周、天和时间段
+    week_range = range(1, 3)
+    # day_range = ['星期1', '星期2', '星期3', '星期4', '星期5','星期6','星期7']
+    day_range = ['星期1', '星期2']
+    # slot_time_range =['第1讲','第2讲','第3讲','第4讲','第5讲']
+    slot_time_range =['第1讲','第2讲']
+    # 初始化上课时间列表
+    TimeSlot_list = initialize_time(week_range,day_range,slot_time_range)
 
     # 初始化教室
     room_list = [f'Room{i}' for i in range(1, 3)]
