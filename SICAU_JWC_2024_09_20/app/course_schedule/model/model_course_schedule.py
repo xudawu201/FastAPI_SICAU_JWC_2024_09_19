@@ -2,15 +2,51 @@
 Author: xudawu
 Date: 2024-11-26 15:05:03
 LastEditors: xudawu
-LastEditTime: 2024-11-26 17:17:13
+LastEditTime: 2024-11-27 15:33:31
 '''
 # 课程类
 class Course:
-    def __init__(self, name_str, CourseTeacher, duration_float, priority_float=1):
+    def __init__(self, id_int,course_id,name_str, week_study_hour, theoretical_study_hour,experimental_study_hour,total_study_hour,
+                 self_study_hour,CourseTeacher_list,schedule_course_type_str,course_type_str,course_system_str,
+                 theoretical_selectable_student_num_int,selected_student_num_int,room_type_str,campus_area_str,
+                 teaching_class_id_int,teacher_study_hour_list,
+                 ):
+        self.id_int = id_int
+        # 课程编号
+        self.course_id = course_id
         self.name_str = name_str
-        self.CourseTeacher = CourseTeacher
-        self.duration_float = duration_float
-        self.priority_float = priority_float
+        # 周学时
+        self.week_study_hour = week_study_hour
+        # 理论课总学时
+        self.theoretical_study_hour = theoretical_study_hour
+        # 实验课总学时
+        self.experimental_study_hour = experimental_study_hour
+        # 总学时
+        self.total_study_hour = total_study_hour
+        # 自修(自学)学时
+        self.self_study_hour = self_study_hour
+        self.CourseTeacher_list = CourseTeacher_list
+        # 排课类别
+        self.schedule_course_type_str = schedule_course_type_str
+        # 课程性质
+        self.course_type_str = course_type_str
+        # 数据库列名为课程体系，内容如慕课、通识必修、专业方向课
+        self.course_system_str = course_system_str
+        # 理论可选学生人数
+        self.theoretical_selectable_student_num_int = theoretical_selectable_student_num_int
+        # 已选学生人数
+        self.selected_student_num_int = selected_student_num_int
+        # 教室类别
+        self.room_type_str = room_type_str
+        # 校区
+        self.campus_area_str = campus_area_str
+        # 教学班编号
+        self.teaching_class_id_int = teaching_class_id_int
+        # 教师学时列表
+        self.teacher_study_hour_list = teacher_study_hour_list
+        
+
+
 
 # 教师类
 class Teacher:
@@ -44,7 +80,7 @@ class TimeSlot:
 
 # 教室类
 class Room:
-    def __init__(self, room_id_int,teaching_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int):
+    def __init__(self, room_id_int,teaching_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int,):
         self.id_int = room_id_int
         # 教学区
         self.teaching_area_str = teaching_area_str

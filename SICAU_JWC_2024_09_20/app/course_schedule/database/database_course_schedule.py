@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-23 16:08:45
 LastEditors: xudawu
-LastEditTime: 2024-11-26 17:36:09
+LastEditTime: 2024-11-27 15:49:58
 '''
 # from database import database_connection
 
@@ -33,9 +33,12 @@ if __name__ == '__main__':
     table_name_str = "开课任务"
     select_column_name_str='学期'
     semeste_name_str = "2024-2025-1"
-    schedule_course_type_str = '混教'
+    column_name_str = '实验室'
     # 构造sql语句
-    select_sql_str =f"select * from {table_name_str} where {select_column_name_str} = '{semeste_name_str}' and 排课类别 = '{schedule_course_type_str}'"
+    select_sql_str =f"""
+    select * from {table_name_str} 
+    where {select_column_name_str} = '{semeste_name_str}' and 教室类别 = '{column_name_str}'
+    """
     excute_sql_flag_str,excute_count_int,rows = select_table_data_database(select_sql_str)
 
     print("执行结果：",excute_sql_flag_str)
