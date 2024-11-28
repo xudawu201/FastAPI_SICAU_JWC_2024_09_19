@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:05:03
 LastEditors: xudawu
-LastEditTime: 2024-11-27 15:33:31
+LastEditTime: 2024-11-28 10:47:41
 '''
 # 课程类
 class Course:
@@ -45,9 +45,6 @@ class Course:
         # 教师学时列表
         self.teacher_study_hour_list = teacher_study_hour_list
         
-
-
-
 # 教师类
 class Teacher:
     def __init__(self, name_str,id_int,unavailable_timeslot_list=[]):
@@ -57,15 +54,31 @@ class Teacher:
         self.unavailable_timeslot_list = unavailable_timeslot_list if unavailable_timeslot_list else []
 # 学生类
 class Student:
-    def __init__(self, name_str):
+    def __init__(self, id_int,student_id_str,name_str,campus_area_str,enroll_campus_area_str,semester_str,
+                 new_class_str,new_major_str,new_grade_str,EnrolledCoursesList=[],TimeSlotList=[]):
+        self.id_int = id_int
+        self.student_id_str = student_id_str
         self.name_str = name_str
-        self.enrolled_courses_list = []
+        # 新校区
+        self.campus_area_str = campus_area_str
+        # 选课校区
+        self.enroll_campus_area_str = enroll_campus_area_str
+        # 学期
+        self.semester_str = semester_str
+        # 新班级
+        self.new_class_str = new_class_str
+        # 新专业
+        self.new_major_str = new_major_str
+        # 新年级
+        self.new_grade_str = new_grade_str
+        # 记录学生的选课列表
+        self.EnrolledCoursesList = EnrolledCoursesList
         # 记录学生的上课时间段
-        self.time_slots_list = []
+        self.TimeSlotList = TimeSlotList
 
     # 选课方法
-    def enroll(self, course):
-        self.enrolled_courses_list.append(course)
+    def enroll_Course(self, Course):
+        self.EnrolledCoursesList.append(Course)
 
 # 时间类
 class TimeSlot:
@@ -80,10 +93,10 @@ class TimeSlot:
 
 # 教室类
 class Room:
-    def __init__(self, room_id_int,teaching_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int,):
+    def __init__(self, room_id_int,campus_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int,):
         self.id_int = room_id_int
-        # 教学区
-        self.teaching_area_str = teaching_area_str
+        # 校区
+        self.campus_area_str = campus_area_str
         # 教学楼
         self.teaching_building_str = teaching_building_str
         self.room_name_str = room_name_str

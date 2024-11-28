@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-12 16:00:37
 LastEditors: xudawu
-LastEditTime: 2024-11-27 19:23:36
+LastEditTime: 2024-11-27 19:51:04
 '''
 
 import pandas
@@ -12,6 +12,7 @@ class Person:
     def __init__(self, name,count=0):
         self.name_str = name
         self.count_int = count
+        self.is_flag = False
 
 # 按学号匹配等级
 def excel_excute(excel_pandas,first_column_name,second_column_name,new_column_name):
@@ -86,7 +87,7 @@ def excel_excute(excel_pandas,first_column_name,second_column_name,new_column_na
                             new_value = f'{Person_data.name_str}:{Person_data.count_int+1}、'
                             temp_row_name_list.at[first_index, new_column_name] = current_value + new_value
                             break
-
+    
 def main():
 
     # # 读取 Excel 文件

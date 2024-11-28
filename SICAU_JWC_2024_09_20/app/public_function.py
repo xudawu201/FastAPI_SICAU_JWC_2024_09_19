@@ -2,8 +2,10 @@
 Author: xudawu
 Date: 2024-10-25 14:14:57
 LastEditors: xudawu
-LastEditTime: 2024-10-29 12:06:48
+LastEditTime: 2024-11-28 11:45:28
 '''
+import time
+from datetime import timedelta
 
 # 学期升序排序
 def sort_semester_list(semester_list):
@@ -120,3 +122,9 @@ def get_average_from_list(score_list):
         avg_float=None
     # 返回平均分
     return avg_float
+
+# 获取已使用时间
+def get_time_used(start_time):
+    end_time = time.time()
+    time_dif = end_time - start_time
+    return timedelta(seconds=int(round(time_dif)))

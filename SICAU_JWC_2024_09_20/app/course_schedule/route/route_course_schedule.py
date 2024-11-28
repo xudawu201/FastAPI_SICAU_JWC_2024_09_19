@@ -2,10 +2,11 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-26 16:01:52
+LastEditTime: 2024-11-28 17:06:12
 '''
 # 遗传算法随机库
 import random
+import time
 
 # fastapi相关
 from fastapi import APIRouter, Request,WebSocket
@@ -63,51 +64,92 @@ class TimeSlot:
 
 # 排课类
 class Schedule:
-    def __init__(self, Course_list, TimeSlot_list, room_list, Student_list):
+    def __init__(self, Course_list, TimeSlot_list, Room_list, Student_list):
         self.Course_list = Course_list
         self.TimeSlot_list = TimeSlot_list
-        self.room_list = room_list
-        self.student_list = Student_list
-        # 时段和教室的组合作为键，课程作为值,课程初始化为None
-        self.schedule_dict = {}
-        for CurTimeSlot_str in self.TimeSlot_list:
-            for cur_room_str in self.room_list:
-                self.schedule_dict[(CurTimeSlot_str, cur_room_str)] = None
+        self.Room_list = Room_list
+        self.Student_list = Student_list
+        # 时段和课程的组合作为键，教室作为值,教室初始化为None
+        self.Schedule_dict = {}
+        for CurTimeSlot in self.TimeSlot_list:
+            for Course in self.Course_list:
+                self.Schedule_dict[(CurTimeSlot, Course)] = None
+
+    # 初始化基因
+    def initialize(self,SingleSchedule):
+        # 随机选择一个课程和教室组合作为初始安排
+        # 遍历所有课程，并为其随机安排一个符合条件的教室和时间
+
+        # 根据校区和教室类型生成不同的教室列表
+        RoomByCampusAndType_dict = {}
+
+        # 初始化字典结构以存储每个校区和教室类型的教室列表
+        for Room in Room_list:
+            # 键是一个元组 (校区, 教室类型)
+            key = (Room.campus_area_str, Room.first_type_str)
+            if key not in RoomByCampusAndType_dict:
+                RoomByCampusAndType_dict[key] = []
+            RoomByCampusAndType_dict[key].append(Room)
+
+
+        # 初始化单个个体的基因
+        for ScheduleKeyTime,ScheduleKeyCourse in SingleSchedule.Schedule_dict.keys():
+            # 取出符合当前课程校区和类型要求的教室
+            AvailableRoom_list = RoomByCampusAndType_dict.get((ScheduleKeyCourse.campus_area_str, ScheduleKeyCourse.room_type_str), [])
+            
+            if AvailableRoom_list!=[]:
+                # 筛选出容量符合要求的教室
+                CapacityAvailableRoom_list = [
+                    Room for Room in AvailableRoom_list
+                    if Room.capacity_int >= ScheduleKeyCourse.selected_student_num_int
+                ]
+            
+                # 如果有符合条件的教室，则从中随机选择一个
+                if CapacityAvailableRoom_list!=[]:
+                    SingleSchedule.Schedule_dict[(ScheduleKeyTime, ScheduleKeyCourse)] = random.choice(CapacityAvailableRoom_list)
+                else:
+                    # 如果没有符合条件的教室
+                    print(f"没有找到符合条件的教室: {ScheduleKeyCourse.name_str} ({ScheduleKeyCourse.selected_student_num_int}人) "
+                        f"需要教室容量大于等于 {ScheduleKeyCourse.selected_student_num_int}，但没有符合条件的教室")
+                    
+            else:
+                # 如果没有符合条件的教室
+                print(f"没有找到符合条件的教室: 没有校区为{ScheduleKeyCourse.campus_area_str}，教室类型为{ScheduleKeyCourse.room_type_str}的教室")
 
     # 基因变异操作
     def mutate(self):
         # 随机选择一个时间段和教室组合
-        random_timeslot_room_tuple = random.choice(list(self.schedule_dict.keys()))
+        random_timeslot_room_tuple = random.choice(list(self.Schedule_dict.keys()))
         # 随机选择一门课程
         random_new_course_str = random.choice(self.Course_list)
         # 替换该位置的课程
-        self.schedule_dict[random_timeslot_room_tuple] = random_new_course_str
+        self.Schedule_dict[random_timeslot_room_tuple] = random_new_course_str
 
     # 基因交叉操作
     def crossover(self, other):
         # 随机选择交叉基因的起点
-        crossover_index_int = random.randint(0, len(self.schedule_dict) - 1)
+        crossover_index_int = random.randint(0, len(self.Schedule_dict) - 1)
         # 初始化两个子代的基因
         child1_schedule_dict = {}
         child2_schedule_dict = {}
 
         # 迭代所有时间和房间的键值对
-        for i, schedule_key_tuple in enumerate(self.schedule_dict.keys()):
+        for i, schedule_key_tuple in enumerate(self.Schedule_dict.keys()):
             # 子代1交叉基因起点之前的基因来自本个体,子代2的基因来自其他个体
             if i <= crossover_index_int:
-                child1_schedule_dict[schedule_key_tuple] = self.schedule_dict[schedule_key_tuple]
-                child2_schedule_dict[schedule_key_tuple] = other.schedule_dict[schedule_key_tuple]
+                child1_schedule_dict[schedule_key_tuple] = self.Schedule_dict[schedule_key_tuple]
+                child2_schedule_dict[schedule_key_tuple] = other.Schedule_dict[schedule_key_tuple]
             else:
                 # 子代1交叉基因起点之后的基因来自其他个体,子代2的基因来自本个体
-                child1_schedule_dict[schedule_key_tuple] = other.schedule_dict[schedule_key_tuple]
-                child2_schedule_dict[schedule_key_tuple] = self.schedule_dict[schedule_key_tuple]
+                child1_schedule_dict[schedule_key_tuple] = other.Schedule_dict[schedule_key_tuple]
+                child2_schedule_dict[schedule_key_tuple] = self.Schedule_dict[schedule_key_tuple]
 
         # 初始化两个子代类的基因
         Child1Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
         Child2Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
         # 赋予子代基因
-        Child1Schedule.schedule_dict = child1_schedule_dict
-        Child2Schedule.schedule_dict = child2_schedule_dict
+        Child1Schedule.Schedule_dict = child1_schedule_dict
+        Child2Schedule.Schedule_dict = child2_schedule_dict
 
         # 返回两个新子代基因
         return Child1Schedule, Child2Schedule
@@ -132,7 +174,7 @@ class Schedule:
             teacher_assigned_dict[CurCourse.CourseTeacher] = 0
             course_assigned_dict[CurCourse.name_str] = 0
         
-        for (CurTimeSlot, cur_room_str), CurCourse in self.schedule_dict.items():
+        for (CurTimeSlot, cur_room_str), CurCourse in self.Schedule_dict.items():
             # 如果当前时段有课程安排,则进行判断
             if CurCourse is not None:
                 # 同一课程同一时间不能安排在多个教室,同一时间同一课程名代表有冲突
@@ -238,7 +280,7 @@ class Schedule:
         schedule_conflict_time_teachers_list = []
         # 初始化上课时间冲突学生列表
         schedule_conflict_time_student_list = []
-        for (CurTimeSlot, cur_room_str), CurCourse in self.schedule_dict.items():
+        for (CurTimeSlot, cur_room_str), CurCourse in self.Schedule_dict.items():
             # 初始化当前排课信息
             room_course_schedule_str=''
             # 如果课程为非空,则打印课程信息
@@ -375,16 +417,15 @@ def list_remove_duplicate_joint(cur_list):
     return unique_list_str
 
 # 初始化种群
-def initialize_population(Course_list, TimeSlot_list, room_list, Student_list, population_size=100):
+def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size=100):
     # 种群列表初始化
     Population_list = []
     for _ in range(population_size):
         # 实例化一个个体
-        SingleSchedule = Schedule(Course_list, TimeSlot_list, room_list, Student_list)
+        SingleSchedule = Schedule(Course_list, TimeSlot_list, Room_list, Student_list)
         # 对个体的基因进行随机初始化
-        for schedule_key_tuple in SingleSchedule.schedule_dict.keys():
-            # 随机一个基因(对时间段和教室的组合随机选择一门课)
-            SingleSchedule.schedule_dict[schedule_key_tuple] = random.choice(Course_list)
+        # 随机一个基因(对时间段和教室的组合随机选择一门课)
+        SingleSchedule.initialize(SingleSchedule)
 
         # 将初始化后的个体加入种群列表
         Population_list.append(SingleSchedule)
@@ -528,78 +569,72 @@ async def ws_course_schedule(websocket: WebSocket):
     # await websocket.send_json({"generation": generation_int,"best_fitness":best_fitness_float})
     # best_schedule.display()
 
-# 上课时间初始化
-def initialize_time(week_range, day_range, slot_time_range):
-    # 初始化列表
-    TimeSlot_list = []
-
-    # 生成时间段
-    for week in week_range:
-        for day in day_range:
-            for slot_time in slot_time_range:
-                timeslot = TimeSlot(week, day, slot_time)
-                TimeSlot_list.append(timeslot)
-
-    return TimeSlot_list
-
-
 if __name__ == "__main__":
 
+    # 引入文件目录设置
+    import sys
+    import os
+    # 添加项目文件根目录到系统路径
+    module_path = os.path.abspath('')
+    sys.path.append(module_path)
+
+    from app.course_schedule.service import service_course_schedule
+    from app import public_function
+
+    # 上课时间初始化
+    print('初始上课时间类列表开始')
+    start_time = time.time()
     # 定义周、天和时间段
-    week_range = range(1, 3)
-    # day_range = ['星期1', '星期2', '星期3', '星期4', '星期5','星期6','星期7']
-    day_range = ['星期1', '星期2']
-    # slot_time_range =['第1讲','第2讲','第3讲','第4讲','第5讲']
-    slot_time_range =['第1讲','第2讲']
+    week_range = range(1, 19)
+    day_range = ['1', '2', '3', '4', '5']
+    slot_time_range =['1','2','3','4','5']
     # 初始化上课时间列表
-    TimeSlot_list = initialize_time(week_range,day_range,slot_time_range)
+    TimeSlot_list = service_course_schedule.initialize_time(week_range,day_range,slot_time_range)
+    time_used = public_function.get_time_used(start_time)
+    print('初始上课时间列表完成,用时:', time_used)
+    print('上课时间数量:',len(TimeSlot_list))
 
-    # 初始化教室
-    room_list = [f'Room{i}' for i in range(1, 3)]
+    # 初始化教室类列表
+    print('初始化教室类列表开始')
+    start_time = time.time()
+    Room_list = service_course_schedule.initialize_room()
+    time_used = public_function.get_time_used(start_time)
+    print('初始化教室类列表完成,用时:', time_used)
+    print('教室数量:',len(Room_list))
     
-    # 示例课程（课程名、任课教师、课时长(单位小时)、优先级(数字越高优先级越高)、不可上课时间）
-    # Course_list = [
-    #     Course(
-    #         name_str="class1", teacher_str='teacher1', duration_float=1, 
-    #         priority_float=1, unavailable_timeslots_list=["time2", "time4"]
-    #         ),
-    # ]
+    # 指定学期
+    semester_str = '2024-2025-1'
+    # 初始化教师和课程类列表
+    print('初始化教师和课程类列表开始')
+    start_time = time.time()
+    Teacher_list,Course_list = service_course_schedule.initialize_teacher_course(semester_str)
+    time_used = public_function.get_time_used(start_time)
+    print('初始化教师和课程类列表完成,用时:', time_used)
+    print('课程人数:',len(Course_list))
+    print('教师人数:',len(Teacher_list))
+
+    # 设置教师上课限制时间
+    print('设置教师上课限制时间开始')
+    start_time = time.time()
+    Teacher_list = service_course_schedule.set_teacher_unavailable_timeslot(Teacher_list,semester_str)
+    time_used = public_function.get_time_used(start_time)
+    print('设置教师上课限制时间完成,用时:', time_used)
+
+    # 初始化学生类列表
+    print('初始化学生类列表开始')
+    start_time = time.time()
+    student_course_dict,Student_list = service_course_schedule.initialize_student(semester_str)
+    time_used = public_function.get_time_used(start_time)
+    print('初始化学生类列表完成,用时:', time_used)
+    print('学生人数:',len(student_course_dict))
+
+    # 设置学生选课
+    print('设置学生选课列表开始')
+    start_time = time.time()
+    Student_list = service_course_schedule.set_student_enroll_course(Student_list,Course_list,student_course_dict)
+    time_used = public_function.get_time_used(start_time)
+    print('设置学生选课列表完成,用时:', time_used)
     
-    # 生成教师样本
-    # teachers = [f'teacher{i}' for i in range(1, 15)]
-    Teacher_list = []
-    for i in range(1, 15):
-        # 随机采样不可上课时间,返回列表
-        unavailable_timeslot_list = random.sample(TimeSlot_list, random.randint(0, 2))
-        # 教师姓名、id、不可上课时间列表
-        teacher = Teacher(f'teacher{i}',i,unavailable_timeslot_list)
-        Teacher_list.append(teacher)
-
-    # 生成课程样本
-    Course_list = []
-    for i in range(1, 21):  # 生成100门课程
-        # 随机采样不可上课时间,返回列表
-        Course_list.append(Course(
-            name_str=f'class{i}',
-            CourseTeacher=random.choice(Teacher_list),
-            duration_float=random.uniform(1, 3),  # 课时长为1到3小时
-            priority_float=random.randint(1, 3),  # 优先级为1到3
-        ))
-
-    # 生成时间段和教室
-    # timeslots_list = ["time1", "time2", "time3", "time4", "time5", "time6"]
-    timeslot_list = [f'time{i}' for i in range(1,7)]
-    
-    # 生成学生样本
-    Student_list = [Student(f'student{i}') for i in range(1, 31)]
-
-    # 学生选课
-    for student in Student_list:
-        courses_to_enroll = random.sample(Course_list, random.randint(1, 3))  # 随机选择1到5门课程
-        for course in courses_to_enroll:
-            student.enroll(course)
-
-
     # 种群大小和适应度阈值
     population_size_int = 100
     fitness_threshold_float = 500
@@ -607,7 +642,7 @@ if __name__ == "__main__":
     retention_number_int=5
 
     # 获得初始化的种群
-    PopulationList = initialize_population(Course_list, TimeSlot_list, room_list, Student_list, population_size_int)
+    PopulationList = initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size_int)
 
     # 初始化进化次数
     generation_int = 0
