@@ -2,11 +2,12 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-11-28 17:06:12
+LastEditTime: 2024-11-29 16:53:25
 '''
 # 遗传算法随机库
 import random
 import time
+import copy
 
 # fastapi相关
 from fastapi import APIRouter, Request,WebSocket
@@ -69,61 +70,138 @@ class Schedule:
         self.TimeSlot_list = TimeSlot_list
         self.Room_list = Room_list
         self.Student_list = Student_list
-        # 时段和课程的组合作为键，教室作为值,教室初始化为None
+        # 时段和教室的组合作为键，课程作为值
         self.Schedule_dict = {}
-        for CurTimeSlot in self.TimeSlot_list:
-            for Course in self.Course_list:
-                self.Schedule_dict[(CurTimeSlot, Course)] = None
+        # for CurTimeSlot in self.TimeSlot_list:
+        #     for Room in self.Room_list:
+        #         self.Schedule_dict[(CurTimeSlot, Room)] = None
+
+        # 初始化已删除没有匹配课程的教室列表
+        self.NoMatchAreaOrTypeCourseRoom_list = []
+        # 初始化已删除没有匹配课程已选人数的教室列表
+        self.NoMatchCapacityCourseRoom_list = []
+
+    # 排课
+    def schedule_for_timeslot_room(self, CurTimeSlot, CurRoom, experiment_classe_dict, first_experiment_classe_index_int, second_experiment_classe_index_int):
+        # 根据教室的校区和类型获取可用课程列表
+        AvailableCourse_list = self.CourseByCampusAndType_dict.get((CurRoom.campus_area_str, CurRoom.room_type_str), [])
+        
+        # 遍历可用课程
+        if AvailableCourse_list==[]:
+            # print(f"没有找到符合类型条件的课程:{CurTimeSlot.week_time_str}{CurTimeSlot.day_time_str}{CurTimeSlot.slot_time_str}没有校区为{CurRoom.campus_area_str}，教室类型为{CurRoom.room_type_str}的课程")
+            self.NoMatchAreaOrTypeCourseRoom_list.append(CurRoom)
+            return None, first_experiment_classe_index_int, second_experiment_classe_index_int
+        
+        # 根据教室容量筛选符合条件的课程
+        CapacityAvailableCourse_list = [
+            Course for Course in AvailableCourse_list
+            if Course.selected_student_num_int <= CurRoom.capacity_int
+        ]
+
+        if CapacityAvailableCourse_list==[]:
+            # print(f"没有找到符合容量条件的课程: 时间{CurTimeSlot.week_time_str}{CurTimeSlot.day_time_str}{CurTimeSlot.slot_time_str},{CurRoom.room_name_str} ({CurRoom.capacity_int}人) ")
+            self.NoMatchCapacityCourseRoom_list.append(CurRoom)
+            return None, first_experiment_classe_index_int, second_experiment_classe_index_int
+
+        # 如果是实验室教室，处理实验课的特殊逻辑
+        if CurRoom.room_type_str == '实验室':
+            return self.schedule_experiment(CurTimeSlot, CapacityAvailableCourse_list, experiment_classe_dict, first_experiment_classe_index_int, second_experiment_classe_index_int)
+        
+        # 非实验室教室直接随机选择一门课程
+        ChoiceCourse = random.choice(CapacityAvailableCourse_list)
+        return ChoiceCourse, first_experiment_classe_index_int, second_experiment_classe_index_int
+
+    # 排实验课
+    def schedule_experiment(self, CurTimeSlot, CapacityAvailableCourse_list, experiment_classe_dict, first_experiment_classe_index_int, second_experiment_classe_index_int):
+        # 实验课安排逻辑：只安排在1、3、5讲，并且第2、4讲连排
+        if CurTimeSlot.slot_time_str in ['1', '3']:
+            ChoiceCourse = random.choice(CapacityAvailableCourse_list)
+            experiment_classe_dict[first_experiment_classe_index_int] = ChoiceCourse
+            first_experiment_classe_index_int += 1
+        elif CurTimeSlot.slot_time_str in ['2', '4']:
+            # 使用上一讲的课程
+            ChoiceCourse = experiment_classe_dict.get(second_experiment_classe_index_int, None)
+            second_experiment_classe_index_int += 1
+        # 第5讲直接随机安排
+        elif CurTimeSlot.slot_time_str in ['5']:
+            ChoiceCourse = random.choice(CapacityAvailableCourse_list)
+        
+        return ChoiceCourse, first_experiment_classe_index_int, second_experiment_classe_index_int
 
     # 初始化基因
     def initialize(self,SingleSchedule):
-        # 随机选择一个课程和教室组合作为初始安排
-        # 遍历所有课程，并为其随机安排一个符合条件的教室和时间
 
-        # 根据校区和教室类型生成不同的教室列表
-        RoomByCampusAndType_dict = {}
+        # 根据校区和教室类型生成不同的课程字典
+        self.CourseByCampusAndType_dict = {}
 
         # 初始化字典结构以存储每个校区和教室类型的教室列表
-        for Room in Room_list:
+        for Course in Course_list:
             # 键是一个元组 (校区, 教室类型)
-            key = (Room.campus_area_str, Room.first_type_str)
-            if key not in RoomByCampusAndType_dict:
-                RoomByCampusAndType_dict[key] = []
-            RoomByCampusAndType_dict[key].append(Room)
+            key = (Course.campus_area_str, Course.room_type_str)
+            if key not in self.CourseByCampusAndType_dict:
+                self.CourseByCampusAndType_dict[key] = []
+            self.CourseByCampusAndType_dict[key].append(Course)
 
+        # 初始化实验课相关字典和索引
+        lab_classe_dict = {}
+        first_experiment_classe_index_int = 0
+        second_experiment_classe_index_int = 0
+        
+        for CurTimeSlot in self.TimeSlot_list:
+            for CurRoom in self.Room_list:
+                # 周一到周五可安排理论课和实验课
+                if CurTimeSlot.day_time_str in ['1', '2', '3', '4', '5']:
+                    ChoiceCourse, first_experiment_classe_index_int, second_experiment_classe_index_int = self.schedule_for_timeslot_room(
+                        CurTimeSlot, CurRoom, lab_classe_dict, first_experiment_classe_index_int, second_experiment_classe_index_int
+                    )
+                # 周六仅安排实验课
+                if CurTimeSlot.day_time_str in ['6']:
+                    if CurRoom.room_type_str == '实验室':
+                        ChoiceCourse_list = self.schedule_experiment(CurTimeSlot, CurRoom,)
+                        # 更新课程安排,能排就直接排两讲
+                        SingleSchedule.Schedule_dict[(CurTimeSlot, CurRoom)] = ChoiceCourse_list[0]
+                        try:
+                            # 获得下一讲的索引
+                            next_index_int = self.TimeSlot_list.index((CurTimeSlot, CurRoom)) + 1
+                            # 设置下一讲的课程安排保持上一讲的课程
+                            SingleSchedule.Schedule_dict[self.TimeSlot_list[next_index_int]] = ChoiceCourse_list[0]
+                        except:
+                            pass
+                    # 周六的理论课直接安排为None
+                    else:
+                        # 更新课程安排
+                        SingleSchedule.Schedule_dict[(CurTimeSlot, CurRoom)] = None
 
-        # 初始化单个个体的基因
-        for ScheduleKeyTime,ScheduleKeyCourse in SingleSchedule.Schedule_dict.keys():
-            # 取出符合当前课程校区和类型要求的教室
-            AvailableRoom_list = RoomByCampusAndType_dict.get((ScheduleKeyCourse.campus_area_str, ScheduleKeyCourse.room_type_str), [])
-            
-            if AvailableRoom_list!=[]:
-                # 筛选出容量符合要求的教室
-                CapacityAvailableRoom_list = [
-                    Room for Room in AvailableRoom_list
-                    if Room.capacity_int >= ScheduleKeyCourse.selected_student_num_int
-                ]
-            
-                # 如果有符合条件的教室，则从中随机选择一个
-                if CapacityAvailableRoom_list!=[]:
-                    SingleSchedule.Schedule_dict[(ScheduleKeyTime, ScheduleKeyCourse)] = random.choice(CapacityAvailableRoom_list)
-                else:
-                    # 如果没有符合条件的教室
-                    print(f"没有找到符合条件的教室: {ScheduleKeyCourse.name_str} ({ScheduleKeyCourse.selected_student_num_int}人) "
-                        f"需要教室容量大于等于 {ScheduleKeyCourse.selected_student_num_int}，但没有符合条件的教室")
-                    
-            else:
-                # 如果没有符合条件的教室
-                print(f"没有找到符合条件的教室: 没有校区为{ScheduleKeyCourse.campus_area_str}，教室类型为{ScheduleKeyCourse.room_type_str}的教室")
+        # 教室库删除没有类型匹配的教室
+        self.Room_list = [Room for Room in self.Room_list if Room not in self.NoMatchAreaOrTypeCourseRoom_list]
+        # 教室库删除没有容量匹配的教室
+        self.Room_list = [Room for Room in self.Room_list if Room not in self.NoMatchCapacityCourseRoom_list]
+
+        Room_list = copy.deepcopy(self.Room_list)
+        return Room_list
 
     # 基因变异操作
     def mutate(self):
         # 随机选择一个时间段和教室组合
-        random_timeslot_room_tuple = random.choice(list(self.Schedule_dict.keys()))
+        RandomTimeslotRoom_tuple = random.choice(list(self.Schedule_dict.keys()))
+
+        # 随机找一个可以替换的课程
+        # 如果是第2、4讲,并且是实验室,则直接返回,不更改课程
+        if RandomTimeslotRoom_tuple[0].slot_time_str in ['2','4'] and RandomTimeslotRoom_tuple[1].room_type_str =='实验室':
+            return
+        # 如果是属于1、3、5讲,再根据教室类别来进行替换
+        if RandomTimeslotRoom_tuple[0].slot_time_str in ['1','3','5']:
+            # 是实验课
+            if RandomTimeslotRoom_tuple[1].room_type_str == '实验室':
+                pass
+            # 是理论课
+            else:
+                return
+
         # 随机选择一门课程
-        random_new_course_str = random.choice(self.Course_list)
+        RandomNewCourse = random.choice(self.Course_list)
         # 替换该位置的课程
-        self.Schedule_dict[random_timeslot_room_tuple] = random_new_course_str
+        self.Schedule_dict[RandomTimeslotRoom_tuple] = RandomNewCourse
 
     # 基因交叉操作
     def crossover(self, other):
@@ -145,8 +223,8 @@ class Schedule:
                 child2_schedule_dict[schedule_key_tuple] = self.Schedule_dict[schedule_key_tuple]
 
         # 初始化两个子代类的基因
-        Child1Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
-        Child2Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.room_list, self.student_list)
+        Child1Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
+        Child2Schedule = Schedule(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
         # 赋予子代基因
         Child1Schedule.Schedule_dict = child1_schedule_dict
         Child2Schedule.Schedule_dict = child2_schedule_dict
@@ -154,86 +232,101 @@ class Schedule:
         # 返回两个新子代基因
         return Child1Schedule, Child2Schedule
     
+    # 学生适应度
+    def student_fitness(self,CurTimeSlot,CurCourse):
+        fitness_float = 0
+        # 学生不能同时上两门及以上课程,进行冲突检测
+        for CurStudent in self.Student_list:
+            # 如果学生选了此门课程
+            if CurCourse in CurStudent.EnrolledCoursesList:
+                # 如果学生上课时间段中有此上课时间
+                if CurTimeSlot in CurStudent.TimeSlotList:
+                    # 有冲突大幅降低适应度
+                    fitness_float -= 6
+                    # 记录冲突信息
+                    self.conflict_info_list.append((CurStudent.name_str, CurCourse.name_str, CurTimeSlot))
+
+                # 更新学生的时间段表,增加此上课时间到学生的上课时间表中
+                else:
+                    CurStudent.TimeSlotList.append(CurTimeSlot)
+
+        return fitness_float
+
     # 计算适应度
     def fitness(self):
         fitness_float = 0
         course_time_dict = {}
         teacher_assigned_dict = {}
-        # 初始化安排课程字典
-        course_assigned_dict = {}
+        # 初始化安排理论课程字典
+        theory_course_assigned_dict = {}
+        # 初始化安排实验课程字典
+        experiment_course_assigned_dict = {}
 
         # 初始化学生冲突时间表为空列表
-        for CurStudent in self.student_list:
-            CurStudent.time_slots_list = []
+        for CurStudent in self.Student_list:
+            CurStudent.TimeSlotList = []
 
         # 初始化冲突信息的列表
         self.conflict_info_list = []
 
         # 每个教师和课程被安排的次数初始化为0
         for CurCourse in self.Course_list:
-            teacher_assigned_dict[CurCourse.CourseTeacher] = 0
-            course_assigned_dict[CurCourse.name_str] = 0
+            # 初始化教师被安排的次数,有多个教师,分别处理
+            for CurTeacher in CurCourse.CourseTeacher_list:
+                teacher_assigned_dict[CurTeacher.id_int] = 0
+            # 排课类别为实验的课程,初始化课程被安排的次数
+            if CurCourse.schedule_course_type_str == '实验':
+                experiment_course_assigned_dict[CurCourse.id_int] = 0
+            # 理论课的课程,初始化课程被安排的次数
+            else:
+                theory_course_assigned_dict[CurCourse.id_int] = 0
         
-        for (CurTimeSlot, cur_room_str), CurCourse in self.Schedule_dict.items():
+        # 计算适应度
+        for (CurTimeSlot, CurRoom_str), CurCourse in self.Schedule_dict.items():
             # 如果当前时段有课程安排,则进行判断
             if CurCourse is not None:
                 # 同一课程同一时间不能安排在多个教室,同一时间同一课程名代表有冲突
                 # 在安排中则代表有冲突
-                if (CurTimeSlot, CurCourse.name_str) in course_time_dict:
+                if (CurTimeSlot, CurCourse) in course_time_dict:
                     fitness_float -= 6
                 else:
                     # 没有在安排表中，记录此次安排
-                    course_time_dict[(CurTimeSlot, CurCourse.name_str)] = cur_room_str
-                    # 安排此课,适应度分值加上优先级分值
-                    fitness_float += CurCourse.priority_float
-                    # 统计教师被安排的次数
-                    teacher_assigned_dict[CurCourse.CourseTeacher] += 1
-                    course_assigned_dict[CurCourse.name_str] +=1 
+                    course_time_dict[(CurTimeSlot, CurCourse)] = CurRoom_str
+                    
+                # 安排此课,适应度分值加上优先级分值
+                fitness_float += CurCourse.priority_float
+                # 统计教师被安排的次数
+                for CurTeacher in CurCourse.CourseTeacher_list:
+                        teacher_assigned_dict[CurTeacher.id_int] += 1
+                if CurCourse.schedule_course_type_str == '实验':
+                    experiment_course_assigned_dict[CurCourse.id_int] +=1
+                else:
+                    theory_course_assigned_dict[CurCourse.id_int] += 1
 
-                    # 学生不能同时上两门及以上课程,进行冲突检测
-                    for CurStudent in self.student_list:
-                        if CurCourse in CurStudent.enrolled_courses_list:
-                            if CurTimeSlot in CurStudent.time_slots_list:
-                                # 有冲突大幅降低适应度
-                                fitness_float -= 6
-                                # 记录冲突信息
-                                self.conflict_info_list.append((CurStudent.name_str, CurCourse.name_str, CurTimeSlot))
-                            
-                            # 更新学生的时间段表,增加此上课时间到学生的上课时间表中
-                            else:
-                                CurStudent.time_slots_list.append(CurTimeSlot)
+                # 计算学生相关适应度
+                student_fitness_float = self.student_fitness(CurTimeSlot,CurCourse)
+                fitness_float += student_fitness_float
 
                 # 如果此门课程的安排时间在教师不可以上课的时间列表中，适应度大幅降低
-                if CurTimeSlot in CurCourse.CourseTeacher.unavailable_timeslot_list:
-                    fitness_float -= 6
+                for CourseTeacher in CurCourse.CourseTeacher_list:
+                    for TeacherUnavailableTimeSlot in CourseTeacher.unavailable_timeslot_list:
+                        if CurTimeSlot.day_time_str == TeacherUnavailableTimeSlot.day_time_str and CurTimeSlot.slot_time_str == TeacherUnavailableTimeSlot.slot_time_str :
+                            fitness_float -= 6
 
-        # 教师排课均衡性评分
-        for CourseTeacher, teacher_assigned_count in teacher_assigned_dict.items():
-            # 教师没有被分配到课程
-            if teacher_assigned_count == 0:
-                fitness_float -= 2
-            # 教师被分配了大于等于3次课程
-            elif teacher_assigned_count >= 3:
-                fitness_float -= 1
-            # 教师排课次数均衡
-            else:
-                fitness_float += 1
-
-        # 课程排课均衡性评分
-        for course_name_str, course_assigned_count in course_assigned_dict.items():
+        # 理论课排课均衡性评分
+        for course_name_str, course_assigned_count_int in theory_course_assigned_dict.items():
             # 没有排课
-            if course_assigned_count == 0:
+            if course_assigned_count_int == 0:
                 fitness_float -= 3
-            # 排了超过3次课
-            elif course_assigned_count >= 3:
-                fitness_float -= 2
-            # 排课次数均衡
-            else:
+            # 2-4次排课,即2-4周学时是合理的
+            elif 2<= course_assigned_count_int <= 4:
                 fitness_float += 1
+            # 其他情况
+            else:
+                fitness_float -= 2
 
         # 返回适应度
         return fitness_float
-
 
     def display(self):
 
@@ -418,14 +511,22 @@ def list_remove_duplicate_joint(cur_list):
 
 # 初始化种群
 def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size=100):
+
+    # 执行一个个体初始化,修改教室列表
+    # 实例化一个个体
+    SingleSchedule = Schedule(Course_list, TimeSlot_list, Room_list, Student_list)
+    # 对个体的基因进行随机初始化
+    # 随机一个基因(对时间段和教室的组合随机选择一门课)
+    CopyRoom_list = SingleSchedule.initialize(SingleSchedule)
+
     # 种群列表初始化
     Population_list = []
     for _ in range(population_size):
         # 实例化一个个体
-        SingleSchedule = Schedule(Course_list, TimeSlot_list, Room_list, Student_list)
+        SingleSchedule = Schedule(Course_list, TimeSlot_list, CopyRoom_list, Student_list)
         # 对个体的基因进行随机初始化
         # 随机一个基因(对时间段和教室的组合随机选择一门课)
-        SingleSchedule.initialize(SingleSchedule)
+        CopyRoom2_list =SingleSchedule.initialize(SingleSchedule)
 
         # 将初始化后的个体加入种群列表
         Population_list.append(SingleSchedule)
@@ -585,8 +686,8 @@ if __name__ == "__main__":
     print('初始上课时间类列表开始')
     start_time = time.time()
     # 定义周、天和时间段
-    week_range = range(1, 19)
-    day_range = ['1', '2', '3', '4', '5']
+    week_range = range(1, 2)
+    day_range = ['1', '2', '3', '4', '5','6']
     slot_time_range =['1','2','3','4','5']
     # 初始化上课时间列表
     TimeSlot_list = service_course_schedule.initialize_time(week_range,day_range,slot_time_range)
@@ -637,18 +738,26 @@ if __name__ == "__main__":
     
     # 种群大小和适应度阈值
     population_size_int = 100
-    fitness_threshold_float = 500
+    fitness_threshold_float = 50000
     # 保留最优的多少个
     retention_number_int=5
 
+    print('排课种群初始化开始')
+    start_time = time.time()
     # 获得初始化的种群
     PopulationList = initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size_int)
+    time_used = public_function.get_time_used(start_time)
+    print('排课种群初始化完成,用时:', time_used)
 
     # 初始化进化次数
     generation_int = 0
     while True:
         # 交叉和变异获得下一代种群
+        print('排课种群进化开始')
+        start_time = time.time()
         PopulationList = genetic_evolution(PopulationList,retention_number_int)
+        time_used = public_function.get_time_used(start_time)
+        print('排课种群进化完成,用时:', time_used)
 
         # 获取最优个体
         best_schedule = max(PopulationList, key=lambda x: x.fitness())

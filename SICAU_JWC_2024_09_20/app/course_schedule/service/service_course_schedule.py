@@ -2,13 +2,13 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-11-28 18:00:52
+LastEditTime: 2024-11-29 11:33:21
 '''
 import time
 
-# from app.course_schedule.database import database_course_schedule
-# from app.course_schedule.model import model_course_schedule
-# from app import public_function
+from app.course_schedule.database import database_course_schedule
+from app.course_schedule.model import model_course_schedule
+from app import public_function
 
 # 初始化教师和课程类
 def initialize_teacher_course(semester_str):
@@ -260,7 +260,7 @@ def initialize_room():
     # 理论课教室、实践课教室
     table_name_str = "教室"
     # 构造sql语句
-    select_sql_str =f"select * from {table_name_str}"
+    select_sql_str =f"select * from {table_name_str} where 是否排课='是'"
     excute_sql_flag_str,excute_count_int,rows = database_course_schedule.select_table_data_database(select_sql_str)
 
     # 初始化教室列表
@@ -273,12 +273,12 @@ def initialize_room():
         teaching_building_str = row.教学楼
         room_name_str = row.教室
         # 教室类型（如实验室）
-        first_type_str = row.类别
+        room_type_str = row.类别
         # 详细教室类型（如实训室1）
-        second_type_str = row.教室小类
+        specific_room_type_str = row.教室小类
         capacity_int = row.容量
 
-        room = model_course_schedule.Room(id_int,campus_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int)
+        room = model_course_schedule.Room(id_int,campus_area_str,teaching_building_str,room_name_str,room_type_str,specific_room_type_str,capacity_int)
         Room_list.append(room)
 
     return Room_list
@@ -303,9 +303,7 @@ def initialize_student(semester_str):
     table3_name_str = '学生花名册'
     
     # 定义排课类别变量
-    schedule_type1_str = "混教"
-    schedule_type2_str = '选课'
-    schedule_type3_str = '实验'
+    schedule_type1_str = "混班"
     # 构造sql语句
     select_sql_str =f'''
         select
@@ -318,12 +316,7 @@ def initialize_student(semester_str):
             inner join {table3_name_str} as c on a.学号 = c.学号
         where
             b.学期 = '{semester_str}'
-        and
-            (
-            b.排课类别 = '{schedule_type1_str}' 
-            or b.排课类别 = '{schedule_type2_str}' 
-            or b.排课类别 = '{schedule_type3_str}'
-            )
+        and b.排课类别 != '{schedule_type1_str}' 
         and b.课程性质 !='实践教学'
         and b.课程体系 !='慕课'
         and b.是否排课 ='是'
@@ -341,7 +334,7 @@ def initialize_student(semester_str):
     # 学生和选课对应列表
     student_course_dict = {}
     # 先测试前5000的数据
-    for row in rows[:5000]:
+    for row in rows[:2000]:
         student_id_str = row.学号
         # 将学号作为键
         if student_id_str not in student_course_dict:
@@ -464,7 +457,7 @@ if __name__ == '__main__':
     print('教室数量:',len(Room_list))
 
     for room in Room_list:
-        print(room.id_int, room.campus_area_str, room.room_name_str, room.first_type_str, room.second_type_str, room.capacity_int)
+        print(room.id_int, room.campus_area_str, room.room_name_str, room.room_type_str, room.specific_room_type_str, room.capacity_int)
         break
     
     # 指定学期

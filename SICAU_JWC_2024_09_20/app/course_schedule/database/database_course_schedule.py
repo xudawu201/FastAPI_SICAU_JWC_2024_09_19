@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-10-23 16:08:45
 LastEditors: xudawu
-LastEditTime: 2024-11-28 16:07:22
+LastEditTime: 2024-11-29 09:26:50
 '''
 # from database import database_connection
 
@@ -46,18 +46,18 @@ if __name__ == '__main__':
     # print("执行数据：",rows[0])
 
     # 理论课教室、实践课教室
-    # table_name_str = "教室"
-    # # 构造sql语句
-    # select_sql_str =f"select * from {table_name_str}"
-    # excute_sql_flag_str,excute_count_int,rows = select_table_data_database(select_sql_str)
+    table_name_str = "教室"
+    # 构造sql语句
+    select_sql_str =f"select distinct 校区,类别 from {table_name_str}"
+    excute_sql_flag_str,excute_count_int,rows = select_table_data_database(select_sql_str)
 
-    # print("执行结果：",excute_sql_flag_str)
-    # print("执行条数：",excute_count_int)
-    # print("执行数据：",rows[0])
-    # index = 0
-    # for row in rows:
-    #     index += 1
-    #     print(index,":",row)
+    print("执行结果：",excute_sql_flag_str)
+    print("执行条数：",excute_count_int)
+    print("执行数据：",rows[0])
+    index = 0
+    for row in rows:
+        index += 1
+        print(index,":",row)
 
     # 课程限制条件
     # table_name_str = "开课限制课程"

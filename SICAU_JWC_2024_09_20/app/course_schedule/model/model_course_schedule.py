@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:05:03
 LastEditors: xudawu
-LastEditTime: 2024-11-28 10:47:41
+LastEditTime: 2024-11-29 10:45:17
 '''
 # 课程类
 class Course:
@@ -44,6 +44,8 @@ class Course:
         self.teaching_class_id_int = teaching_class_id_int
         # 教师学时列表
         self.teacher_study_hour_list = teacher_study_hour_list
+        # 优先级
+        self.priority_float = 1
         
 # 教师类
 class Teacher:
@@ -93,7 +95,7 @@ class TimeSlot:
 
 # 教室类
 class Room:
-    def __init__(self, room_id_int,campus_area_str,teaching_building_str,room_name_str,first_type_str,second_type_str,capacity_int,):
+    def __init__(self, room_id_int,campus_area_str,teaching_building_str,room_name_str,room_type_str,specific_room_type_str,capacity_int,):
         self.id_int = room_id_int
         # 校区
         self.campus_area_str = campus_area_str
@@ -101,7 +103,7 @@ class Room:
         self.teaching_building_str = teaching_building_str
         self.room_name_str = room_name_str
         # 教室类型（如实验室）
-        self.first_type_str = first_type_str
+        self.room_type_str = room_type_str
         # 详细教室类型（如实训室1）
-        self.second_type_str = second_type_str
+        self.specific_room_type_str = specific_room_type_str
         self.capacity_int = capacity_int
