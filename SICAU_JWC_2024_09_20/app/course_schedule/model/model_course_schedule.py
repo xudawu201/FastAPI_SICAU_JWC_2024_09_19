@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:05:03
 LastEditors: xudawu
-LastEditTime: 2024-11-29 10:45:17
+LastEditTime: 2024-12-02 14:02:36
 '''
 # 课程类
 class Course:
@@ -107,3 +107,13 @@ class Room:
         # 详细教室类型（如实训室1）
         self.specific_room_type_str = specific_room_type_str
         self.capacity_int = capacity_int
+
+# 排课类
+class Schedule:
+    def __init__(self, TimeSlot,Room,Course):
+        # 时间
+        self.TimeSlot = TimeSlot
+        # 教室
+        self.Room = Room
+        # 课程
+        self.Course = Course

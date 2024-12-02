@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-11-29 11:33:21
+LastEditTime: 2024-12-02 15:55:30
 '''
 import time
 
@@ -49,7 +49,7 @@ def initialize_teacher_course(semester_str):
     # 初始化临时教师列表
     temp_teacher_list = []
 
-    for row in rows:
+    for row in rows[:1000]:
         
         # 初始化临时教师列表
         TempTeacherList = []
@@ -265,7 +265,7 @@ def initialize_room():
 
     # 初始化教室列表
     Room_list = []
-    for row in rows:
+    for row in rows[:100]:
         id_int = row.id
         # 校区
         campus_area_str = row.校区
@@ -333,8 +333,8 @@ def initialize_student(semester_str):
     temp_student_list = []
     # 学生和选课对应列表
     student_course_dict = {}
-    # 先测试前5000的数据
-    for row in rows[:2000]:
+    # 先测试前2000的数据
+    for row in rows[:500]:
         student_id_str = row.学号
         # 将学号作为键
         if student_id_str not in student_course_dict:
