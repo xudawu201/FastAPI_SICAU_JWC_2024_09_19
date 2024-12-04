@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:05:03
 LastEditors: xudawu
-LastEditTime: 2024-12-02 14:02:36
+LastEditTime: 2024-12-04 09:57:32
 '''
 # 课程类
 class Course:
@@ -84,13 +84,13 @@ class Student:
 
 # 时间类
 class TimeSlot:
-    def __init__(self, week_time_str, day_time_str,slot_time_str):
+    def __init__(self, week_time_int, day_time_int,slot_time_int):
         # 周时间
-        self.week_time_str = week_time_str
+        self.week_time_int = week_time_int
         # 天时间
-        self.day_time_str = day_time_str
+        self.day_time_int = day_time_int
         # 时段时间
-        self.slot_time_str = slot_time_str
+        self.slot_time_int = slot_time_int
 
 
 # 教室类

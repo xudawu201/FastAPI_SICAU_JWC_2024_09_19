@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-09-18 16:39:56
 LastEditors: xudawu
-LastEditTime: 2024-12-03 18:02:28
+LastEditTime: 2024-12-04 16:15:43
 '''
 # 遗传算法随机库
 import random
@@ -14,10 +14,10 @@ from fastapi import APIRouter, Request,WebSocket
 import asyncio
 
 # # 引入模板模块
-# from template import TemplatesJinja2CourseSchedule
-# from app.course_schedule.service import service_course_schedule
-# from app.course_schedule.model import model_course_schedule
-# from app import public_function
+from template import TemplatesJinja2CourseSchedule
+from app.course_schedule.service import service_course_schedule
+from app.course_schedule.model import model_course_schedule
+from app import public_function
 
 # 全局超参数
 
@@ -30,19 +30,27 @@ class GeneticAlgorithm:
         self.TimeSlot_list = TimeSlot_list
         self.Room_list = Room_list
         self.Student_list = Student_list
-        # 初始化排课类
+        # 初始化排课类,用于随机选课
         self.Schedule_list = []
+        # 初始化安排索引,键为四元组(周,天,讲,教室id)),值为Schedule类,用字典查找Schedule类优化性能
+        self.ScheduleIndex_dict = {}
         # 根据校区和教室类型生成不同的课程字典,键是一个二元组 (校区, 教室类型),值为对应课程
         self.CourseByCampusAndType_dict = {}
         # 学生冲突信息
         self.conflict_info_list = []
 
         # 工作日
-        self.workday_day_time_dict = {'1', '2', '3', '4', '5'}
+        self.workday_day_time_dict = {1, 2, 3, 4, 5}
         # 周末
-        self.weekend_day_time_dict = {'6'}
+        self.weekend_day_time_dict = {6}
         # 实验排课起始讲
-        self.experiment_start_slot_dict = {'1','3','5'}
+        self.experiment_start_slot_dict = {1,3,5}
+        # 被继承的实验课起始讲
+        self.experiment_inherit_start_slot_dict = {1,3}
+        # 要继承的实验课的讲
+        self.experiment_inherit_slot_dict = {2,4}
+        # 实验课算排两次的讲
+        self.experiment_course_count_double_slot_dict = {5}
         # 实验室名字
         self.experiment_room_name_str = '实验室'
         # 排课类别名字
@@ -69,21 +77,30 @@ class GeneticAlgorithm:
         ]
         return CapacityAvailableCourse_list
 
-    # 根据时间和教室获得索引,并安排课程
-    def set_schedule_course(self, CurTimeSlot, CurRoom,ChoiceCourse):
-        for index_int, CurSchedule in enumerate(self.Schedule_list):
-            if CurSchedule.TimeSlot == CurTimeSlot and CurSchedule.Room == CurRoom:
-                CurSchedule.Course = ChoiceCourse
+    # 根据安排索引安排课程
+    def set_schedule_course(self, Schedule,ChoiceCourse):
+        Schedule.Course = ChoiceCourse
+        
+    # 设置2、4讲的实验课继承1、3讲的实验课
+    def initialize_schedule_experiment_inherit(self,CurSchedule,ChoiceCourse):
+        # 排第二讲,如果属于1、3讲
+        if CurSchedule.TimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+            # 查找下一讲的时间段
+            next_slot_key = (CurSchedule.TimeSlot.week_time_int, CurSchedule.TimeSlot.day_time_int, CurSchedule.TimeSlot.slot_time_int + 1,CurSchedule.Room.id_int)
+            NextSlotSchedule = self.ScheduleIndex_dict.get(next_slot_key, None)
+            if NextSlotSchedule!=None:
+                # 安排课程
+                self.set_schedule_course(NextSlotSchedule,ChoiceCourse)
 
     # 排理论课
-    def initialize_schedule_theory(self, CurTimeSlot,CurRoom,ChoiceCourse):
+    def initialize_schedule_theory(self, CurSchedule,ChoiceCourse):
         # 只在工作日排理论课
-        if CurTimeSlot.day_time_str in self.workday_day_time_dict:
+        if CurSchedule.TimeSlot.day_time_int in self.workday_day_time_dict:
             # 更新课程安排
-            self.set_schedule_course(CurTimeSlot, CurRoom,ChoiceCourse)
+            self.set_schedule_course(CurSchedule,ChoiceCourse)
     # 排实验课
-    def initialize_schedule_experiment(self,CurTimeSlot,CurRoom,ChoiceCourse):
-        self.set_schedule_course(CurTimeSlot,CurRoom,ChoiceCourse)
+    def initialize_schedule_experiment(self,CurSchedule,ChoiceCourse):
+        self.set_schedule_course(CurSchedule,ChoiceCourse)
 
     # 获得教室对应的课程
     def get_schedule(self,CurTimeSlot,CurRoom):
@@ -92,7 +109,7 @@ class GeneticAlgorithm:
         
         # 遍历可用课程
         if AvailableCourse_list==[]:
-            print(f"没有找到符合类型条件的课程:{CurTimeSlot.week_time_str}{CurTimeSlot.day_time_str}{CurTimeSlot.slot_time_str}没有校区为{CurRoom.campus_area_str}，教室类型为{CurRoom.room_type_str}的课程")
+            print(f"没有找到符合类型条件的课程:{CurTimeSlot.week_time_int}{CurTimeSlot.day_time_int}{CurTimeSlot.slot_time_int}没有校区为{CurRoom.campus_area_str}，教室类型为{CurRoom.room_type_str}的课程")
             # 记录教室
             self.NoMatchAreaOrTypeCourseRoom_list.append(CurRoom)
             return None
@@ -100,7 +117,7 @@ class GeneticAlgorithm:
         # 根据教室容量筛选符合条件的课程
         CapacityAvailableCourse_list = self.get_capacity_match_course_list(CurRoom,AvailableCourse_list)
         if CapacityAvailableCourse_list==[]:
-            print(f"没有找到符合容量条件的课程: 时间{CurTimeSlot.week_time_str}{CurTimeSlot.day_time_str}{CurTimeSlot.slot_time_str},{CurRoom.room_name_str} ({CurRoom.capacity_int}人) ")
+            print(f"没有找到符合容量条件的课程: 时间{CurTimeSlot.week_time_int}{CurTimeSlot.day_time_int}{CurTimeSlot.slot_time_int},{CurRoom.room_name_str} ({CurRoom.capacity_int}人) ")
             # 记录教室
             self.NoMatchCapacityCourseRoom_list.append(CurRoom)
             return None
@@ -112,11 +129,16 @@ class GeneticAlgorithm:
     # 初始化基因,去掉不能排课的教室
     def initialize(self):
 
-        # 初始化排课安排列表
+        # 初始化排课安排列表和初始化安排索引
         for CurTimeSlot in self.TimeSlot_list:
-            for Room in self.Room_list:
-                schedule = model_course_schedule.Schedule(CurTimeSlot, Room, None)
+            for CurRoom in self.Room_list:
+                # 初始化排课安排列表
+                schedule = model_course_schedule.Schedule(CurTimeSlot, CurRoom, None)
                 self.Schedule_list.append(schedule)
+
+                # 初始化安排索引
+                key = (CurTimeSlot.week_time_int, CurTimeSlot.day_time_int, CurTimeSlot.slot_time_int,CurRoom.id_int)
+                self.ScheduleIndex_dict[key] = schedule
 
         # 初始化字典结构以存储每个校区和教室类型的教室列表
         for Course in self.Course_list:
@@ -127,21 +149,26 @@ class GeneticAlgorithm:
             self.CourseByCampusAndType_dict[key].append(Course)
 
         # 排课
-        for CurTimeSlot in self.TimeSlot_list:
-            for CurRoom in self.Room_list:
-                # 获得教室对应的课程
-                ChoiceCourse = self.get_schedule(CurTimeSlot,CurRoom)
-                # 如果有匹配的课
-                if ChoiceCourse!=None:
-                    # 根据课程类别在对应排课
-                    schedule_course_type_str = ChoiceCourse.schedule_course_type_str
-                    # 排实验课
-                    if schedule_course_type_str==self.schedule_course_type_str:
-                        self.initialize_schedule_experiment(CurTimeSlot,CurRoom,ChoiceCourse)
-                    # 排理论课
-                    else:
-                        self.initialize_schedule_theory(CurTimeSlot,CurRoom,ChoiceCourse)
-            # 教室库删除没有类型和容量匹配的教室
+        for CurSchedule in self.Schedule_list:
+            # 获得教室对应的课程
+            ChoiceCourse = self.get_schedule(CurSchedule.TimeSlot,CurSchedule.Room)
+            # 如果有匹配的课
+            if ChoiceCourse!=None:
+                # 根据课程类别在对应排课
+                schedule_course_type_str = ChoiceCourse.schedule_course_type_str
+                # 排实验课,只排1、3、5讲,2、4讲直接继承上一讲
+                if schedule_course_type_str==self.schedule_course_type_str:
+                    # 1、3、5讲直接排
+                    if CurTimeSlot.slot_time_int in self.experiment_start_slot_dict:
+                        self.initialize_schedule_experiment(CurSchedule,ChoiceCourse)
+                    # 如果是1、3讲,2、4讲继承
+                    if CurTimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+                        # 2、4讲继承
+                        self.initialize_schedule_experiment_inherit(CurSchedule,ChoiceCourse)
+                # 排理论课
+                else:
+                    self.initialize_schedule_theory(CurSchedule,ChoiceCourse)
+        # 教室库删除没有类型和容量匹配的教室
         self.Room_list = [Room for Room in self.Room_list if Room not in self.NoMatchAreaOrTypeCourseRoom_list and Room not in self.NoMatchCapacityCourseRoom_list]
 
         Room_list = copy.deepcopy(self.Room_list)
@@ -163,10 +190,16 @@ class GeneticAlgorithm:
             if ChoiceCourse!=None:
                 # 排实验课
                 if schedule_course_type_str==self.schedule_course_type_str:
-                    self.initialize_schedule_experiment(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room,ChoiceCourse)
+                    # 只在1、3、5讲排
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_start_slot_dict:
+                        self.initialize_schedule_experiment(ChoiceSchedule,ChoiceCourse)
+                    # 如果是1、3讲,2、4讲继承
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+                        # 2、4讲继承
+                        self.initialize_schedule_experiment_inherit(ChoiceSchedule,ChoiceCourse)
                 # 排理论课
                 else:
-                    self.initialize_schedule_theory(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room,ChoiceCourse)
+                    self.initialize_schedule_theory(ChoiceSchedule,ChoiceCourse)
         # 现在没有匹配的课,根据选的课类别排课
         else:
             # 获得教室对应的课程,随机选一门课
@@ -177,11 +210,29 @@ class GeneticAlgorithm:
                 schedule_course_type_str = ChoiceCourse.schedule_course_type_str
                 # 排实验课
                 if schedule_course_type_str==self.schedule_course_type_str:
-                    self.initialize_schedule_experiment(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room,ChoiceCourse)
+                    # 只在1、3、5讲排
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_start_slot_dict:
+                        self.initialize_schedule_experiment(ChoiceSchedule,ChoiceCourse)
+                    # 如果是1、3讲,2、4讲继承
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+                        # 2、4讲继承
+                        self.initialize_schedule_experiment_inherit(ChoiceSchedule,ChoiceCourse)
                 # 排理论课
                 else:
-                    self.initialize_schedule_theory(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room,ChoiceCourse)
-        
+                    self.initialize_schedule_theory(ChoiceSchedule,ChoiceCourse)
+
+    # 批量处理2、4讲的实验课继承于1、3讲
+    def batch_initialize_schedule_experiment_inherit(self,Schedule_list):
+        for CurSchedule in Schedule_list:
+            if CurSchedule.Course!=None:
+                # 处理实验课
+                if CurSchedule.Course.schedule_course_type_str==self.schedule_course_type_str:
+                    # 如果为可继承的起始讲
+                    if CurSchedule.TimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+                        # 2、4讲继承
+                        self.initialize_schedule_experiment_inherit(CurSchedule,CurSchedule.Course)
+        return Schedule_list
+
     # 基因交叉操作
     def crossover(self, OtherParent):
         # 随机选择交叉基因的起点
@@ -204,6 +255,11 @@ class GeneticAlgorithm:
         # 初始化两个子代类的基因
         Child1Schedule = GeneticAlgorithm(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
         Child2Schedule = GeneticAlgorithm(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
+
+        # 批量处理2、4讲的实验课
+        child1_schedule_list = self.batch_initialize_schedule_experiment_inherit(child1_schedule_list)
+        child2_schedule_list = self.batch_initialize_schedule_experiment_inherit(child2_schedule_list)
+
         # 赋予子代基因
         Child1Schedule.Schedule_list = child1_schedule_list
         Child2Schedule.Schedule_list = child2_schedule_list
@@ -251,19 +307,19 @@ class GeneticAlgorithm:
                 # 初始化已处理周数
                 teacher_week_time_list=[]
                 for CurTimeSlot in self.TimeSlot_list:
-                    if CurTimeSlot.week_time_str not in teacher_week_time_list:
+                    if CurTimeSlot.week_time_int not in teacher_week_time_list:
                         # 更新已处理周数
-                        teacher_week_time_list.append(CurTimeSlot.week_time_str)
-                        key = (CurTimeSlot.week_time_str,CurTeacher.id_int)
+                        teacher_week_time_list.append(CurTimeSlot.week_time_int)
+                        key = (CurTimeSlot.week_time_int,CurTeacher.id_int)
                         self.teacher_assigned_dict[key] = 0
 
             # 初始化已处理周数
             course_week_time_list=[]
             for CurTimeSlot in self.TimeSlot_list:
-                if CurTimeSlot.week_time_str not in course_week_time_list:
+                if CurTimeSlot.week_time_int not in course_week_time_list:
                     # 更新已处理周数
-                    course_week_time_list.append(CurTimeSlot.week_time_str)
-                    key = (CurTimeSlot.week_time_str,CurCourse.id_int)
+                    course_week_time_list.append(CurTimeSlot.week_time_int)
+                    key = (CurTimeSlot.week_time_int,CurCourse.id_int)
                     # 排课类别为实验的课程,初始化课程被安排的次数
                     if CurCourse.schedule_course_type_str == self.schedule_course_type_str:
                         self.experiment_course_assigned_dict[key] = 0
@@ -287,13 +343,20 @@ class GeneticAlgorithm:
                 fitness_float += CurSchedule.Course.priority_float
                 # 统计教师被安排的次数
                 for CurTeacher in CurSchedule.Course.CourseTeacher_list:
-                        key=(CurSchedule.TimeSlot.week_time_str,CurTeacher.id_int)
+                    key=(CurSchedule.TimeSlot.week_time_int,CurTeacher.id_int)
+                    # 如果是实验课并且安排在第5讲,算排了两次课
+                    if CurSchedule.Course.schedule_course_type_str == self.schedule_course_type_str and CurSchedule.TimeSlot.slot_time_int in self.experiment_course_count_double_slot_dict:
+                        self.teacher_assigned_dict[key] += 2
+                    else:
                         self.teacher_assigned_dict[key] += 1
                         
                 # 分别计算理论课和实验课被安排的次数
-                key = (CurSchedule.TimeSlot.week_time_str,CurSchedule.Course.id_int)
+                key = (CurSchedule.TimeSlot.week_time_int,CurSchedule.Course.id_int)
                 if CurSchedule.Course.schedule_course_type_str == self.schedule_course_type_str:
-                    self.experiment_course_assigned_dict[key] +=1
+                    if CurSchedule.TimeSlot.slot_time_int in self.experiment_course_count_double_slot_dict:
+                        self.experiment_course_assigned_dict[key] +=2
+                    else:
+                        self.experiment_course_assigned_dict[key] +=1
                 else:
                     self.theory_course_assigned_dict[key] += 1
 
@@ -304,7 +367,7 @@ class GeneticAlgorithm:
                 # 如果此门课程的安排时间在教师不可以上课的时间列表中，适应度大幅降低
                 for CourseTeacher in CurSchedule.Course.CourseTeacher_list:
                     for TeacherUnavailableTimeSlot in CourseTeacher.unavailable_timeslot_list:
-                        if CurSchedule.TimeSlot.day_time_str == TeacherUnavailableTimeSlot.day_time_str and CurSchedule.TimeSlot.slot_time_str == TeacherUnavailableTimeSlot.slot_time_str :
+                        if CurSchedule.TimeSlot.day_time_int == TeacherUnavailableTimeSlot.day_time_int and CurSchedule.TimeSlot.slot_time_int == TeacherUnavailableTimeSlot.slot_time_int :
                             fitness_float -= 6
 
         # 理论课周排课均衡性评分
@@ -335,6 +398,18 @@ class GeneticAlgorithm:
         # 返回适应度
         return fitness_float
 
+    # 找到课程本周的安排的讲数
+    def get_course_assigned_count(self,CurTimeSlot,CurCourse):
+        # 获得key键
+        key=(CurTimeSlot.week_time_int,CurCourse.id_int)
+        # 处理实验课
+        if CurCourse.schedule_course_type_str == self.schedule_course_type_str:
+            schedule_week_count_int = self.experiment_course_assigned_dict.get(key,-1)
+            return schedule_week_count_int
+        # 处理理论课
+        else:
+            schedule_week_count_int = self.theory_course_assigned_dict.get(key,-1)
+            return schedule_week_count_int
     def display(self):
 
         # 未安排课程字典
@@ -361,7 +436,7 @@ class GeneticAlgorithm:
         
         # 用集合去重
         unassigned_rooms = set(self.Room_list)
-        unassigned_students = set(str(Student.id_int) for Student in self.Student_list)
+        unassigned_students = set(str(Student.student_id_str) for Student in self.Student_list)
 
         # 初始化当前代排课信息字典
         current_generation_info_dict = {
@@ -396,9 +471,9 @@ class GeneticAlgorithm:
                 for CurStudent in self.Student_list:
                     # 如果本门课在当前学生选课列表中,则将学生姓名加入选课学生列表
                     if CurSchedule.Course in CurStudent.EnrolledCoursesList:
-                        enrolled_course_student_name_list.append(str(CurStudent.id_int))
+                        enrolled_course_student_name_list.append(str(CurStudent.student_id_str))
                         # 从未安排列表中移除学生
-                        unassigned_students.discard(str(CurStudent.id_int))
+                        unassigned_students.discard(str(CurStudent.student_id_str))
                 enrolled_course_student_str = ", ".join(enrolled_course_student_name_list) if enrolled_course_student_name_list else "No student enrolled"
 
                 # 初始化教师不可上课信息
@@ -425,7 +500,7 @@ class GeneticAlgorithm:
                 for CurTeacher in CurSchedule.Course.CourseTeacher_list:
                     teacher_id_str+=str(CurTeacher.id_int)+','
                 # 排课时间、教师、课程名、授课教师、课程优先级、选课学生、冲突信息、是否处于教师不可上课时间、不可上课信息
-                room_course_schedule_str = f"week:{CurSchedule.TimeSlot.week_time_str},day:{CurSchedule.TimeSlot.day_time_str},time:{CurSchedule.TimeSlot.slot_time_str} in {CurSchedule.Room.room_name_str}: {CurSchedule.Course.name_str} by {teacher_id_str} (Priority: {CurSchedule.Course.priority_float}) | Enrolled: {enrolled_course_student_str} | student_conflict:{conflict_str} | teacher_availability:{availability_str}"
+                # room_course_schedule_str = f"week:{CurSchedule.TimeSlot.week_time_int},day:{CurSchedule.TimeSlot.day_time_int},time:{CurSchedule.TimeSlot.slot_time_int} in {CurSchedule.Room.room_name_str}: {CurSchedule.Course.name_str} by {teacher_id_str} (Priority: {CurSchedule.Course.priority_float}) | Enrolled: {enrolled_course_student_str} | student_conflict:{conflict_str} | teacher_availability:{availability_str}"
                 
                 # 初始化处理教师不可上课时间为列表
                 teatcher_unavailable_timeslot_list=[]
@@ -433,17 +508,23 @@ class GeneticAlgorithm:
                     # 如果有不可上课时间
                     if CurTeacher.unavailable_timeslot_list != []:
                         for ThisCurTimeSlot in CurTeacher.unavailable_timeslot_list:
-                            this_cur_time_slot_list=[f'week:{ThisCurTimeSlot.week_time_str},day:{ThisCurTimeSlot.day_time_str},time:{ThisCurTimeSlot.slot_time_str}']
+                            this_cur_time_slot_list=[f'week:{ThisCurTimeSlot.week_time_int},day:{ThisCurTimeSlot.day_time_int},time:{ThisCurTimeSlot.slot_time_int}']
                             teatcher_unavailable_timeslot_list.append(this_cur_time_slot_list)
+                
+                # 找到本周此课程安排次数(讲数)
+                schedule_week_count_int = self.get_course_assigned_count(CurSchedule.TimeSlot,CurSchedule.Course)
 
                 # 添加到字典中,使用排课安排索引作为键,值为排课信息
                 current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={
-                    'week':CurSchedule.TimeSlot.week_time_str,'day':CurSchedule.TimeSlot.day_time_str,
-                    "time":CurSchedule.TimeSlot.slot_time_str,"room":CurSchedule.Room.room_name_str,
+                    'week':CurSchedule.TimeSlot.week_time_int,'day':CurSchedule.TimeSlot.day_time_int,
+                    "time":CurSchedule.TimeSlot.slot_time_int,"room":CurSchedule.Room.room_name_str,
                     "course":CurSchedule.Course.name_str,"teacher":teacher_id_str,"priority":CurSchedule.Course.priority_float,
                     "enrolled_student":enrolled_course_student_str,"conflict":conflict_str,"availability":availability_str,
-                    'unavailable_timeslots_teacher':teatcher_unavailable_timeslot_list,
-                    'course_type':CurSchedule.Course.schedule_course_type_str
+                    'unavailable_timeslots_teacher':teatcher_unavailable_timeslot_list, 
+                    
+                    'schedule_course_type':CurSchedule.Course.schedule_course_type_str,
+                    'campus_area_str':CurSchedule.Room.campus_area_str,
+                    'schedule_week_count_int':schedule_week_count_int,
                     }
 
                 # 从未安排列表中移除教室
@@ -458,13 +539,22 @@ class GeneticAlgorithm:
             else:
                 # 未安排教室和时间段
                 unassigned_time_list.append(CurSchedule.TimeSlot)
-                room_course_schedule_str = f"week:{CurSchedule.TimeSlot.week_time_str},day:{CurSchedule.TimeSlot.day_time_str},time:{CurSchedule.TimeSlot.slot_time_str} in {CurSchedule.Room.room_name_str}: Free"
-                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={'week':CurSchedule.TimeSlot.week_time_str,'day':CurSchedule.TimeSlot.day_time_str,"time":CurSchedule.TimeSlot.slot_time_str,"room":CurSchedule.Room.room_name_str,"course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',"availability":'','unavailable_timeslots_teacher':[]}
+                # room_course_schedule_str = f"week:{CurSchedule.TimeSlot.week_time_int},day:{CurSchedule.TimeSlot.day_time_int},time:{CurSchedule.TimeSlot.slot_time_int} in {CurSchedule.Room.room_name_str}: Free"
+                current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={
+                    'week':CurSchedule.TimeSlot.week_time_int,'day':CurSchedule.TimeSlot.day_time_int,
+                    "time":CurSchedule.TimeSlot.slot_time_int,"room":CurSchedule.Room.room_name_str,
+                    "course":'未安排排课',"teacher":'',"priority":'',"enrolled_student":'',"conflict":'',
+                    "availability":'','unavailable_timeslots_teacher':[],
+
+                    'schedule_course_type':'',
+                    'campus_area_str':CurSchedule.Room.campus_area_str,
+                    'schedule_week_count_int':''
+                    }
             
             # 更新排课安排索引
             schedule_index_int += 1
             # 打印排课信息
-            print(room_course_schedule_str)
+            # print(room_course_schedule_str)
         
         # 打印上课时间冲突的教师
         # 获得去重的字符串
@@ -473,7 +563,7 @@ class GeneticAlgorithm:
             unique_conflict_time_teachers_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_teacher"]=unique_conflict_time_teachers_list_str
-        print('unique_conflict_time_teachers_list_str:',unique_conflict_time_teachers_list_str)
+        # print('unique_conflict_time_teachers_list_str:',unique_conflict_time_teachers_list_str)
 
         # 未安排的排课课程添加到字典中
         # 如果全部排课完成,则为空字典
@@ -489,7 +579,7 @@ class GeneticAlgorithm:
             unique_conflict_time_student_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["schedule_conflict_time_student"]=unique_conflict_time_student_list_str
-        print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
+        # print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
 
         # 打印未安排的时间段
         unique_unassigned_time_list_str =list_remove_duplicate_joint(unassigned_time_list)
@@ -497,15 +587,17 @@ class GeneticAlgorithm:
             unique_unassigned_time_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_time_list"]=unique_unassigned_time_list_str
-        print('unique_unassigned_time_list_str:',unique_unassigned_time_list_str)
+        # print('unique_unassigned_time_list_str:',unique_unassigned_time_list_str)
 
         if unassigned_rooms:
-            unassigned_room_str = "Unassigned Rooms: " + ", ".join(unassigned_rooms)
+            unassigned_room_str=''
+            for CurRoom in unassigned_rooms:
+                unassigned_room_str+=CurRoom.room_name_str+','
         else:
             unassigned_room_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_room_list"]=unassigned_room_str
-        print('unassigned_room_str:',unassigned_room_str)
+        # print('unassigned_room_str:',unassigned_room_str)
 
         # 未安排学生
         if unassigned_students:
@@ -514,7 +606,7 @@ class GeneticAlgorithm:
             unassigned_student_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_student_list"]=unassigned_student_str
-        print('unassigned_student_str:',unassigned_student_str)
+        # print('unassigned_student_str:',unassigned_student_str)
 
         return current_generation_info_dict
 
@@ -546,11 +638,10 @@ def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, p
 
     # 种群列表初始化
     Population_list = []
-    count_int=0
-    for _ in range(population_size):
-        count_int+=1
-        print(f'count:{count_int}/{population_size},初始化单个个体开始')
-        start_time = time.time()
+    # count_int=0
+    for count_int in range(population_size):
+        # print(f'count:{count_int+1}/{population_size},初始化单个个体开始')
+        # start_time = time.time()
         # 实例化一个个体
         SingleSchedule = GeneticAlgorithm(Course_list, TimeSlot_list, CopyRoom_list, Student_list)
         # 对个体的基因进行随机初始化
@@ -559,8 +650,8 @@ def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, p
 
         # 将初始化后的个体加入种群列表
         Population_list.append(SingleSchedule)
-        time_used = public_function.get_time_used(start_time)
-        print('初始化单个个体完成,用时:', time_used)
+        # time_used = public_function.get_time_used(start_time)
+        # print('初始化单个个体完成,用时:', time_used)
     # 返回初始化的种群列表
     return Population_list
 
@@ -607,9 +698,9 @@ async def ws_course_schedule(websocket: WebSocket):
     print('初始上课时间类列表开始')
     start_time = time.time()
     # 定义周、天和时间段
-    week_range = range(1, 3)
+    week_range = range(1, 2)
     day_range = ['1', '2', '3', '4', '5','6']
-    slot_time_range =['1','2','3','4','5']
+    slot_time_range =[1,2,3,4,5]
     # 初始化上课时间列表
     TimeSlot_list = service_course_schedule.initialize_time(week_range,day_range,slot_time_range)
     time_used = public_function.get_time_used(start_time)
@@ -728,9 +819,9 @@ if __name__ == "__main__":
     print('初始上课时间类列表开始')
     start_time = time.time()
     # 定义周、天和时间段
-    week_range = range(1, 3)
+    week_range = range(1, 2)
     day_range = ['1', '2', '3', '4', '5','6']
-    slot_time_range =['1','2','3','4','5']
+    slot_time_range =[1,2,3,4,5]
     # 初始化上课时间列表
     TimeSlot_list = service_course_schedule.initialize_time(week_range,day_range,slot_time_range)
     time_used = public_function.get_time_used(start_time)

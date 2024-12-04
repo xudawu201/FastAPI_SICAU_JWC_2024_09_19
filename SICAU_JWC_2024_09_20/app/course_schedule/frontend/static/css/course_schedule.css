@@ -213,6 +213,12 @@
     font-weight: bold;
 }
 
+/* 实验课样式 */
+.schedule-cell-experiment{
+    background-color: rgba(164, 198, 57, 0.2);
+    color: #333;
+    font-weight: bold;
+}
 
 /* 表格样式 */
 table {

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-12-03 17:47:02
+LastEditTime: 2024-12-04 11:54:34
 '''
 import time
 
@@ -210,7 +210,7 @@ def set_teacher_unavailable_timeslot(Teacher_list,semester_str):
                 for unavailable_timeslot in temp_unavailable_timeslot_list:
                     day_str,time_str = unavailable_timeslot.split('-')
                     # 使用0来代表所有周
-                    timeslot = model_course_schedule.TimeSlot(0, day_str, time_str)
+                    timeslot = model_course_schedule.TimeSlot(0, int(day_str), int(time_str))
                     unavailable_timeslot_list.append(timeslot)
 
                 # 添加不可上课时间
