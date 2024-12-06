@@ -3,6 +3,8 @@ let generation_info_dict = new Map(); // 存储排课信息的字典
 let current_page = 1;  // 当前页码
 let start_page = 1;  // 页码范围的起始页
 const show_per_page = 50;  // 每页显示的排课信息条目数
+// 选择的当前代
+let cur_generation_int = -1;
 
 // 开始排课函数
 async function start_course_schedule() {
@@ -25,7 +27,7 @@ async function start_course_schedule() {
 
         // 将新的进度信息添加到排课过程显示框
         generation_progress_div.appendChild(progress_content_div);
-        // 点击显示具体排课信息
+        // 绑定点击事件,点击显示具体排课信息
         progress_content_div.onclick = () => show_course_schedule_info(generation_int);
 
         // 自动滚动到最新的进度信息
@@ -103,6 +105,9 @@ async function show_course_schedule_info(generation_int) {
 
     // 调用可视化函数
     visualize_schedule(generation_int);
+
+    // 设置全局变量中当前代数更新
+    cur_generation_int = generation_int;
 
     // 显示当前代详细排课信息    
     const schedule_info_div = document.getElementById("schedule_info_div");
@@ -242,7 +247,7 @@ async function visualize_schedule(generation_int) {
     visualize_top_generation_info_div.className = "visualize_top_generation_info_div";
 
     visualize_top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float} <br>`;
-    visualize_top_generation_info_div.innerHTML += `浅绿色：实验课，浅蓝色:理论课，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
+    visualize_top_generation_info_div.innerHTML += `浅绿色：正常实验课，深绿色：实验课安排次数一周大于4讲，浅蓝色:正常理论课，深蓝色：理论课安排次数一周大于4讲，白色：未安排排课，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
     // 将当前代数和适应度信息添加到排课信息显示框的左上角
     schedule_visualization_div.appendChild(visualize_top_generation_info_div);
 
@@ -284,6 +289,10 @@ async function visualize_schedule(generation_int) {
                 }
                 // 课程类别
                 conflicts_info_dict.schedule_course_type=cellData.schedule_course_type;
+                // 课程安排次数
+                conflicts_info_dict.schedule_week_count=cellData.schedule_week_count_int;
+                // 是否安排课程
+                conflicts_info_dict.is_schedule=cellData.course;
                 
                 gridContainer.appendChild(createScheduleCell(cellData.course, cellData.teacher, conflicts_info_dict));
             } 
@@ -310,7 +319,11 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
     const cell = document.createElement("div");
     // 指定默认类名
     cell.className = "schedule-cell";
-
+    // 未进行排课的单元格
+    if (conflicts_info_dict.is_schedule=='未安排排课')
+    {
+        cell.classList.add("schedule-cell-not-schedule");
+    }
     // 根据情况动态分配样式
     if (conflicts_info_dict.teacher_is_unavailable && conflicts_info_dict.student_is_conflict) {
         cell.classList.add("schedule-cell-multiple-conflicts");
@@ -321,19 +334,27 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
     else if (conflicts_info_dict.student_is_conflict) {
         cell.classList.add("schedule-cell-student-conflict");
     } 
-    // else {
-    //     cell.classList.add("schedule-cell-normal");
-    // }
     // 实验课
     if(conflicts_info_dict.schedule_course_type=='实验'){
-        cell.classList.add("schedule-cell-experiment");
+        // 排课次数超过4次切换显示颜色
+        if(conflicts_info_dict.schedule_week_count>4){
+            cell.classList.add("schedule_cell_experiment_too_many_count");
+        }
+        else{
+            cell.classList.add("schedule-cell-experiment");
+        }
     }
     // 理论课
     else {
-        // 添加类名
-        cell.classList.add("schedule-cell-normal");
+        // 排课次数超过4次切换显示颜色
+        if(conflicts_info_dict.schedule_week_count>4){
+            cell.classList.add("schedule_cell_theory_too_many_count");
+        }
+        else{
+            // 添加类名
+            cell.classList.add("schedule-cell-normal");
+        }
     }
-
 
     // 填充课程和教师信息
     cell.innerHTML = `<strong>${course}</strong><br>${teacher}`;
@@ -345,4 +366,17 @@ function createEmptyCell() {
     const cell = document.createElement("div");
     cell.className = "schedule-cell schedule-cell-empty";
     return cell;
+}
+
+// 下载按钮事件处理
+async function download_data_to_excel() {
+    // 检查是否有当前选中
+    if (cur_generation_int==-1) {
+        alert('请先选择一个进化代数');
+        return;
+    }
+    // 有选择,下载内容
+    else {
+        window.location.href = `/download_schedule_to_excel?query=${cur_generation_int}`;
+    }
 }

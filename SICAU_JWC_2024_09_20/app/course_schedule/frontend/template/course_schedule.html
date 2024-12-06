@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-11-12 10:49:26
  * @LastEditors: xudawu
- * @LastEditTime: 2024-12-04 17:56:45
+ * @LastEditTime: 2024-12-05 17:59:09
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -37,12 +37,18 @@
     <div id="schedule_visualization_div" class="show_course_schedule_div">
         <h3>排课过程可视化</h3>
         <!-- <p><strong>说明:</strong></p> -->
-        <p>1. 实验课为浅绿色</p>
-        <p>2. 理论课为淡蓝色</p>
-        <p>3. 存在教师不可上课时间单元格为橙红色</p>
-        <p>4. 存在学生上课时间冲突单元格为金黄色</p>
-        <p>5. 存在以上两种冲突单元格为紫色</p>
+        <p>1. 正常实验课为浅绿色,安排次数过多为深绿色</p>
+        <p>2. 正常理论课为浅蓝色,安排次数过多为深蓝色</p>
+        <p>3. 未安排排课为白色</p>
+        <p>4. 存在教师不可上课时间单元格为橙红色</p>
+        <p>5. 存在学生上课时间冲突单元格为金黄色</p>
+        <p>6. 存在以上两种冲突单元格为紫色</p>
         
+    </div>
+
+    <!-- 下载按钮 -->
+    <div class="button-group" id="download_button_div">
+        <button id="download_button" onclick="download_data_to_excel()">下载当前代排课数据</button>
     </div>
 
     <!-- 用于显示具体的排课信息 -->
