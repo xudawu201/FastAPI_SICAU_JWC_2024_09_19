@@ -57,7 +57,7 @@
     border: 1px solid #ddd;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow: auto; /* 允许垂直滚动 */
+    overflow: auto; /* 允许滚动 */
 }
 
 /* 内容框内的文字样式 */
@@ -308,5 +308,11 @@ tr:hover {
 /* 未排课的课程样式 */
 .schedule-cell-not-schedule{
     background-color: rgba(255, 255, 255, 0.2);
+    color: #333;
+}
+
+/* 距离过远的课程样式 */
+.schedule-cell-distance_unnormal{
+    background-color: rgba(237, 135, 45, 0.2);
     color: #333;
 }

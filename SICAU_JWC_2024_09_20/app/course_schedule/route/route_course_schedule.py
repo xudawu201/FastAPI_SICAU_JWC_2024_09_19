@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-12 10:49:26
 LastEditors: xudawu
-LastEditTime: 2024-12-06 16:51:05
+LastEditTime: 2024-12-09 18:02:11
 '''
 '''
 Author: xudawu
@@ -78,10 +78,14 @@ class GeneticAlgorithm:
 
         # 以教师id和上课周为键，上课次数为值
         self.teacher_assigned_dict = {}
-        # 初始化安排理论课程字典
+        # 初始化安排理论课次数字典，键为（周，课程id）,值为安排次数
         self.theory_course_assigned_dict = {}
-        # 初始化安排实验课程字典
+        # 初始化安排实验课次数字典，键为（周，课程id）,值为安排次数
         self.experiment_course_assigned_dict = {}
+        # 初始化课程安排学时字典,键为（课程id）,值为已安排学时
+        self.course_assigned_study_hour_dict = {}
+        # 初始化课程id和课程类字典，键为课程id，值为课程类
+        self.Course_id_dict = {}
 
         # 初始化排课安排列表和初始化安排索引
         for CurTimeSlot in self.TimeSlot_list:
@@ -100,6 +104,10 @@ class GeneticAlgorithm:
             if key not in self.CourseByCampusAndType_dict:
                 self.CourseByCampusAndType_dict[key] = []
             self.CourseByCampusAndType_dict[key].append(Course)
+
+        # 初始化课程id和课程类字典
+        for Course in self.Course_list:
+            self.Course_id_dict[Course.id_int] = Course
 
     # 获得容量匹配的课程列表
     def get_capacity_match_course_list(self, CurRoom,AvailableCourse_list):
@@ -212,12 +220,6 @@ class GeneticAlgorithm:
                 else:
                     self.initialize_schedule_theory(CurSchedule,ChoiceCourse)
         
-            # 批量处理2、4讲的实验课
-            # SetedSchedule_dict = self.batch_initialize_schedule_experiment_inherit(self.ScheduleIndex_dict)
-            # # 赋予处理后的实验课基因
-            # self.ScheduleIndex_dict = SetedSchedule_dict
-
-
         # 教室库删除没有类型和容量匹配的教室
         self.Room_list = [Room for Room in self.Room_list if Room not in self.NoMatchAreaOrTypeCourseRoom_list and Room not in self.NoMatchCapacityCourseRoom_list]
 
@@ -235,9 +237,27 @@ class GeneticAlgorithm:
         if ChoiceSchedule.Course!=None:
             # 根据课程类别在对应排课
             schedule_course_type_str = ChoiceSchedule.Course.schedule_course_type_str
+            
+            # 有一定概率设置为不排课
+            if random.random() < 0.3:
+                # 实验课还需要设置2、4讲为None
+                if schedule_course_type_str==self.schedule_experiment_course_type_name_str:
+                    # 只在1、3、5讲排
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_start_slot_dict:
+                        self.initialize_schedule_experiment(ChoiceSchedule,None)
+                    # 如果是1、3讲,2、4讲继承
+                    if ChoiceSchedule.TimeSlot.slot_time_int in self.experiment_inherit_start_slot_dict:
+                        # 2、4讲继承
+                        self.initialize_schedule_experiment_inherit(ChoiceSchedule,None)
+                # 如果是理论课,直接设置为None
+                else:
+                    self.initialize_schedule_theory(ChoiceSchedule,None)
+                
+                # 直接中断返回
+                return
+            
             # 获得教室对应的课程,随机选一门课
             ChoiceCourse = self.get_schedule(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room)
-            
             # 如果有课再排
             if ChoiceCourse!=None:
                 # 原位置课程为实验课
@@ -292,40 +312,6 @@ class GeneticAlgorithm:
                 else:
                     self.initialize_schedule_theory(ChoiceSchedule,ChoiceCourse)
 
-    # 基因交叉操作
-    def crossover(self, OtherParent):
-        # 随机选择交叉基因的起点
-        crossover_index_int = random.randint(0, len(self.ScheduleIndex_dict) - 1)
-        # 初始化两个子代的基因
-        child1_schedule_dict = {}
-        child2_schedule_dict = {}
-
-        # 迭代所有时间和房间的键值对
-        for index, ScheduleIndexKey_tuple in enumerate(self.ScheduleIndex_dict.keys()):
-            # 子代1交叉基因起点之前的基因来自本个体,子代2的基因来自其他个体
-            if index <= crossover_index_int:
-                child1_schedule_dict[ScheduleIndexKey_tuple] = self.ScheduleIndex_dict[ScheduleIndexKey_tuple]
-                child2_schedule_dict[ScheduleIndexKey_tuple] = OtherParent.ScheduleIndex_dict[ScheduleIndexKey_tuple]
-            else:
-                # 子代1交叉基因起点之后的基因来自其他个体,子代2的基因来自本个体
-                child1_schedule_dict[ScheduleIndexKey_tuple] = OtherParent.ScheduleIndex_dict[ScheduleIndexKey_tuple]
-                child2_schedule_dict[ScheduleIndexKey_tuple] = self.ScheduleIndex_dict[ScheduleIndexKey_tuple]
-
-        # 初始化两个子代类的基因
-        Child1Schedule = GeneticAlgorithm(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
-        Child2Schedule = GeneticAlgorithm(self.Course_list, self.TimeSlot_list, self.Room_list, self.Student_list)
-
-        # 批量处理2、4讲的实验课
-        child1_schedule_dict = self.batch_initialize_schedule_experiment_inherit(child1_schedule_dict)
-        child2_schedule_dict = self.batch_initialize_schedule_experiment_inherit(child2_schedule_dict)
-
-        # 赋予子代基因
-        Child1Schedule.ScheduleIndex_dict = child1_schedule_dict
-        Child2Schedule.ScheduleIndex_dict = child2_schedule_dict
-
-        # 返回两个新子代基因
-        return Child1Schedule, Child2Schedule
-    
     # 学生适应度
     def student_fitness(self,CurTimeSlot,CurCourse):
         fitness_float = 0
@@ -345,6 +331,25 @@ class GeneticAlgorithm:
                     CurStudent.TimeSlotList.append(CurTimeSlot)
 
         return fitness_float
+
+    # 计算课程安排学时适应度
+    def course_schedule_study_hour_fitness(self,course_assigned_study_hour_dict):
+        # 初始化学时适应度
+        study_hour_fitness_float = 0
+        for cur_key,cur_study_hour in course_assigned_study_hour_dict.items():
+            CurCourse = self.Course_id_dict.get(cur_key,None)
+            if CurCourse!=None:
+                # 获得当前课程需要排课的总学时
+                cur_schedule_total_study_hour_float = CurCourse.total_study_hour-CurCourse.self_study_hour
+                # 总学时减去已排学时的绝对值,即为和要求排课的距离,为0则为最佳
+                study_hour_distance_float= abs(cur_schedule_total_study_hour_float-cur_study_hour)
+                # 距离为0增加大量适应度
+                if study_hour_distance_float==0:
+                    study_hour_fitness_float += 10
+                # 距离越大,适应度越低,直接减去距离和一个基础值
+                else:
+                    study_hour_fitness_float -= study_hour_distance_float+5
+        return study_hour_fitness_float
 
     # 计算适应度
     def fitness(self):
@@ -385,6 +390,10 @@ class GeneticAlgorithm:
                     # 理论课的课程,初始化课程被安排的次数
                     else:
                         self.theory_course_assigned_dict[key] = 0
+
+            # 初始化课程已安排学时为0
+            key = (CurCourse.id_int)
+            self.course_assigned_study_hour_dict[key] = 0
                         
         # 计算适应度
         for CurSchedule in self.ScheduleIndex_dict.values():
@@ -411,15 +420,23 @@ class GeneticAlgorithm:
                         
                 # 分别计算理论课和实验课被安排的次数
                 key = (CurSchedule.TimeSlot.week_time_int,CurSchedule.Course.id_int)
+                # 计算课程学时
+                course_key=(CurSchedule.Course.id_int)
                 if CurSchedule.Course.schedule_course_type_str == self.schedule_experiment_course_type_name_str:
                     if CurSchedule.TimeSlot.slot_time_int in self.experiment_course_count_double_slot_dict:
                         self.experiment_course_assigned_dict[key] +=2
+                        # 课时加2
+                        self.course_assigned_study_hour_dict[course_key]+=2
                     else:
                         self.experiment_course_assigned_dict[key] +=1
+                        # 课时加1
+                        self.course_assigned_study_hour_dict[course_key]+=1
                 else:
                     self.theory_course_assigned_dict[key] += 1
+                    # 课时加1
+                    self.course_assigned_study_hour_dict[course_key]+=1
 
-                # 计算学生相关适应度
+                # 计算该课程学生相关适应度
                 student_fitness_float = self.student_fitness(CurSchedule.TimeSlot,CurSchedule.Course)
                 fitness_float += student_fitness_float
 
@@ -439,8 +456,7 @@ class GeneticAlgorithm:
                 fitness_float += 5
             # 其他情况,直接减去排课次数的分,次数越多减的越多,增加减去一个基础分,消除边界波动
             else:
-                # fitness_float -= course_assigned_count_int+2
-                fitness_float -= 2
+                fitness_float -= course_assigned_count_int+7
 
         # 实验课周排课均衡性评分
         for (week_time_int,course_id_int), course_assigned_count_int in self.experiment_course_assigned_dict.items():
@@ -453,8 +469,10 @@ class GeneticAlgorithm:
                 fitness_float += 5
             # 其他情况,直接减去排课次数的分,次数越多减的越多,增加减去一个基础分
             else:
-                # fitness_float -= course_assigned_count_int+2
-                fitness_float -= 2
+                fitness_float -= course_assigned_count_int+7
+
+        # 课程学时安排适应度
+        fitness_float += self.course_schedule_study_hour_fitness(self.course_assigned_study_hour_dict)
 
         # 返回适应度
         return fitness_float
@@ -567,6 +585,19 @@ class GeneticAlgorithm:
                     teatcher_unavailable_timeslot_str+=cur_time_slot+','
                 # 找到本周此课程安排次数(讲数)
                 schedule_week_count_int = self.get_course_assigned_count(CurSchedule.TimeSlot,CurSchedule.Course)
+                # 找到本课程已排学时和要求排课的距离
+                CurCourse = self.Course_id_dict.get((CurSchedule.Course.id_int),None)
+                # 初始化学时要求
+                cur_schedule_total_study_hour_float=0
+                # 初始化已排总学时
+                cur_study_hour=0
+                if CurCourse!=None:
+                    # 获得当前课程需要排课的总学时
+                    cur_schedule_total_study_hour_float = CurCourse.total_study_hour-CurCourse.self_study_hour
+                    key = (CurCourse.id_int)
+                    cur_study_hour = self.course_assigned_study_hour_dict.get(key,0)
+                    # 总学时减去已排学时的绝对值,即为和要求排课的距离,为0则为最佳
+                    study_hour_distance_float= abs(cur_schedule_total_study_hour_float-cur_study_hour)
 
                 # 添加到字典中,使用排课安排索引作为键,值为排课信息
                 current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={
@@ -579,6 +610,11 @@ class GeneticAlgorithm:
                     'schedule_course_type':CurSchedule.Course.schedule_course_type_str,
                     'campus_area_str':CurSchedule.Room.campus_area_str,
                     'schedule_week_count_int':schedule_week_count_int,
+                    'study_hour_distance_float':study_hour_distance_float,
+                    'cur_schedule_total_study_hour_float':cur_schedule_total_study_hour_float,
+                    'cur_study_hour':cur_study_hour,
+                    'course_id':CurSchedule.Course.id_int,
+                    'room_id':CurSchedule.Room.id_int,
                     }
 
                 # 从未安排列表中移除教室
@@ -602,7 +638,12 @@ class GeneticAlgorithm:
 
                     'schedule_course_type':'',
                     'campus_area_str':CurSchedule.Room.campus_area_str,
-                    'schedule_week_count_int':''
+                    'schedule_week_count_int':'',
+                    'study_hour_distance_float':'',
+                    'cur_schedule_total_study_hour_float':'',
+                    'cur_study_hour':'',
+                    'course_id':'',
+                    'room_id':CurSchedule.Room.id_int,
                     }
             
             # 更新排课安排索引
@@ -714,36 +755,6 @@ def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, p
     # 返回初始化的种群列表
     return Population_list
 
-# 交叉和变异获得下一代种群
-def genetic_evolution(Population_list,retention_number_int):
-    
-    # 计算适应度,并对种群列表进行倒序排序
-    Population_list.sort(key=lambda x: x.fitness(), reverse=True)
-
-    # 初始化下一代个体列表
-    NextGeneration_list = []
-    # 保留最优的部分个体
-    for i in range(retention_number_int):
-        NextGeneration_list.append(Population_list[i])
-
-    # 选择和交叉,直到达到种群大小
-    while len(NextGeneration_list) < len(Population_list):
-        # 随机在适应度最高的部分中选择父母
-        Parent1 = random.choice(Population_list[:10])
-        Parent2 = random.choice(Population_list[:10])
-        # 对父母基因进行交叉,得到两个子代
-        Child1, Child2 = Parent1.crossover(Parent2)
-        # 将两个子代加入下一代个体列表
-        NextGeneration_list.append(Child1)
-        NextGeneration_list.append(Child2)
-
-    # 子代和父代有概率变异(随机变异一个基因点),这里的概率为50%
-    for ChildsChedule in NextGeneration_list:
-        if random.random() < 0.5:
-            ChildsChedule.mutate()
-
-    return NextGeneration_list
-
 # 渲染前端页面的路由
 @router.get("/course_schedule")
 async def course_schedule(request: Request):
@@ -757,7 +768,7 @@ async def ws_course_schedule(websocket: WebSocket):
     print('初始上课时间类列表开始')
     start_time = time.time()
     # 定义周、天和时间段
-    week_range = range(1, 2)
+    week_range = range(1, 19)
     day_range = [1, 2, 3, 4, 5,6]
     slot_time_range =[1,2,3,4,5]
     # 初始化上课时间列表
@@ -809,8 +820,6 @@ async def ws_course_schedule(websocket: WebSocket):
     
     # 种群大小和适应度阈值
     population_size_int = 100
-    # 保留最优的多少个
-    retention_number_int=5
 
     print('排课种群初始化开始')
     start_time = time.time()
@@ -825,6 +834,21 @@ async def ws_course_schedule(websocket: WebSocket):
     time_used = public_function.get_time_used(start_time)
     print('排课种群初始化完成,用时:', time_used)
 
+    print('获取最优个体开始')
+    start_time = time.time()
+    # 获取最优个体
+    BestSchedule = max(PopulationList, key=lambda x: x.fitness())
+    # 批量获取最优个体2、4讲的实验课
+    SetedSchedule_dict = BestSchedule.batch_initialize_schedule_experiment_inherit(BestSchedule.ScheduleIndex_dict)
+    # 赋予处理后的实验课基因
+    BestSchedule.ScheduleIndex_dict = SetedSchedule_dict
+
+    time_used = public_function.get_time_used(start_time)
+    print('获取最优个体完成,用时:', time_used)
+
+    # 初始化当前最高适应度
+    cur_max_fitness_float=BestSchedule.fitness()
+
     # 初始化进化次数
     generation_int = 0
     # 初始化一个锁
@@ -835,25 +859,38 @@ async def ws_course_schedule(websocket: WebSocket):
     while True:
         # 加锁以保证异步执行时，每次循环内的数据是隔离的
         async with AsyncioLock:
-            print('排课种群进化开始')
+            # 执行深拷贝
+            # CurSchedule = copy.deepcopy(BestSchedule)
+            # 找到进化方向
+            print('尝试找到进化方向开始')
             start_time = time.time()
-            # 交叉和变异获得下一代种群
-            # 使用asyncio的to_thread方法将同步函数转换为异步函数
-            PopulationList = await asyncio.to_thread(genetic_evolution,PopulationList,retention_number_int)
-            # PopulationList = genetic_evolution(PopulationList,retention_number_int)
-            time_used = public_function.get_time_used(start_time)
-            print('排课种群进化完成,用时:', time_used)
+            while True:
+                # 执行深拷贝
+                CurSchedule = copy.deepcopy(BestSchedule)
+                # 执行变异
+                CurSchedule.mutate()
+                # 变异第2次
+                # CurSchedule.mutate()
 
-            print('计算种群适应度开始')
-            start_time = time.time()
-            # 获取最优个体
-            BestSchedule = max(PopulationList, key=lambda x: x.fitness())
-            # BestSchedule = await asyncio.to_thread(max, PopulationList, key=lambda x: x.fitness())
-            # 获得最优个体的适应度
-            best_fitness_float = BestSchedule.fitness()
-            # best_fitness_float = await asyncio.to_thread(BestSchedule.fitness)
+                # 获得最优个体的适应度
+                # best_fitness_float = CurSchedule.fitness()
+                best_fitness_float = await asyncio.to_thread(CurSchedule.fitness)
+                # time_used = public_function.get_time_used(start_time)
+                # print('计算当前适应度完成,用时:', time_used)
+                print('当前适应度:',best_fitness_float)
+
+                # 如果适应度降低则是不好的变异方向,则放弃,重新变异
+                if best_fitness_float<=cur_max_fitness_float:
+                    continue
+                else:
+                    # 适应度增加,则跳出循环
+                    break
             time_used = public_function.get_time_used(start_time)
-            print('计算种群适应度完成,用时:', time_used)
+            print('尝试找到进化方向完成,用时:', time_used)
+
+            # 变异方向是增加适应度的,则继续进化,基因继承和适应度继承
+            BestSchedule = CurSchedule
+            cur_max_fitness_float = best_fitness_float
 
             print('处理种群信息可视化开始')
             start_time = time.time()
@@ -861,8 +898,8 @@ async def ws_course_schedule(websocket: WebSocket):
             generation_int += 1
             # print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
             # 获得当前代的排课信息
-            # current_generation_info_dict = await asyncio.to_thread(BestSchedule.display)
-            current_generation_info_dict = BestSchedule.display()
+            # current_generation_info_dict = await asyncio.to_thread(CurSchedule.display)
+            current_generation_info_dict = CurSchedule.display()
             # 获得已排课的课程数
             total_assigned_course_number = len(current_generation_info_dict['room_assigned_course_schedule_dict'].keys())
             # 字典添加代数和适应度
@@ -900,7 +937,7 @@ async def download_schedule_to_excel(query: int = 0):
     ws.title = f"Schedule_{query}"
 
     # 添加表头
-    headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师","本周排课次数","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"]
+    headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师id","课程id","教室id","课程总学时要求","已排总学时","本周排课次数","已排学时和要求学时的距离","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"]
     ws.append(headers)
 
     # 填充排课数据
@@ -909,17 +946,27 @@ async def download_schedule_to_excel(query: int = 0):
             schedule['week'],
             schedule['day'],
             schedule['time'],
+            schedule['campus_area_str'],
+
             schedule['room'],
+            schedule['schedule_course_type'],
             schedule['course'],
             schedule['teacher'],
+
+            schedule['course_id'],
+            schedule['room_id'],
+            
+            schedule['cur_schedule_total_study_hour_float'],
+            schedule['cur_study_hour'],
+            schedule['schedule_week_count_int'],
+            schedule['study_hour_distance_float'],
+
             schedule['priority'],
             schedule['enrolled_student'],
-            schedule['conflict'],
-            schedule['availability'],
             schedule['unavailable_timeslots_teacher'],
-            schedule['schedule_course_type'],
-            schedule['campus_area_str'],
-            schedule['schedule_week_count_int'],
+            schedule['conflict'],
+
+            schedule['availability'],
         ]
         ws.append(row)
 
@@ -1029,30 +1076,3 @@ if __name__ == "__main__":
     PopulationList = initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size_int)
     time_used = public_function.get_time_used(start_time)
     print('排课种群初始化完成,用时:', time_used)
-
-    # 初始化进化次数
-    generation_int = 0
-    while True:
-        # 交叉和变异获得下一代种群
-        print('排课种群进化开始')
-        start_time = time.time()
-        PopulationList = genetic_evolution(PopulationList,retention_number_int)
-        time_used = public_function.get_time_used(start_time)
-        print('排课种群进化完成,用时:', time_used)
-
-        # 获取最优个体
-        best_schedule = max(PopulationList, key=lambda x: x.fitness())
-        best_fitness_float = best_schedule.fitness()
-
-        # 打印当前代的最优适应度
-        generation_int += 1
-        print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
-        # best_schedule.display()
-        print("-" * 40)
-
-        # 如果达到了适应度要求，退出循环
-        if best_fitness_float >= fitness_threshold_float:
-            break
-
-    print(f"best_fitness_float:{best_fitness_float},Final Best Schedule:")
-    best_schedule.display()

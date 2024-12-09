@@ -132,7 +132,7 @@ async function show_course_schedule_info(generation_int) {
 
         // 创建表头
         const header = schedule_table.insertRow();
-        const headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师","本周排课次数","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
+        const headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师id","课程id","教室id","课程总学时要求","已排总学时","本周排课次数","已排学时和要求学时的距离","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
         headers.forEach(header_text => {
             const th = document.createElement("th");
             th.innerHTML = header_text;
@@ -156,14 +156,20 @@ async function show_course_schedule_info(generation_int) {
             row.insertCell(6).innerHTML = schedule_dict.course;
             row.insertCell(7).innerHTML = schedule_dict.teacher;
 
-            row.insertCell(8).innerHTML = schedule_dict.schedule_week_count_int;
+            row.insertCell(8).innerHTML = schedule_dict.course_id;
+            row.insertCell(9).innerHTML = schedule_dict.room_id;
 
-            row.insertCell(9).innerHTML = schedule_dict.priority;
-            row.insertCell(10).innerHTML = schedule_dict.enrolled_student;
-            row.insertCell(11).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+            row.insertCell(10).innerHTML = schedule_dict.cur_schedule_total_study_hour_float;
+            row.insertCell(11).innerHTML = schedule_dict.cur_study_hour;
+            row.insertCell(12).innerHTML = schedule_dict.schedule_week_count_int;
+            row.insertCell(13).innerHTML = schedule_dict.study_hour_distance_float;
 
-            row.insertCell(12).innerHTML = schedule_dict.conflict;
-            row.insertCell(13).innerHTML = schedule_dict.availability;
+            row.insertCell(14).innerHTML = schedule_dict.priority;
+            row.insertCell(15).innerHTML = schedule_dict.enrolled_student;
+            row.insertCell(16).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+            row.insertCell(17).innerHTML = schedule_dict.conflict;
+
+            row.insertCell(16).innerHTML = schedule_dict.availability;
         });
 
         // 将排课表格添加到页面中
@@ -247,7 +253,7 @@ async function visualize_schedule(generation_int) {
     visualize_top_generation_info_div.className = "visualize_top_generation_info_div";
 
     visualize_top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float} <br>`;
-    visualize_top_generation_info_div.innerHTML += `浅绿色：正常实验课，深绿色：实验课安排次数一周大于4讲，浅蓝色:正常理论课，深蓝色：理论课安排次数一周大于4讲，白色：未安排排课，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
+    visualize_top_generation_info_div.innerHTML += `浅绿色：正常实验课，深绿色：实验课安排次数一周大于4讲，浅蓝色:正常理论课，深蓝色：理论课安排次数一周大于4讲，白色：未安排排课，棕色：课程排课学时和要求学时距离大于0，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
     // 将当前代数和适应度信息添加到排课信息显示框的左上角
     schedule_visualization_div.appendChild(visualize_top_generation_info_div);
 
@@ -293,6 +299,8 @@ async function visualize_schedule(generation_int) {
                 conflicts_info_dict.schedule_week_count=cellData.schedule_week_count_int;
                 // 是否安排课程
                 conflicts_info_dict.is_schedule=cellData.course;
+                // 课程已排学时和要求学时的距离
+                conflicts_info_dict.study_hour_distance_float=cellData.study_hour_distance_float;
                 
                 gridContainer.appendChild(createScheduleCell(cellData.course, cellData.teacher, conflicts_info_dict));
             } 
@@ -354,6 +362,12 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
             // 添加类名
             cell.classList.add("schedule-cell-normal");
         }
+
+    }
+    
+    // 已排学时和要求学时的距离大于0的标记为橙色
+    if(conflicts_info_dict.study_hour_distance_float>0){
+        cell.classList.add("schedule-cell-distance_unnormal");
     }
 
     // 填充课程和教师信息

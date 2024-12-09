@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-12-06 16:50:13
+LastEditTime: 2024-12-09 17:04:52
 '''
 import time
 
@@ -48,7 +48,7 @@ def initialize_teacher_course(semester_str):
     Course_list = []
     # 初始化临时教师列表
     temp_teacher_list = []
-    for row in rows[:100]:
+    for row in rows[:10]:
         
         # 初始化临时教师列表
         TempTeacherList = []
