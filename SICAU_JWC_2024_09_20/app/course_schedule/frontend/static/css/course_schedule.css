@@ -239,7 +239,9 @@ th, td {
 
 /* 设置表头样式，使其固定 */
 th {
-    background-color: #f2f2f2;
+    background-color: #0069d9;
+    color: white;
+    /* background-color: #f2f2f2; */
     position: sticky; /* 固定表头 */
     top: 0; /* 固定在顶部 */
     z-index: 1; /* 确保表头在上面 */

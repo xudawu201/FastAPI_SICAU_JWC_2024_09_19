@@ -2,7 +2,7 @@ let WSocket = null;  // WebSocket对象，全局变量
 let generation_info_dict = new Map(); // 存储排课信息的字典
 let current_page = 1;  // 当前页码
 let start_page = 1;  // 页码范围的起始页
-const show_per_page = 50;  // 每页显示的排课信息条目数
+const show_per_page = 25;  // 每页显示的排课信息条目数
 // 选择的当前代
 let cur_generation_int = -1;
 

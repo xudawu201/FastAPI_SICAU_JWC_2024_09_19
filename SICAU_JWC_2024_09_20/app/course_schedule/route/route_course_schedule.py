@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-12 10:49:26
 LastEditors: xudawu
-LastEditTime: 2024-12-09 18:02:11
+LastEditTime: 2024-12-10 18:18:25
 '''
 '''
 Author: xudawu
@@ -38,6 +38,14 @@ router = APIRouter()
 
 # 初始化每代排课信息
 all_generation_info_dict={}
+# 每代基因最大变异次数
+max_mutate_count_int = 50
+# 定义周、天和时间段
+week_range = range(1, 13)
+day_range = [1, 2, 3, 4, 5,6]
+slot_time_range =[1,2,3,4,5]
+# 指定学期
+semester_str = '2024-2025-1'
 
 
 # 遗传算法类
@@ -293,6 +301,9 @@ class GeneticAlgorithm:
                             self.initialize_schedule_experiment_inherit(ChoiceSchedule,ChoiceCourse)
         # 现在没有匹配的课,根据选的课类别排课
         else:
+            # 有一定概率不排课
+            if random.random() < 0.3:
+                return
             # 获得教室对应的课程,随机选一门课
             ChoiceCourse = self.get_schedule(ChoiceSchedule.TimeSlot,ChoiceSchedule.Room)
             # 如果有课再排
@@ -322,7 +333,7 @@ class GeneticAlgorithm:
                 # 如果学生上课时间段中有此上课时间
                 if CurTimeSlot in CurStudent.TimeSlotList:
                     # 有冲突大幅降低适应度
-                    fitness_float -= 6
+                    fitness_float -= 2
                     # 记录冲突信息
                     self.conflict_info_list.append((CurStudent.student_id_str, CurCourse.id_int, CurTimeSlot))
 
@@ -345,10 +356,11 @@ class GeneticAlgorithm:
                 study_hour_distance_float= abs(cur_schedule_total_study_hour_float-cur_study_hour)
                 # 距离为0增加大量适应度
                 if study_hour_distance_float==0:
-                    study_hour_fitness_float += 10
+                    study_hour_fitness_float += 1
                 # 距离越大,适应度越低,直接减去距离和一个基础值
                 else:
-                    study_hour_fitness_float -= study_hour_distance_float+5
+                    study_hour_fitness_float -= study_hour_distance_float
+                    # study_hour_fitness_float -= 1
         return study_hour_fitness_float
 
     # 计算适应度
@@ -402,7 +414,7 @@ class GeneticAlgorithm:
                 # 同一课程同一时间不能安排在多个教室,同一时间同一课程名代表有冲突
                 # 在安排中则代表有冲突
                 if (CurSchedule.TimeSlot, CurSchedule.Room) in course_time_dict:
-                    fitness_float -= 6
+                    fitness_float -= 2
                 else:
                     # 没有在安排表中，记录此次安排
                     course_time_dict[(CurSchedule.TimeSlot, CurSchedule.Room)] = CurSchedule.Course
@@ -444,32 +456,33 @@ class GeneticAlgorithm:
                 for CourseTeacher in CurSchedule.Course.CourseTeacher_list:
                     for TeacherUnavailableTimeSlot in CourseTeacher.unavailable_timeslot_list:
                         if CurSchedule.TimeSlot.day_time_int == TeacherUnavailableTimeSlot.day_time_int and CurSchedule.TimeSlot.slot_time_int == TeacherUnavailableTimeSlot.slot_time_int :
-                            fitness_float -= 6
+                            fitness_float -= 2
 
         # 理论课周排课均衡性评分
         for (week_time_int,course_id_int), course_assigned_count_int in self.theory_course_assigned_dict.items():
-            # 没有排课
-            if course_assigned_count_int == 0:
-                fitness_float -= 5
+            # 小于2次
+            if course_assigned_count_int <2:
+                fitness_float -= 1
             # 2-4次排课,即2-4周学时是合理的
             elif 2<= course_assigned_count_int <= 4:
-                fitness_float += 5
+                fitness_float += 1
             # 其他情况,直接减去排课次数的分,次数越多减的越多,增加减去一个基础分,消除边界波动
             else:
-                fitness_float -= course_assigned_count_int+7
+                # fitness_float -= 1
+                fitness_float -= course_assigned_count_int-4
 
         # 实验课周排课均衡性评分
         for (week_time_int,course_id_int), course_assigned_count_int in self.experiment_course_assigned_dict.items():
             # print((week_time_int,course_id_int), course_assigned_count_int)
-            # 没有排课
-            if course_assigned_count_int == 0:
-                fitness_float -= 5
+            # 小于2次
+            if course_assigned_count_int <2:
+                fitness_float -= 1
             # 1-2次排课,即2-4周学时是合理的
             elif 2<= course_assigned_count_int <= 4:
-                fitness_float += 5
+                fitness_float += 1
             # 其他情况,直接减去排课次数的分,次数越多减的越多,增加减去一个基础分
             else:
-                fitness_float -= course_assigned_count_int+7
+                fitness_float -= course_assigned_count_int-4
 
         # 课程学时安排适应度
         fitness_float += self.course_schedule_study_hour_fitness(self.course_assigned_study_hour_dict)
@@ -520,11 +533,11 @@ class GeneticAlgorithm:
         # 用集合去重
         unassigned_rooms = set(self.Room_list)
         unassigned_students = set(str(Student.student_id_str) for Student in self.Student_list)
+        # 初始化未安排时间列表
+        unassigned_time_list = set(self.TimeSlot_list)
 
         # 初始化排课索引
         schedule_index_int = 0
-        # 初始化未安排时间列表
-        unassigned_time_list = []
         # 初始化上课时间冲突教师列表
         schedule_conflict_time_teachers_list = []
         # 初始化上课时间冲突学生列表
@@ -625,10 +638,10 @@ class GeneticAlgorithm:
                 except KeyError:
                     # 键不存在,则跳过
                     pass
+                # 更新未安排时间列表
+                unassigned_time_list.discard(CurSchedule.TimeSlot)
 
             else:
-                # 未安排教室和时间段
-                unassigned_time_list.append(CurSchedule.TimeSlot)
                 # room_course_schedule_str = f"week:{CurSchedule.TimeSlot.week_time_int},day:{CurSchedule.TimeSlot.day_time_int},time:{CurSchedule.TimeSlot.slot_time_int} in {CurSchedule.Room.room_name_str}: Free"
                 current_generation_info_dict["room_assigned_course_schedule_dict"][f'schedule{schedule_index_int}']={
                     'week':CurSchedule.TimeSlot.week_time_int,'day':CurSchedule.TimeSlot.day_time_int,
@@ -677,8 +690,12 @@ class GeneticAlgorithm:
         # print('unique_conflict_time_student_list_str:',unique_conflict_time_student_list_str)
 
         # 打印未安排的时间段
-        unique_unassigned_time_list_str =list_remove_duplicate_joint(unassigned_time_list)
-        if unique_unassigned_time_list_str == '':
+        if unassigned_time_list:
+            unique_unassigned_time_list_str=''
+            for CurTimeSlot in unassigned_time_list:
+                unique_unassigned_time_list_str+=f'({CurTimeSlot.week_time_int},{CurTimeSlot.day_time_int},{CurTimeSlot.slot_time_int})'
+                unique_unassigned_time_list_str+=','
+        else:
             unique_unassigned_time_list_str = "无"
         # 添加到字典中
         current_generation_info_dict["unassigned_time_list"]=unique_unassigned_time_list_str
@@ -767,10 +784,6 @@ async def ws_course_schedule(websocket: WebSocket):
     # 上课时间初始化
     print('初始上课时间类列表开始')
     start_time = time.time()
-    # 定义周、天和时间段
-    week_range = range(1, 19)
-    day_range = [1, 2, 3, 4, 5,6]
-    slot_time_range =[1,2,3,4,5]
     # 初始化上课时间列表
     TimeSlot_list = service_course_schedule.initialize_time(week_range,day_range,slot_time_range)
     time_used = public_function.get_time_used(start_time)
@@ -785,8 +798,6 @@ async def ws_course_schedule(websocket: WebSocket):
     print('初始化教室类列表完成,用时:', time_used)
     print('教室数量:',len(Room_list))
     
-    # 指定学期
-    semester_str = '2024-2025-1'
     # 初始化教师和课程类列表
     print('初始化教师和课程类列表开始')
     start_time = time.time()
@@ -860,24 +871,31 @@ async def ws_course_schedule(websocket: WebSocket):
         # 加锁以保证异步执行时，每次循环内的数据是隔离的
         async with AsyncioLock:
             # 执行深拷贝
-            # CurSchedule = copy.deepcopy(BestSchedule)
+            CurSchedule = copy.deepcopy(BestSchedule)
             # 找到进化方向
             print('尝试找到进化方向开始')
             start_time = time.time()
+            # 初始化变异次数
+            mutate_count_int = 0
             while True:
-                # 执行深拷贝
-                CurSchedule = copy.deepcopy(BestSchedule)
+                # 探索变异次数大于阈值,认为此基因的变异方向不合理,退回起点重新寻找
+                if mutate_count_int>max_mutate_count_int:
+                    # 执行深拷贝,重新赋予起始基因
+                    CurSchedule = copy.deepcopy(BestSchedule)
+                    # 重置变异次数
+                    mutate_count_int = 0
+                    print('变异方向不合理,退回起点重新寻找')
                 # 执行变异
                 CurSchedule.mutate()
-                # 变异第2次
-                # CurSchedule.mutate()
+                # 变异次数增加
+                mutate_count_int+=1
 
                 # 获得最优个体的适应度
                 # best_fitness_float = CurSchedule.fitness()
                 best_fitness_float = await asyncio.to_thread(CurSchedule.fitness)
                 # time_used = public_function.get_time_used(start_time)
                 # print('计算当前适应度完成,用时:', time_used)
-                print('当前适应度:',best_fitness_float)
+                print(f'{mutate_count_int}/{max_mutate_count_int},当前适应度:',best_fitness_float)
 
                 # 如果适应度降低则是不好的变异方向,则放弃,重新变异
                 if best_fitness_float<=cur_max_fitness_float:

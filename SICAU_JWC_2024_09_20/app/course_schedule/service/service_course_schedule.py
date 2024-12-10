@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-12-09 17:04:52
+LastEditTime: 2024-12-10 14:23:33
 '''
 import time
 
@@ -333,7 +333,7 @@ def initialize_student(semester_str):
     # 学生和选课对应列表
     student_course_dict = {}
     # 先测试前2000的数据
-    for row in rows[:6000]:
+    for row in rows[:2000]:
         student_id_str = row.学号
         # 将学号作为键
         if student_id_str not in student_course_dict:
