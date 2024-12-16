@@ -5,46 +5,148 @@ let start_page = 1;  // 页码范围的起始页
 const show_per_page = 25;  // 每页显示的排课信息条目数
 // 选择的当前代
 let cur_generation_int = -1;
+// 当前适应度
+let cur_fitness_float = -1;
 
-// 开始排课函数
-async function start_course_schedule() {
-    WSocket = new WebSocket('/ws_course_schedule'); // 创建WebSocket连接
+// 快速开始排课函数
+async function quick_start_course_schedule() {
+    WSocket = new WebSocket('/ws_course_schedule_quick'); // 创建WebSocket连接
+
     const generation_progress_div = document.getElementById("generation_progress_div");
     generation_progress_div.innerHTML = ""; // 清空现有内容
+    // 显示变异进化信息
+    const mutate_progress_div = document.getElementById("mutate_progress_div");
+    mutate_progress_div.innerHTML = ""; // 清空现有内容
+
+    // 定义消息队列和最大队列大小
+    const mutateMessageQueue = [];
+    const generationMessageQueue = [];
+    const maxQueueSize = 100; // 队列最大容量
+
+    // 添加消息到队列并更新显示
+    function addToQueue(queue, message, displayDiv, renderCallback) {
+        queue.push(message);
+        if (queue.length > maxQueueSize) {
+            queue.shift(); // 删除最早的消息
+        }
+
+        // 清空并重新渲染显示内容
+        displayDiv.innerHTML = "";
+        queue.forEach((msg) => {
+            const messageDiv = document.createElement("div");
+            renderCallback(messageDiv, msg);
+            displayDiv.appendChild(messageDiv);
+        });
+
+        // 自动滚动到最新的内容
+        displayDiv.scrollTop = displayDiv.scrollHeight;
+    }
 
     // 监听WebSocket消息
     WSocket.onmessage = function(event) {
         const response_data = JSON.parse(event.data); // 解析消息
-        const generation_int = response_data.generation; // 当前进化代数
-        const best_fitness_float = response_data.best_fitness; // 当前代数的最佳适应度
+        if('process_message' in response_data) {
+            // 获取消息
+            const process_message = response_data.process_message;
+            addToQueue(mutateMessageQueue, process_message, mutate_progress_div, (div, msg) => {
+                div.innerHTML = `${msg}`; // 更新变异进化信息
+            });
+        } 
+        else if('generation' in response_data) {
+            const generation_int = response_data.generation; // 当前进化代数
+            const best_fitness_float = response_data.best_fitness; // 当前代数的最佳适应度
 
-        // 将当前代数的排课信息存储到字典中
-        generation_info_dict.set(generation_int, response_data.current_generation_info_dict);
+            // 将当前代数的排课信息存储到字典中
+            generation_info_dict.set(generation_int, response_data.current_generation_info_dict);
+            
+            // 创建进度显示内容
+            const generation_message = {
+                generation: generation_int,
+                best_fitness: best_fitness_float,
+            };
+            addToQueue(generationMessageQueue, generation_message, generation_progress_div, (div, msg) => {
+                div.innerHTML = `当前进化代数:${msg.generation}，当前代最高适应度:${msg.best_fitness}`;
+                div.onclick = () => show_course_schedule_info(msg.generation); // 绑定点击事件
+            });
+            // 实时显示排课信息
+            visualize_schedule(generation_int);
+        }
+    }
+}
 
-        // 创建进度显示内容
-        const progress_content_div = document.createElement("div");
-        progress_content_div.innerHTML = `当前进化代数:${generation_int}，当前代最高适应度:${best_fitness_float}`;
+// 更优开始排课函数
+async function better_start_course_schedule() {
 
-        // 将新的进度信息添加到排课过程显示框
-        generation_progress_div.appendChild(progress_content_div);
-        // 绑定点击事件,点击显示具体排课信息
-        progress_content_div.onclick = () => show_course_schedule_info(generation_int);
+    WSocket = new WebSocket('/ws_course_schedule_better'); // 创建 WebSocket 连接
 
-        // 自动滚动到最新的进度信息
-        generation_progress_div.scrollTop = generation_progress_div.scrollHeight;
-        
-        // 实时显示排课信息
-        visualize_schedule(generation_int);
+    const generation_progress_div = document.getElementById("generation_progress_div");
+    generation_progress_div.innerHTML = ""; // 清空现有内容
+    const mutate_progress_div = document.getElementById("mutate_progress_div");
+    mutate_progress_div.innerHTML = ""; // 清空现有内容
+
+    // 定义消息队列和最大队列大小
+    const mutateMessageQueue = [];
+    const generationMessageQueue = [];
+    const maxQueueSize = 100; // 队列最大容量
+
+    // 添加消息到队列并更新显示
+    function addToQueue(queue, message, displayDiv, renderCallback) {
+        queue.push(message);
+        if (queue.length > maxQueueSize) {
+            queue.shift(); // 删除最早的消息
+        }
+
+        // 清空并重新渲染显示内容
+        displayDiv.innerHTML = "";
+        queue.forEach((msg) => {
+            const messageDiv = document.createElement("div");
+            renderCallback(messageDiv, msg);
+            displayDiv.appendChild(messageDiv);
+        });
+
+        // 自动滚动到最新的内容
+        displayDiv.scrollTop = displayDiv.scrollHeight;
+    }
+
+    // 监听 WebSocket 消息
+    WSocket.onmessage = function (event) {
+        const response_data = JSON.parse(event.data); // 解析消息
+
+        if ('process_message' in response_data) {
+            // 获取消息
+            const process_message = response_data.process_message;
+            addToQueue(mutateMessageQueue, process_message, mutate_progress_div, (div, msg) => {
+                div.innerHTML = `${msg}`; // 更新变异进化信息
+            });
+        } 
+        else if ('generation' in response_data) {
+            const generation_int = response_data.generation; // 当前进化代数
+            const best_fitness_float = response_data.best_fitness; // 当前代数的最佳适应度
+
+            // 将当前代数的排课信息存储到字典中
+            generation_info_dict.set(generation_int, response_data.current_generation_info_dict);
+            
+            // 创建进度显示内容
+            const generation_message = {
+                generation: generation_int,
+                best_fitness: best_fitness_float,
+            };
+            addToQueue(generationMessageQueue, generation_message, generation_progress_div, (div, msg) => {
+                div.innerHTML = `当前进化代数:${msg.generation}，当前代最高适应度:${msg.best_fitness}`;
+                div.onclick = () => show_course_schedule_info(msg.generation); // 绑定点击事件
+            });
+            // 实时显示排课信息
+            visualize_schedule(generation_int);
+        }
     }
 }
 
 // 停止排课函数
 async function stop_course_schedule() {
     if (WSocket) {
-        WSocket.close(); // 关闭WebSocket连接
-        }
+        WSocket.close(); // 关闭 WebSocket 连接
+    }
 }
-
 
 // 显示当前代排课信息总览
 async function show_generation_course_schedule_summary_info(generation_int) {
@@ -123,6 +225,8 @@ async function show_course_schedule_info(generation_int) {
         
         // 创建并显示当前代数和适应度信息
         const fitness_float = CurrentScheduleInfo["fitness_float"];
+        // 更新适应度用于后续下载文件命名使用
+        cur_fitness_float = fitness_float;
         const top_generation_info_div = document.createElement("div");
         top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float}`;
         // 将当前代数和适应度信息添加到排课信息显示框的左上角
@@ -169,7 +273,7 @@ async function show_course_schedule_info(generation_int) {
             row.insertCell(16).innerHTML = schedule_dict.unavailable_timeslots_teacher;
             row.insertCell(17).innerHTML = schedule_dict.conflict;
 
-            row.insertCell(16).innerHTML = schedule_dict.availability;
+            row.insertCell(18).innerHTML = schedule_dict.availability;
         });
 
         // 将排课表格添加到页面中
@@ -253,7 +357,6 @@ async function visualize_schedule(generation_int) {
     visualize_top_generation_info_div.className = "visualize_top_generation_info_div";
 
     visualize_top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float} <br>`;
-    visualize_top_generation_info_div.innerHTML += `浅绿色：正常实验课，深绿色：实验课安排次数一周大于4讲，浅蓝色:正常理论课，深蓝色：理论课安排次数一周大于4讲，白色：未安排排课，棕色：课程排课学时和要求学时距离大于0，橙红色:教师不可上课时间，金黄色:学生上课时间冲突，紫色:以上两种冲突`;
     // 将当前代数和适应度信息添加到排课信息显示框的左上角
     schedule_visualization_div.appendChild(visualize_top_generation_info_div);
 
@@ -301,6 +404,8 @@ async function visualize_schedule(generation_int) {
                 conflicts_info_dict.is_schedule=cellData.course;
                 // 课程已排学时和要求学时的距离
                 conflicts_info_dict.study_hour_distance_float=cellData.study_hour_distance_float;
+                // 是否连续排课
+                conflicts_info_dict.is_continuous_schedule=cellData.is_contitueous_course_bool;
                 
                 gridContainer.appendChild(createScheduleCell(cellData.course, cellData.teacher, conflicts_info_dict));
             } 
@@ -344,23 +449,41 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
     } 
     // 实验课
     if(conflicts_info_dict.schedule_course_type=='实验'){
-        // 排课次数超过4次切换显示颜色
-        if(conflicts_info_dict.schedule_week_count>4){
+        // 排课次数超过6次切换显示颜色
+        if(conflicts_info_dict.schedule_week_count>6){
+            cell.classList.add("schedule_cell_experiment_too_too_many_count");
+        }
+        // 4（不含）-6（含）次
+        else if(conflicts_info_dict.schedule_week_count>4){
             cell.classList.add("schedule_cell_experiment_too_many_count");
         }
-        else{
+        // 2（含）-4（含）次
+        else if(conflicts_info_dict.schedule_week_count>=2){
             cell.classList.add("schedule-cell-experiment");
+        }
+        // 次数过少
+        else{
+            cell.classList.add("schedule_cell_experiment_too_less_count");
         }
     }
     // 理论课
     else {
-        // 排课次数超过4次切换显示颜色
-        if(conflicts_info_dict.schedule_week_count>4){
+        // 排课次数超过6次切换显示颜色
+        if(conflicts_info_dict.schedule_week_count>6){
+            cell.classList.add("schedule_cell_theory_too_too_many_count");
+        }
+        // 4（不含）-6（含）次
+        else if(conflicts_info_dict.schedule_week_count>4){
             cell.classList.add("schedule_cell_theory_too_many_count");
         }
-        else{
+        // 2（含）-4（含）次
+        else if(conflicts_info_dict.schedule_week_count>=2){
             // 添加类名
             cell.classList.add("schedule-cell-normal");
+        }
+        // 次数过少
+        else{
+            cell.classList.add("schedule_cell_theory_too_less_count");
         }
 
     }
@@ -368,6 +491,11 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
     // 已排学时和要求学时的距离大于0的标记为橙色
     if(conflicts_info_dict.study_hour_distance_float>0){
         cell.classList.add("schedule-cell-distance_unnormal");
+    }
+
+    // 连续排课的标记为棕色
+    if(conflicts_info_dict.is_continuous_schedule=='true'){
+        cell.classList.add("schedule_cell_continuous");
     }
 
     // 填充课程和教师信息
@@ -391,6 +519,9 @@ async function download_data_to_excel() {
     }
     // 有选择,下载内容
     else {
-        window.location.href = `/download_schedule_to_excel?query=${cur_generation_int}`;
+        // window.location.href = `/download_schedule_to_excel?query=${cur_generation_int,cur_fitness_int}`;
+        // encodeURIComponent函数，它用于对URI（统一资源标识符）组件进行编码，确保URL中的特殊字符被正确转义
+        // window.location.href = `/download_schedule_to_excel?generation=${encodeURIComponent(cur_generation_int)}&fitness=${encodeURIComponent(cur_fitness_float)}`;
+        window.location.href = `/download_schedule_to_excel?generation=${cur_generation_int}&fitness=${cur_fitness_float}`;
     }
 }

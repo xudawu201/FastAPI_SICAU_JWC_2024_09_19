@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-11-12 10:49:26
  * @LastEditors: xudawu
- * @LastEditTime: 2024-12-09 16:12:00
+ * @LastEditTime: 2024-12-12 08:38:52
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -19,8 +19,10 @@
 </head>
 <body>
     <h1>排课系统</h1>
-    <!-- 开始排课按钮 -->
-    <button id="start_course_schedule_button" onclick="start_course_schedule()">开始排课</button>
+    <!-- 快速开始排课按钮 -->
+    <button id="quick_start_course_schedule_button" onclick="quick_start_course_schedule()">开始快速排课</button>
+    <!-- 更优开始排课按钮 -->
+    <button id="better_start_course_schedule_button" onclick="better_start_course_schedule()">开始更优排课</button>
     <!-- 停止排课按钮 -->
     <button id="stop_course_schedule_button" onclick="stop_course_schedule()">停止排课</button>
     <!-- 显示排课过程的进度框 -->
@@ -28,23 +30,41 @@
         <h3>排课过程</h3>
     </div>
 
+    <!-- 显示变异进化过程的进度框 -->
+    <div id="mutate_progress_div" class="show_course_schedule_div">
+        <h3>变异进化过程</h3>
+    </div>
+
     <!-- 用于当前代排课信息总览 -->
     <div id="generation_schedule_summary_info_div" class="show_course_schedule_div">
         <h3>当前代排课信息总览</h3>
     </div>
     
+    <!-- 可视化的图例显示div -->
+    <div id="schedule_visualization_legend_div" class="show_course_schedule_div">
+        <h3>可视化排课图例</h3>
+        <div class="schedule-cell-not-schedule">未安排排课</div>
+        <div class="schedule-cell-normal">正常理论课</div>
+        <div class="schedule_cell_theory_too_many_count">理论课一周安排次数5-6次</div>
+        <div class="schedule_cell_theory_too_too_many_count">理论课一周安排次数大于6次</div>
+
+        <div class="schedule-cell-experiment">正常实验课</div>
+        <div class="schedule_cell_experiment_too_many_count">实验课一周安排次数5-6次</div>
+        <div class="schedule_cell_experiment_too_too_many_count">实验课一周安排次数大于6次</div>
+
+        <div class="schedule_cell_theory_too_less_count">课程一周安排次数1次</div>
+        <div class="schedule-cell-unavailable">教师不可上课时间</div>
+        <div class="schedule-cell-student-conflict">学生上课时间冲突</div>
+        <div class="schedule-cell-multiple-conflicts">多种冲突</div>
+        
+        <div class="schedule_cell_continuous">理论课没有间隔一天排课</div>
+        <div class="schedule-cell-distance_unnormal">课程安排学时距离要求学时大于0</div>
+
+    </div>
+
     <!-- 排课过程可视化 -->
     <div id="schedule_visualization_div" class="show_course_schedule_div">
         <h3>排课过程可视化</h3>
-        <!-- <p><strong>说明:</strong></p> -->
-        <p>1. 正常实验课为浅绿色,安排次数过多为深绿色</p>
-        <p>2. 正常理论课为浅蓝色,安排次数过多为深蓝色</p>
-        <p>3. 未安排排课为白色</p>
-        <p>4. 课程排课学时和要求学时距离大于0为棕色</p>
-        <p>5. 存在教师不可上课时间单元格为橙红色</p>
-        <p>6. 存在学生上课时间冲突单元格为金黄色</p>
-        <p>7. 存在以上两种冲突单元格为紫色</p>
-        
     </div>
 
     <!-- 下载按钮 -->
