@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-12-16 17:37:56
+LastEditTime: 2024-12-17 14:33:09
 '''
 import time
 
@@ -37,7 +37,7 @@ def initialize_teacher_course(semester_str):
     select_sql_str = f"""
         select * from {table_name_str} 
         where 学期 = '{semester_str}' 
-        and 排课类别 != '{schedule_type1_str}' and 课程性质 !='实践教学' and 课程体系 !='慕课' and 是否排课 ='是'
+        and 排课类别 != '{schedule_type1_str}' and 课程性质 !='实践教学' and 课程体系 !='慕课' and 是否排课 ='是' and 排课类别='混教'
     """
 
     excute_sql_flag_str,excute_count_int,rows = database_course_schedule.select_table_data_database(select_sql_str)
@@ -48,7 +48,7 @@ def initialize_teacher_course(semester_str):
     Course_list = []
     # 初始化临时教师列表
     temp_teacher_list = []
-    for row in rows[:4]:
+    for row in rows[:10]:
         
         # 初始化临时教师列表
         TempTeacherList = []
@@ -264,7 +264,7 @@ def initialize_room():
 
     # 初始化教室列表
     Room_list = []
-    for row in rows[:35]:
+    for row in rows[:100]:
         id_int = row.id
         # 校区
         campus_area_str = row.校区

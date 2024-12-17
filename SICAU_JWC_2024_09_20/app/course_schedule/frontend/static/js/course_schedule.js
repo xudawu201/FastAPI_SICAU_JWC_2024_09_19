@@ -8,6 +8,13 @@ let cur_generation_int = -1;
 // 当前适应度
 let cur_fitness_float = -1;
 
+// 可视化分页当前页码
+let visualize_current_page = 1; 
+// 可视化分页每页显示的条目数
+const visualize_show_per_page = 10;
+// 每次显示的最大页码数量
+const pages_in_view = 10;
+
 // 快速开始排课函数
 async function quick_start_course_schedule() {
     WSocket = new WebSocket('/ws_course_schedule_quick'); // 创建WebSocket连接
@@ -219,9 +226,6 @@ async function show_course_schedule_info(generation_int) {
     // 获取当前代数的排课信息
     const CurrentScheduleInfo = generation_info_dict.get(generation_int);
     if (CurrentScheduleInfo) {
-        const total_assigned_time_numer_int = CurrentScheduleInfo["total_assigned_course_number"];
-        const start_index = (current_page - 1) * show_per_page;
-        const end_index = start_index + show_per_page;
         
         // 创建并显示当前代数和适应度信息
         const fitness_float = CurrentScheduleInfo["fitness_float"];
@@ -236,12 +240,16 @@ async function show_course_schedule_info(generation_int) {
 
         // 创建表头
         const header = schedule_table.insertRow();
-        const headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师id","课程id","教室id","课程总学时要求","已排总学时","本周排课次数","已排学时和要求学时的距离","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
+        const headers = ["上课周数","上课星期","上课时间","校区","上课教室","排课类别","课程名称", "授课教师id","课程id","教室id","课程总学时要求","已排总学时","本周排课次数","已排学时和要求学时的距离","教师当天上课讲数","教师本周上课讲数","课程优先级", "选课学生", "教师不可上课时间段","上课时间冲突学生", "是否处于教师不可上课时间"];
         headers.forEach(header_text => {
             const th = document.createElement("th");
             th.innerHTML = header_text;
             header.appendChild(th);
         });
+
+        const total_assigned_time_numer_int = CurrentScheduleInfo["total_assigned_course_number"];
+        const start_index = (current_page - 1) * show_per_page;
+        const end_index = Math.min(start_index + show_per_page, total_assigned_time_numer_int);
 
         // 获取排课数据并分页显示
         const schedule_list = Object.entries(CurrentScheduleInfo['room_assigned_course_schedule_dict']);
@@ -268,12 +276,15 @@ async function show_course_schedule_info(generation_int) {
             row.insertCell(12).innerHTML = schedule_dict.schedule_week_count_int;
             row.insertCell(13).innerHTML = schedule_dict.study_hour_distance_float;
 
-            row.insertCell(14).innerHTML = schedule_dict.priority;
-            row.insertCell(15).innerHTML = schedule_dict.enrolled_student;
-            row.insertCell(16).innerHTML = schedule_dict.unavailable_timeslots_teacher;
-            row.insertCell(17).innerHTML = schedule_dict.conflict;
+            row.insertCell(14).innerHTML = schedule_dict.course_teacher_day_study_hour_str;
+            row.insertCell(15).innerHTML = schedule_dict.course_teacher_week_study_hour_str;
 
-            row.insertCell(18).innerHTML = schedule_dict.availability;
+            row.insertCell(16).innerHTML = schedule_dict.priority;
+            row.insertCell(17).innerHTML = schedule_dict.enrolled_student;
+            row.insertCell(18).innerHTML = schedule_dict.unavailable_timeslots_teacher;
+            row.insertCell(19).innerHTML = schedule_dict.conflict;
+
+            row.insertCell(20).innerHTML = schedule_dict.availability;
         });
 
         // 将排课表格添加到页面中
@@ -295,7 +306,6 @@ function show_pagination(total_items, generation_int) {
     const total_pages = Math.ceil(total_items / show_per_page);
 
     // 计算新的页码范围，使当前页位于中间
-    const pages_in_view = 10; // 每次显示的最大页码数量
     let min_page = Math.max(1, current_page - Math.floor(pages_in_view / 2));
     let max_page = Math.min(total_pages, min_page + pages_in_view - 1);
 
@@ -343,7 +353,6 @@ async function visualize_schedule(generation_int) {
     const schedule_visualization_div = document.getElementById("schedule_visualization_div");
     schedule_visualization_div.innerHTML = ""; // 清空现有内容
     
-    
     // 获取当前代数的排课信息
     const CurrentScheduleInfo = generation_info_dict.get(generation_int);
     if (!CurrentScheduleInfo) {
@@ -357,12 +366,10 @@ async function visualize_schedule(generation_int) {
     visualize_top_generation_info_div.className = "visualize_top_generation_info_div";
 
     visualize_top_generation_info_div.innerHTML = `当前代数: ${generation_int} 适应度: ${fitness_float} <br>`;
-    // 将当前代数和适应度信息添加到排课信息显示框的左上角
     schedule_visualization_div.appendChild(visualize_top_generation_info_div);
 
     const assigned_schedule = Object.values(CurrentScheduleInfo['room_assigned_course_schedule_dict']);
     const unique_rooms = [...new Set(assigned_schedule.map(s => s.room))];
-    // 将时间的周数、天数、时段组合成完整时间
     const unique_times = [...new Set(assigned_schedule.map(s => `${s.week}, ${s.day}, ${s.time}`))];
 
     unique_rooms.sort();
@@ -371,51 +378,100 @@ async function visualize_schedule(generation_int) {
     // 创建动态网格容器
     const gridContainer = document.createElement("div");
     gridContainer.className = "schedule-grid";
-
-    // 设置网格布局：列数等于教室数 + 1（左侧时间列）
     gridContainer.style.gridTemplateColumns = `repeat(${unique_rooms.length + 1}, auto)`;
 
     // 填充横纵坐标和数据
-    gridContainer.appendChild(createHeaderCell("time/room", "schedule-header")); // 左上角标题
-    unique_rooms.forEach(room => gridContainer.appendChild(createHeaderCell(room, "schedule-header-horizontal"))); // 横坐标（教室）
+    gridContainer.appendChild(createHeaderCell("time/room", "schedule-header"));
+    unique_rooms.forEach(room => gridContainer.appendChild(createHeaderCell(room, "schedule-header-horizontal")));
+    
+    // 分页逻辑：计算当前页面的起始索引和结束索引
+    const startIndex = (visualize_current_page - 1) * visualize_show_per_page;
+    const endIndex = Math.min(startIndex + visualize_show_per_page, unique_times.length);
 
-    unique_times.forEach(time => {
-        gridContainer.appendChild(createHeaderCell(time, "schedule-header-vertical")); // 纵坐标（时间）
+    // 只显示当前页面的数据
+    const currentTimesToDisplay = unique_times.slice(startIndex, endIndex);
+
+    currentTimesToDisplay.forEach(time => {
+        gridContainer.appendChild(createHeaderCell(time, "schedule-header-vertical"));
         unique_rooms.forEach(room => {
             const cellData = assigned_schedule.find(s => `${s.week}, ${s.day}, ${s.time}` === time && s.room === room);
             if (cellData) {
                 let conflicts_info_dict = {
-                    // 初始化默认值为 false
                     teacher_is_unavailable: false,
                     student_is_conflict: false,
                 };
-                // 如果有冲突信息，则更新冲突状态
-                if(cellData.availability !='') {
+                if (cellData.availability != '') {
                     conflicts_info_dict.teacher_is_unavailable = true;
                 }
-                if(cellData.conflict !='') {
+                if (cellData.conflict != '') {
                     conflicts_info_dict.student_is_conflict = true;
                 }
-                // 课程类别
-                conflicts_info_dict.schedule_course_type=cellData.schedule_course_type;
-                // 课程安排次数
-                conflicts_info_dict.schedule_week_count=cellData.schedule_week_count_int;
-                // 是否安排课程
-                conflicts_info_dict.is_schedule=cellData.course;
-                // 课程已排学时和要求学时的距离
-                conflicts_info_dict.study_hour_distance_float=cellData.study_hour_distance_float;
-                // 是否连续排课
-                conflicts_info_dict.is_continuous_schedule=cellData.is_contitueous_course_bool;
+                conflicts_info_dict.schedule_course_type = cellData.schedule_course_type;
+                conflicts_info_dict.schedule_week_count = cellData.schedule_week_count_int;
+                conflicts_info_dict.is_schedule = cellData.course;
+                conflicts_info_dict.study_hour_distance_float = cellData.study_hour_distance_float;
+                conflicts_info_dict.is_continuous_schedule = cellData.is_contitueous_course_bool;
                 
                 gridContainer.appendChild(createScheduleCell(cellData.course, cellData.teacher, conflicts_info_dict));
-            } 
-            else {
+            } else {
                 gridContainer.appendChild(createEmptyCell());
             }
         });
     });
-
+    // 将网格容器添加到页面中
     schedule_visualization_div.appendChild(gridContainer);
+
+    // 调用分页函数
+    visualization_pagination(unique_times.length, generation_int);
+}
+
+// 可视化显示的分页
+function visualization_pagination(total_items, generation_int) {
+    const schedule_info_div = document.getElementById("schedule_visualization_div");
+    const pagination_div = document.createElement("div");
+    pagination_div.classList.add("visualization_pagination");
+
+    const total_pages = Math.ceil(total_items / visualize_show_per_page);
+
+    // 计算新的页码范围，使当前页位于中间
+    let min_page = Math.max(1, visualize_current_page - Math.floor(pages_in_view / 2));
+    let max_page = Math.min(total_pages, min_page + pages_in_view - 1);
+
+    // 确保页码范围不会超出总页数
+    if (max_page - min_page < pages_in_view - 1) {
+        min_page = Math.max(1, max_page - pages_in_view + 1);
+    }
+
+    // 清空现有的分页按钮
+    const existingPaginationDiv = schedule_info_div.querySelector(".visualization_pagination");
+    if (existingPaginationDiv) {
+        existingPaginationDiv.remove();
+    }
+
+    // 创建页码按钮
+    for (let page = min_page; page <= max_page; page++) {
+        const page_button = document.createElement("button");
+        page_button.innerHTML = page;
+
+        // 添加当前页的样式
+        if (page === visualize_current_page) {
+            page_button.disabled = true;  // 禁用当前页按钮
+            page_button.classList.add("current-page");
+        }
+
+        // 点击分页按钮，更新页码并显示对应内容
+        page_button.onclick = function () {
+            visualize_current_page = page;
+            visualize_schedule(generation_int); // 重新显示排课信息
+            schedule_info_div.scrollTop = schedule_info_div.scrollHeight;  // 滚动到底部
+        };
+        
+        // 将按钮添加到分页容器
+        pagination_div.appendChild(page_button);
+    }
+
+    // 添加分页到排课信息显示框
+    schedule_info_div.appendChild(pagination_div);
 }
 
 // 创建标题单元格（横纵坐标）
@@ -450,41 +506,42 @@ function createScheduleCell(course, teacher, conflicts_info_dict) {
     // 实验课
     if(conflicts_info_dict.schedule_course_type=='实验'){
         // 排课次数超过6次切换显示颜色
-        if(conflicts_info_dict.schedule_week_count>6){
+        if(conflicts_info_dict.schedule_week_count>4){
             cell.classList.add("schedule_cell_experiment_too_too_many_count");
         }
         // 4（不含）-6（含）次
-        else if(conflicts_info_dict.schedule_week_count>4){
-            cell.classList.add("schedule_cell_experiment_too_many_count");
-        }
+        // else if(conflicts_info_dict.schedule_week_count>4){
+        //     cell.classList.add("schedule_cell_experiment_too_many_count");
+        // }
         // 2（含）-4（含）次
-        else if(conflicts_info_dict.schedule_week_count>=2){
+        // else if(conflicts_info_dict.schedule_week_count>=2){
+        else if(2<=conflicts_info_dict.schedule_week_count && conflicts_info_dict.schedule_week_count<=4){
             cell.classList.add("schedule-cell-experiment");
         }
         // 次数过少
-        else{
-            cell.classList.add("schedule_cell_experiment_too_less_count");
-        }
+        // else{
+        //     cell.classList.add("schedule_cell_experiment_too_less_count");
+        // }
     }
     // 理论课
     else {
         // 排课次数超过6次切换显示颜色
-        if(conflicts_info_dict.schedule_week_count>6){
+        if(conflicts_info_dict.schedule_week_count>3){
             cell.classList.add("schedule_cell_theory_too_too_many_count");
         }
-        // 4（不含）-6（含）次
-        else if(conflicts_info_dict.schedule_week_count>4){
+        // 3次
+        else if(conflicts_info_dict.schedule_week_count==3){
             cell.classList.add("schedule_cell_theory_too_many_count");
         }
-        // 2（含）-4（含）次
-        else if(conflicts_info_dict.schedule_week_count>=2){
+        // 1（含）-2（含）次
+        else if(1<=conflicts_info_dict.schedule_week_count && conflicts_info_dict.schedule_week_count<=2){
             // 添加类名
             cell.classList.add("schedule-cell-normal");
         }
         // 次数过少
-        else{
-            cell.classList.add("schedule_cell_theory_too_less_count");
-        }
+        // else{
+        //     cell.classList.add("schedule_cell_theory_too_less_count");
+        // }
 
     }
     
