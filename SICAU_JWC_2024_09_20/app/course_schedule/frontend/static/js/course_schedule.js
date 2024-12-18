@@ -17,6 +17,16 @@ const pages_in_view = 10;
 
 // 快速开始排课函数
 async function quick_start_course_schedule() {
+
+    // 找到学期下拉框
+    const semester_select = document.getElementById('select_semester_select');
+
+    // 检查是否有当前选中
+    if (!semester_select.value) {
+        alert('请先选择一个学期');
+        return;
+    }
+
     WSocket = new WebSocket('/ws_course_schedule_quick'); // 创建WebSocket连接
 
     const generation_progress_div = document.getElementById("generation_progress_div");
@@ -83,6 +93,15 @@ async function quick_start_course_schedule() {
 
 // 更优开始排课函数
 async function better_start_course_schedule() {
+
+    // 找到学期下拉框
+    const semester_select = document.getElementById('select_semester_select');
+
+    // 检查是否有当前选中
+    if (!semester_select.value) {
+        alert('请先选择一个学期');
+        return;
+    }
 
     WSocket = new WebSocket('/ws_course_schedule_better'); // 创建 WebSocket 连接
 
@@ -172,6 +191,11 @@ async function show_generation_course_schedule_summary_info(generation_int) {
     schedule_conflict_time_teacher = CurrentScheduleInfo["schedule_conflict_time_teacher"];
     schedule_conflict_time_student = CurrentScheduleInfo["schedule_conflict_time_student"];
 
+    // 不正常的排课信息
+    unnormal_schedule_str = CurrentScheduleInfo["unnormal_schedule_str"];
+    unnormal_schedule_teacher_day_str = CurrentScheduleInfo["unnormal_schedule_teacher_day_str"];
+    unnormal_schedule_teacher_week_str = CurrentScheduleInfo["unnormal_schedule_teacher_week_str"];
+
     // 创建进度显示内容
     const summary_content_div = document.createElement("div");
     // 为进度显示内容添加样式类名
@@ -180,27 +204,34 @@ async function show_generation_course_schedule_summary_info(generation_int) {
     summary_content_div.innerHTML = `<strong>当前代数:</strong>${generation_int}，<strong>适应度:</strong>${fitness_float} <br/>`;
     summary_content_div.innerHTML += `<strong>总排课课程数:</strong>${total_assigned_course_number_int} <br/>`;
 
+    
+    summary_content_div.innerHTML += `<strong>上课时间冲突学生:</strong><br/>`;
+    summary_content_div.innerHTML += `${schedule_conflict_time_student} <br/>`;
+    
+    summary_content_div.innerHTML += `<strong>被安排在教师不可上课时间的教师:</strong><br/>`;
+    summary_content_div.innerHTML += `${schedule_conflict_time_teacher} <br/>`;
+
+    summary_content_div.innerHTML += `<strong>课程安排次数不合理的:</strong><br/>`;
+    summary_content_div.innerHTML += `${unnormal_schedule_str} <br/>`;
+    summary_content_div.innerHTML += `<strong>教师一天上课次数大于等于3讲:</strong><br/>`;
+    summary_content_div.innerHTML += `${unnormal_schedule_teacher_day_str} <br/>`;
+    summary_content_div.innerHTML += `<strong>教师一周上课次数大于12讲:</strong><br/>`;
+    summary_content_div.innerHTML += `${unnormal_schedule_teacher_week_str} <br/>`;
+    
     summary_content_div.innerHTML += `<strong>未安排课程教室:</strong><br/>`;
     summary_content_div.innerHTML += `${unassigned_room_list} <br/>`;
-
-    summary_content_div.innerHTML += `<strong>未安排课程时间:</strong><br/>`;
-    summary_content_div.innerHTML += `${unassigned_time_list} <br/>`;
-
+    
     summary_content_div.innerHTML += `<strong>未安排排课课程:</strong><br/>`;
     // 遍历字典添加数据
     Object.entries(unassigned_course_dict).forEach(([key, value]) => {
         summary_content_div.innerHTML += `${value} <br/>`;
     });
-
     summary_content_div.innerHTML += `<strong>未安排上课学生:</strong><br/>`;
     summary_content_div.innerHTML += `${unassigned_student_list} <br/>`;
-
-    summary_content_div.innerHTML += `<strong>被安排在教师不可上课时间的教师:</strong><br/>`;
-    summary_content_div.innerHTML += `${schedule_conflict_time_teacher} <br/>`;
     
-    summary_content_div.innerHTML += `<strong>上课时间冲突学生:</strong><br/>`;
-    summary_content_div.innerHTML += `${schedule_conflict_time_student} <br/>`;
-
+    summary_content_div.innerHTML += `<strong>未安排课程时间:</strong><br/>`;
+    summary_content_div.innerHTML += `${unassigned_time_list} <br/>`;
+    
     // 将新的进度信息添加到排课过程显示框
     generation_schedule_summary_info_div.appendChild(summary_content_div);
 }

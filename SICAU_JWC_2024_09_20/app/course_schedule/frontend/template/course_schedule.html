@@ -2,7 +2,7 @@
  * @Author: xudawu
  * @Date: 2024-11-12 10:49:26
  * @LastEditors: xudawu
- * @LastEditTime: 2024-12-17 14:37:29
+ * @LastEditTime: 2024-12-18 17:51:47
 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -19,12 +19,20 @@
 </head>
 <body>
     <h1>排课系统</h1>
+
+    <!-- <h1>学院、班级、课程性质筛选</h1> -->
+    <label for="select_semester_label">排课学期:</label>
+    <select id="select_semester_select" onchange="update_semester()" style="width: 150px;">
+        <option value="">请选择一个排课学期</option>
+    </select>
+
     <!-- 快速开始排课按钮 -->
     <button id="quick_start_course_schedule_button" onclick="quick_start_course_schedule()">开始快速排课</button>
     <!-- 更优开始排课按钮 -->
     <button id="better_start_course_schedule_button" onclick="better_start_course_schedule()">开始更优排课</button>
     <!-- 停止排课按钮 -->
     <button id="stop_course_schedule_button" onclick="stop_course_schedule()">停止排课</button>
+
     <!-- 显示排课过程的进度框 -->
     <div id="generation_progress_div" class="show_course_schedule_div">
         <h3>排课过程</h3>
@@ -81,6 +89,9 @@
 
     <!-- 数据处理js -->
     <script src="course_schedule_static_path/js/course_schedule.js"></script>
+
+    <!-- 获取学期选择信息 -->
+    <script src="course_schedule_static_path/js/course_schedule_updata_semester.js"></script>
 
 </body>
 </html>
