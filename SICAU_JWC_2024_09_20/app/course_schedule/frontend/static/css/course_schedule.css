@@ -12,6 +12,13 @@
     overflow: auto; /* 允许垂直滚动 */
 }
 
+/* 排课过程显示框 */
+#generation_progress_div p{
+    position: relative;
+    margin-top: 40px;
+    margin-left: 10px;
+}
+
 /* 排课过程显示框中div鼠标悬浮显示 */
 #generation_progress_div div:hover {
     /* 鼠标指针样式 */

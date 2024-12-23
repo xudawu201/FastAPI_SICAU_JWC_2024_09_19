@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-12 10:49:26
 LastEditors: xudawu
-LastEditTime: 2024-12-18 17:59:51
+LastEditTime: 2024-12-19 16:32:14
 '''
 
 # 遗传算法随机库
@@ -217,13 +217,13 @@ class GeneticAlgorithm:
         if ChoiceRoom_list==[]:
             # 没有找到合适的教室,则记录课程
             self.NoMatchAreaOrTypeAndCapacityRoomCourse_list.append(Course)
-            return
+            return []
         # 获得容量匹配的教室列表
         CapacityAvailableRoom_list = [Room for Room in ChoiceRoom_list if Room.capacity_int>=Course.selected_student_num_int]
         if CapacityAvailableRoom_list==[]:
             # 没有找到合适的教室,则记录课程
             self.NoMatchAreaOrTypeAndCapacityRoomCourse_list.append(Course)
-            return
+            return []
         
         return CapacityAvailableRoom_list
 
@@ -241,7 +241,7 @@ class GeneticAlgorithm:
         # 获得当前课程需要排课的总学时
         cur_schedule_total_study_hour_int = int(Course.total_study_hour-Course.self_study_hour)
 
-        # 初始化所有可排课的安排
+        # 初始化本次课所有可排课的安排
         CopyScheduleIndex_dict = {}
         # 获得所有教室id
         CapacityAvailableRoomId_list=[Room.id_int for Room in CapacityAvailableRoom_list]
@@ -279,11 +279,19 @@ class GeneticAlgorithm:
         if schedule_course_type_str!=self.schedule_experiment_course_type_name_str:
             # 一讲是两学时
             cur_schedule_total_study_hour_int = int(cur_schedule_total_study_hour_int/2)
+            if cur_schedule_total_study_hour_int>len(CopyScheduleIndex_dict.keys()):
+                # 课程学时大于可选择的时间,则无法安排此课程,记录课程
+                self.NoMatchAreaOrTypeAndCapacityRoomCourse_list.append(Course)
+                return
             # 根据课程学时选择对应的安排时间个数
             SampleScheduleIndex_list = random.sample(list(CopyScheduleIndex_dict.values()),k=cur_schedule_total_study_hour_int)
         else:
             # 如果是实验课,时间选择也减半
             cur_schedule_total_study_hour_int = int(cur_schedule_total_study_hour_int/4)
+            if cur_schedule_total_study_hour_int>len(CopyScheduleIndex_dict.keys()):
+                # 课程学时大于可选择的时间,则无法安排此课程,记录课程
+                self.NoMatchAreaOrTypeAndCapacityRoomCourse_list.append(Course)
+                return
             # 根据课程学时选择对应的安排时间个数
             SampleScheduleIndex_list = random.sample(list(CopyScheduleIndex_dict.values()),k=cur_schedule_total_study_hour_int)
         
@@ -307,7 +315,7 @@ class GeneticAlgorithm:
                 else:
                     self.initialize_schedule_theory(ChoiceSchedule,Course)
 
-    # 初始化基因,去掉不能排课的教室
+    # 初始化基因,去掉不能排课的课程
     def initialize(self):
         
         # 排课,遍历课程
@@ -579,6 +587,17 @@ class GeneticAlgorithm:
         fitness_float += week_fitness_float
         return fitness_float
 
+    # 计算教师连堂上课的适应度
+    def teacher_schedule_continuous_fitness(self):
+        # 初始化适应度
+        fitness_float = 0
+        # 初始化连续上课次数
+        continuous_count_int = 0
+        # 初始化连续上课次数字典
+        self.teacher_course_continuous_count_dict = {}
+        # 初始化已处理教师列表
+        teacher_processed_id_list = []
+
     # 计算适应度
     def fitness(self):
             
@@ -737,7 +756,7 @@ class GeneticAlgorithm:
         # 课程隔天排课适应度
         fitness_float += self.course_schedule_day_fitness(self.week_day_theory_course_assigned_dict)
 
-        # 教师上课次数适应度
+        # 教师周和天上课次数适应度
         fitness_float += self.teacher_schedule_week_day_fitness(self.teacher_week_day_assigned_dict)
 
         # 返回适应度
@@ -962,13 +981,13 @@ class GeneticAlgorithm:
                     week_key =(CurSchedule.TimeSlot.week_time_int,CurTeacher.id_int)
                     course_teacher_week_schedule_count_list.append(self.teacher_week_assigned_dict.get(week_key,0))
 
-                if len(course_teacher_day_schedule_count_list)==[]:
+                if course_teacher_day_schedule_count_list==[]:
                     course_teacher_day_schedule_count_str='无'
                 else:
                     # 教师上课次数转为字符串
                     course_teacher_day_schedule_count_str = ','.join(str(count_int) for count_int in course_teacher_day_schedule_count_list)
 
-                if len(course_teacher_week_schedule_count_list)==[]:
+                if course_teacher_week_schedule_count_list==[]:
                     course_teacher_week_schedule_count_str='无'
                 else:
                     course_teacher_week_schedule_count_str = ','.join(str(count_int) for count_int in course_teacher_week_schedule_count_list)
@@ -1142,6 +1161,8 @@ class GeneticAlgorithm:
             if teacher_day_schedule_count_int>=3:
                 unnormal_schedule_teacher_day_str+=f'({week_int}_{day_int}_{teacher_id_int}_{teacher_day_schedule_count_int}),'
 
+        if unnormal_schedule_teacher_day_str == '':
+            unnormal_schedule_teacher_day_str = "无"
         # 添加到字典中
         current_generation_info_dict["unnormal_schedule_teacher_day_str"]=unnormal_schedule_teacher_day_str
 
@@ -1152,6 +1173,8 @@ class GeneticAlgorithm:
             if teacher_week_schedule_count_int>12:
                 unnormal_schedule_teacher_week_str+=f'({week_int}_{teacher_id_int}_{teacher_week_schedule_count_int}),'
 
+        if unnormal_schedule_teacher_week_str == '':
+            unnormal_schedule_teacher_week_str = "无"
         # 添加到字典中
         current_generation_info_dict["unnormal_schedule_teacher_week_str"]=unnormal_schedule_teacher_week_str
 
@@ -1168,7 +1191,7 @@ def list_remove_duplicate_joint(cur_list):
     unique_list_str=''
     for cur_item in unique_list:
         unique_list_str+=str(cur_item)
-        unique_list_str+='，'
+        unique_list_str+=','
         
     # 返回列表拼接后的字符串
     return unique_list_str
@@ -1186,6 +1209,8 @@ def initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, p
     if CopyRoom_list == []:
         return True
 
+    # 实例化一个个体,使用修改后的教室列表
+    SingleSchedule = GeneticAlgorithm(Course_list, TimeSlot_list, CopyRoom_list, Student_list)
     # 对个体的基因进行随机初始化
     # 随机一个基因(对时间段和教室的组合随机选择一门课)
     CopyCourse_list = SingleSchedule.initialize()

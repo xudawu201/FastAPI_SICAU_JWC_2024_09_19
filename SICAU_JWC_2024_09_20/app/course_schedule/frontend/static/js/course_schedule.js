@@ -1,4 +1,5 @@
 let WSocket = null;  // WebSocket对象，全局变量
+let stop_schedule_flag = false; // 停止排课标志
 let generation_info_dict = new Map(); // 存储排课信息的字典
 let current_page = 1;  // 当前页码
 let start_page = 1;  // 页码范围的起始页
@@ -14,54 +15,82 @@ let visualize_current_page = 1;
 const visualize_show_per_page = 10;
 // 每次显示的最大页码数量
 const pages_in_view = 10;
+// 重连间隔 (毫秒),5000=5秒
+let reconnect_interval = 5000;
 
-// 快速开始排课函数
-async function quick_start_course_schedule() {
+// 禁用元素
+function disable_element(element_id_str) {
+    const element = document.getElementById(element_id_str);
+    element.style.pointerEvents = "none";
+    element.style.opacity = "0.5";
+}
 
-    // 找到学期下拉框
-    const semester_select = document.getElementById('select_semester_select');
+// 启用元素
+function enable_element(element_id_str) {
+    const element = document.getElementById(element_id_str);
+    element.style.pointerEvents = "auto";
+    element.style.opacity = "1";
+}
 
-    // 检查是否有当前选中
-    if (!semester_select.value) {
-        alert('请先选择一个学期');
-        return;
+// 初始化WebSocket连接
+function initialize_websocket(websocket_url){
+    // 如果已设置停止排课,直接返回
+    if (stop_schedule_flag==true) {
+        return
+    }
+    // 创建 WebSocket 连接
+    WSocket = new WebSocket(websocket_url);
+    // WSocket = new WebSocket("/ws_course_schedule_quick");
+
+    // 接收到消息时的回调
+    WSocket.onmessage = (event) => {
+        display_message(event);
+    };
+
+    // 未设置停止排课,连接关闭时回调重连
+    if (stop_schedule_flag!=true) {
+        // 连接关闭时回调重连
+        WSocket.onclose = (event) => {
+            // displayMessage("WebSocket Closed. Attempting to reconnect...");
+            setTimeout(() => {
+                initialize_websocket();
+            }, 5000);  // 5秒后尝试重连
+        };
     }
 
-    WSocket = new WebSocket('/ws_course_schedule_quick'); // 创建WebSocket连接
+    // 显示消息
+    function display_message(event) {
 
-    const generation_progress_div = document.getElementById("generation_progress_div");
-    generation_progress_div.innerHTML = ""; // 清空现有内容
-    // 显示变异进化信息
-    const mutate_progress_div = document.getElementById("mutate_progress_div");
-    mutate_progress_div.innerHTML = ""; // 清空现有内容
+        // 创建进度显示内容
+        const generation_progress_div = document.getElementById("generation_progress_div");
+        // 显示变异进化信息
+        const mutate_progress_div = document.getElementById("mutate_progress_div");
 
-    // 定义消息队列和最大队列大小
-    const mutateMessageQueue = [];
-    const generationMessageQueue = [];
-    const maxQueueSize = 100; // 队列最大容量
-
-    // 添加消息到队列并更新显示
-    function addToQueue(queue, message, displayDiv, renderCallback) {
-        queue.push(message);
-        if (queue.length > maxQueueSize) {
-            queue.shift(); // 删除最早的消息
+        // 定义消息队列和最大队列大小
+        const mutateMessageQueue = [];
+        const generationMessageQueue = [];
+        const maxQueueSize = 100; // 队列最大容量
+        
+        // 添加消息到队列并更新显示
+        function addToQueue(queue, message, displayDiv, renderCallback) {
+            queue.push(message);
+            if (queue.length > maxQueueSize) {
+                queue.shift(); // 删除最早的消息
+                // 清空并重新渲染显示内容
+                mutate_progress_div.innerHTML = "";
+            }
+            
+            queue.forEach((msg) => {
+                const messageDiv = document.createElement("div");
+                renderCallback(messageDiv, msg);
+                displayDiv.appendChild(messageDiv);
+            });
+            
+            // 自动滚动到最新的内容
+            displayDiv.scrollTop = displayDiv.scrollHeight;
         }
-
-        // 清空并重新渲染显示内容
-        displayDiv.innerHTML = "";
-        queue.forEach((msg) => {
-            const messageDiv = document.createElement("div");
-            renderCallback(messageDiv, msg);
-            displayDiv.appendChild(messageDiv);
-        });
-
-        // 自动滚动到最新的内容
-        displayDiv.scrollTop = displayDiv.scrollHeight;
-    }
-
-    // 监听WebSocket消息
-    WSocket.onmessage = function(event) {
-        const response_data = JSON.parse(event.data); // 解析消息
+        // 解析消息渲染内容
+        const response_data = JSON.parse(event.data); 
         if('process_message' in response_data) {
             // 获取消息
             const process_message = response_data.process_message;
@@ -75,7 +104,7 @@ async function quick_start_course_schedule() {
 
             // 将当前代数的排课信息存储到字典中
             generation_info_dict.set(generation_int, response_data.current_generation_info_dict);
-            
+                
             // 创建进度显示内容
             const generation_message = {
                 generation: generation_int,
@@ -85,10 +114,53 @@ async function quick_start_course_schedule() {
                 div.innerHTML = `当前进化代数:${msg.generation}，当前代最高适应度:${msg.best_fitness}`;
                 div.onclick = () => show_course_schedule_info(msg.generation); // 绑定点击事件
             });
-            // 实时显示排课信息
-            visualize_schedule(generation_int);
-        }
+
+        // 实时显示排课信息
+        visualize_schedule(generation_int);
+
+        };
     }
+}
+
+// 快速开始排课函数
+async function quick_start_course_schedule() {
+
+    // 找到学期下拉框
+    const semester_select = document.getElementById('select_semester_select');
+
+    // 检查是否有当前选中
+    if (!semester_select.value) {
+        alert('请先选择一个学期');
+        return;
+    }
+
+    // 禁用元素
+    disable_element('select_semester_select');
+    disable_element("quick_start_course_schedule_button");
+    disable_element('better_start_course_schedule_button');
+
+    // 发送请求
+    const response = await fetch('/initialize_course_schedule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: 'message',
+        })
+    });
+
+    
+    // 清空显示内容
+    const generation_progress_div = document.getElementById("generation_progress_div");
+    generation_progress_div.innerHTML = ""; // 清空现有内容
+    // 显示变异进化信息
+    const mutate_progress_div = document.getElementById("mutate_progress_div");
+    mutate_progress_div.innerHTML = ""; // 清空现有内容
+    
+    // 创建 WebSocket 连接
+    initialize_websocket("/ws_course_schedule_quick")
+
 }
 
 // 更优开始排课函数
@@ -103,75 +175,56 @@ async function better_start_course_schedule() {
         return;
     }
 
-    WSocket = new WebSocket('/ws_course_schedule_better'); // 创建 WebSocket 连接
+    // 禁用元素
+    disable_element('select_semester_select');
+    disable_element("quick_start_course_schedule_button");
+    disable_element('better_start_course_schedule_button');
+
+    // 发送请求
+    const response = await fetch('/initialize_course_schedule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            message: 'message',
+        })
+    });
 
     const generation_progress_div = document.getElementById("generation_progress_div");
     generation_progress_div.innerHTML = ""; // 清空现有内容
     const mutate_progress_div = document.getElementById("mutate_progress_div");
     mutate_progress_div.innerHTML = ""; // 清空现有内容
 
-    // 定义消息队列和最大队列大小
-    const mutateMessageQueue = [];
-    const generationMessageQueue = [];
-    const maxQueueSize = 100; // 队列最大容量
-
-    // 添加消息到队列并更新显示
-    function addToQueue(queue, message, displayDiv, renderCallback) {
-        queue.push(message);
-        if (queue.length > maxQueueSize) {
-            queue.shift(); // 删除最早的消息
-        }
-
-        // 清空并重新渲染显示内容
-        displayDiv.innerHTML = "";
-        queue.forEach((msg) => {
-            const messageDiv = document.createElement("div");
-            renderCallback(messageDiv, msg);
-            displayDiv.appendChild(messageDiv);
-        });
-
-        // 自动滚动到最新的内容
-        displayDiv.scrollTop = displayDiv.scrollHeight;
-    }
-
-    // 监听 WebSocket 消息
-    WSocket.onmessage = function (event) {
-        const response_data = JSON.parse(event.data); // 解析消息
-
-        if ('process_message' in response_data) {
-            // 获取消息
-            const process_message = response_data.process_message;
-            addToQueue(mutateMessageQueue, process_message, mutate_progress_div, (div, msg) => {
-                div.innerHTML = `${msg}`; // 更新变异进化信息
-            });
-        } 
-        else if ('generation' in response_data) {
-            const generation_int = response_data.generation; // 当前进化代数
-            const best_fitness_float = response_data.best_fitness; // 当前代数的最佳适应度
-
-            // 将当前代数的排课信息存储到字典中
-            generation_info_dict.set(generation_int, response_data.current_generation_info_dict);
-            
-            // 创建进度显示内容
-            const generation_message = {
-                generation: generation_int,
-                best_fitness: best_fitness_float,
-            };
-            addToQueue(generationMessageQueue, generation_message, generation_progress_div, (div, msg) => {
-                div.innerHTML = `当前进化代数:${msg.generation}，当前代最高适应度:${msg.best_fitness}`;
-                div.onclick = () => show_course_schedule_info(msg.generation); // 绑定点击事件
-            });
-            // 实时显示排课信息
-            visualize_schedule(generation_int);
-        }
-    }
+    // 创建 WebSocket 连接
+    initialize_websocket("/ws_course_schedule_better")
 }
 
 // 停止排课函数
-async function stop_course_schedule() {
+async function stop_schedule() {
     if (WSocket) {
         WSocket.close(); // 关闭 WebSocket 连接
     }
+
+    // 设置全局变量
+    stop_schedule_flag = true;
+
+    // 启用元素
+    enable_element('select_semester_select');
+    enable_element("quick_start_course_schedule_button");
+    enable_element('better_start_course_schedule_button');
+
+    // 发送请求
+    const response = await fetch('/stop_schedule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            set_stop_flag_str: 'true',
+        })
+    });
+
 }
 
 // 显示当前代排课信息总览

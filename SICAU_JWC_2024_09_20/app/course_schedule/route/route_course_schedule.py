@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-12 10:49:26
 LastEditors: xudawu
-LastEditTime: 2024-12-18 17:46:47
+LastEditTime: 2024-12-19 14:30:17
 '''
 
 import time
@@ -10,7 +10,7 @@ import copy
 import urllib.parse
 
 # fastapi相关
-from fastapi import APIRouter, Request,WebSocket
+from fastapi import APIRouter, Request,WebSocket,WebSocketDisconnect
 import asyncio
 
 # 下载文件相关
@@ -44,9 +44,19 @@ max_mutate_count_int = 50
 week_range = range(1, 17)
 day_range = [1, 2, 3, 4, 5,6]
 slot_time_range =[1,2,3,4,5]
-# 指定学期
+# 声明全局变量,指定学期
 semester_str ='2024-2025-1'
-# global semester_str = '2024-2025-1'
+
+# 初始化进化停止标志
+global_stop_flag = False
+
+# 初始化最优基因
+BestSchedule = None
+# 初始化当前最高适应度
+cur_max_fitness_float=0
+# 初始化进化次数
+generation_int = 0
+
 
 # 异步缓冲队列
 queue_size_int = 100
@@ -108,7 +118,19 @@ async def update_semester(request: Request):
     # 声明全局变量
     global semester_str 
     semester_str = request_semester_str
-    # 更新全局学期数据
+
+
+# 更新学期数据
+@router.post("/stop_schedule")
+async def stop_schedule(request: Request):
+
+    # 获取请求体中的 JSON 数据
+    request_data = await request.json()
+    set_stop_flag_str = request_data.get("set_stop_flag_str")
+    
+    # 声明全局变量
+    global global_stop_flag 
+    global_stop_flag = True
 
 async def add_to_queue(message: Dict):
     """向队列中添加消息，如果队列已满，移除最早的消息"""
@@ -116,12 +138,25 @@ async def add_to_queue(message: Dict):
         await MessageQueue.get()  # 丢弃最早的消息
     await MessageQueue.put(message)
 
-# 开始快速排课
-@router.websocket("/ws_course_schedule_quick")
-async def ws_course_schedule_quick(websocket: WebSocket):
+# 开始排课初始化
+@router.post("/initialize_course_schedule")
+async def initialize_course_schedule(request: Request):
+    
     # 声明全局变量
     global semester_str
-  
+    # 声明全局最优基因
+    global BestSchedule
+
+    # 初始化当前最高适应度
+    global cur_max_fitness_float
+
+    # 初始化进化次数
+    global generation_int
+
+    # 声明全局变量
+    global global_stop_flag 
+    global_stop_flag = False
+    
     # 上课时间初始化
     print('初始上课时间类列表开始')
     start_time = time.time()
@@ -180,7 +215,7 @@ async def ws_course_schedule_quick(websocket: WebSocket):
     if PopulationList == True:
         error_str = '没有可排课的教室,中断排课'
         # await websocket.send_json({'message': error_str})
-        await websocket.close()
+        # await websocket.close()
         print(error_str)
         return
     time_used = public_function.get_time_used(start_time)
@@ -203,12 +238,27 @@ async def ws_course_schedule_quick(websocket: WebSocket):
 
     # 初始化进化次数
     generation_int = 0
-    # 等待接受WebSocket连接
+
+# 开始快速排课
+@router.websocket("/ws_course_schedule_quick")
+async def ws_course_schedule_quick(websocket: WebSocket):
+    
+    # 声明全局变量
+    global global_stop_flag
+    global BestSchedule
+    # 初始化当前最高适应度
+    global cur_max_fitness_float
+    # 初始化进化次数
+    global generation_int
+    global all_generation_info_dict
+
+    # 等待建立连接
     await websocket.accept()
-    # print('排课种群进化开始')
     while True:
-        # 加锁以保证异步执行时，每次循环内的数据是隔离的
-        # async with AsyncioLock:
+        # 如果停止排课,则退出循环
+        if global_stop_flag==True:
+            websocket.close()
+            break
         # 找到进化方向
         process_message = '尝试找到进化方向开始'
         print(process_message)
@@ -224,14 +274,15 @@ async def ws_course_schedule_quick(websocket: WebSocket):
             
         start_time = time.time()
         while True:
+            if global_stop_flag==True:
+                websocket.close()
+                break
             # 执行深拷贝
             CurSchedule = copy.deepcopy(BestSchedule)
             # 执行变异
             CurSchedule.mutate()
             # 执行变异2
             CurSchedule.mutate()
-            # 执行变异3
-            # CurSchedule.mutate()
 
             # 获得最优个体的适应度
             # best_fitness_float = CurSchedule.fitness()
@@ -289,8 +340,8 @@ async def ws_course_schedule_quick(websocket: WebSocket):
         generation_int += 1
         # print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
         # 获得当前代的排课信息
-        # current_generation_info_dict = await asyncio.to_thread(CurSchedule.display)
-        current_generation_info_dict = CurSchedule.display()
+        current_generation_info_dict = await asyncio.to_thread(CurSchedule.display)
+        # current_generation_info_dict = CurSchedule.display()
         # 获得已排课的课程数
         total_assigned_course_number = len(current_generation_info_dict['room_assigned_course_schedule_dict'].keys())
         # 字典添加代数和适应度
@@ -315,11 +366,6 @@ async def ws_course_schedule_quick(websocket: WebSocket):
         # 存储全局课程排课信息
         all_generation_info_dict[generation_int] = current_generation_info_dict
 
-        # 将内容发送给前端实时显示
-        # await websocket.send_json({
-        #     "generation": generation_int,"best_fitness":best_fitness_float,
-        #     'current_generation_info_dict':current_generation_info_dict
-        #     })
         # 添加消息到队列
         await add_to_queue({
             "generation": generation_int,"best_fitness":best_fitness_float,
@@ -331,127 +377,47 @@ async def ws_course_schedule_quick(websocket: WebSocket):
             message = await MessageQueue.get()
             await websocket.send_json(message)
 
-# 开始更优排课
+# 更优开始排课
 @router.websocket("/ws_course_schedule_better")
 async def ws_course_schedule_better(websocket: WebSocket):
+    
     # 声明全局变量
-    global semester_str
-  
-    # 上课时间初始化
-    print('初始上课时间类列表开始')
-    start_time = time.time()
-    # 初始化上课时间列表
-    TimeSlot_list = service_initialize_course_schedule.initialize_time(week_range,day_range,slot_time_range)
-    time_used = public_function.get_time_used(start_time)
-    print('初始上课时间列表完成,用时:', time_used)
-    print('上课时间数量:',len(TimeSlot_list))
-
-    # 初始化教室类列表
-    print('初始化教室类列表开始')
-    start_time = time.time()
-    Room_list = service_initialize_course_schedule.initialize_room()
-    time_used = public_function.get_time_used(start_time)
-    print('初始化教室类列表完成,用时:', time_used)
-    print('教室数量:',len(Room_list))
-    
-    # 初始化教师和课程类列表
-    print('初始化教师和课程类列表开始')
-    start_time = time.time()
-    Teacher_list,Course_list = service_initialize_course_schedule.initialize_teacher_course(semester_str)
-    time_used = public_function.get_time_used(start_time)
-    print('初始化教师和课程类列表完成,用时:', time_used)
-    print('课程人数:',len(Course_list))
-    print('教师人数:',len(Teacher_list))
-
-    # 设置教师上课限制时间
-    print('设置教师上课限制时间开始')
-    start_time = time.time()
-    Teacher_list = service_initialize_course_schedule.set_teacher_unavailable_timeslot(Teacher_list,semester_str)
-    time_used = public_function.get_time_used(start_time)
-    print('设置教师上课限制时间完成,用时:', time_used)
-
-    # 初始化学生类列表
-    print('初始化学生类列表开始')
-    start_time = time.time()
-    student_course_dict,Student_list = service_initialize_course_schedule.initialize_student(semester_str)
-    time_used = public_function.get_time_used(start_time)
-    print('初始化学生类列表完成,用时:', time_used)
-    print('学生人数:',len(student_course_dict))
-
-    # 设置学生选课
-    print('设置学生选课列表开始')
-    start_time = time.time()
-    Student_list = service_initialize_course_schedule.set_student_enroll_course(Student_list,Course_list,student_course_dict)
-    time_used = public_function.get_time_used(start_time)
-    print('设置学生选课列表完成,用时:', time_used)
-    
-    # 种群大小和适应度阈值
-    population_size_int = 100
-
-    print('排课种群初始化开始')
-    start_time = time.time()
-    # 获得初始化的种群
-    PopulationList = service_course_schedule.initialize_population(Course_list, TimeSlot_list, Room_list, Student_list, population_size_int)
-    if PopulationList == True:
-        error_str = '没有可排课的教室,中断排课'
-        # await websocket.send_json({'message': error_str})
-        await websocket.close()
-        print(error_str)
-        return
-    time_used = public_function.get_time_used(start_time)
-    print('排课种群初始化完成,用时:', time_used)
-
-    print('获取最优个体开始')
-    start_time = time.time()
-    # 获取最优个体
-    BestSchedule = max(PopulationList, key=lambda x: x.fitness())
-    # 批量获取最优个体2、4讲的实验课
-    # SetedSchedule_dict = BestSchedule.batch_initialize_schedule_experiment_inherit(BestSchedule.ScheduleIndex_dict)
-    # # 赋予处理后的实验课基因
-    # BestSchedule.ScheduleIndex_dict = SetedSchedule_dict
-
-    time_used = public_function.get_time_used(start_time)
-    print('获取最优个体完成,用时:', time_used)
-
+    global global_stop_flag
+    global BestSchedule
     # 初始化当前最高适应度
-    cur_max_fitness_float=BestSchedule.fitness()
-
+    global cur_max_fitness_float
     # 初始化进化次数
-    generation_int = 0
-    # 初始化一个锁
-    # AsyncioLock = asyncio.Lock()
-    # 连接前端进行实时通信
-    await websocket.accept()
-    
+    global generation_int
+    global all_generation_info_dict
 
-    # print('排课种群进化开始')
+    # 等待建立连接
+    await websocket.accept()
+
     while True:
-        
-        # 发送心跳包
-        # await websocket.send_text('ping')
+        # 如果停止排课,则退出循环
+        if global_stop_flag==True:
+            await websocket.close()
+            break
         # 执行深拷贝
         CurSchedule = copy.deepcopy(BestSchedule)
         # 找到进化方向
         process_message = '尝试找到进化方向开始'
         print(process_message)
-        # await websocket.send_json({
-        #     "process_message": process_message,
-        #     })
+        await websocket.send_json({
+            "process_message": process_message,
+            })
         # 初始化变异次数
         mutate_count_int = 0
         while True:
-            # 接收前端消息
-            # keyword = await websocket.receive_text()
-            # print(keyword)
-            # 发送心跳包
-            # await websocket.send_text('ping')
+            # 如果停止排课,则退出循环
+            if global_stop_flag==True:
+                await websocket.close()
+                break
 
             # 探索变异次数大于阈值,认为此基因的变异方向不合理,退回起点重新寻找
             if mutate_count_int>max_mutate_count_int:
                 # 执行深拷贝,重新赋予起始基因
                 CurSchedule = copy.deepcopy(BestSchedule)
-                # 异步深拷贝 BestSchedule
-                # CurSchedule = await asyncio.to_thread(copy.deepcopy, BestSchedule)
                 # 重置变异次数
                 mutate_count_int = 0
                 process_message = '变异方向不合理,退回起点重新寻找'
@@ -465,9 +431,6 @@ async def ws_course_schedule_better(websocket: WebSocket):
                 while not MessageQueue.empty():
                     message = await MessageQueue.get()
                     await websocket.send_json(message)
-                # await websocket.send_json({
-                #     "process_message": process_message,
-                #     })
             # 执行变异
             CurSchedule.mutate()
             # 变异次数增加
@@ -480,9 +443,6 @@ async def ws_course_schedule_better(websocket: WebSocket):
             # print('计算当前适应度完成,用时:', time_used)
             process_message = f'{mutate_count_int}/{max_mutate_count_int},当前适应度:{best_fitness_float}'
             print(process_message)
-            # await websocket.send_json({
-            #     "process_message": process_message,
-            #     })
 
             # 添加消息到队列
             await add_to_queue({
@@ -501,17 +461,8 @@ async def ws_course_schedule_better(websocket: WebSocket):
                 # 适应度增加,则跳出循环
                 break
 
-        # 取出队列中的消息并发送
-        # while not MessageQueue.empty():
-        #     message = await MessageQueue.get()
-        #     await websocket.send_json(message)
-            
         process_message = '尝试找到进化方向完成'
         print(process_message)
-        # await websocket.send_json({
-        #     "process_message": process_message,
-        #     })
-        
         # 添加消息到队列
         await add_to_queue({
             "process_message": process_message,
@@ -528,15 +479,12 @@ async def ws_course_schedule_better(websocket: WebSocket):
 
         process_message = '处理种群信息可视化开始'
         print(process_message)
-        # await websocket.send_json({
-        #     "process_message": process_message,
-        #     })
         # 打印当前代的最优适应度
         generation_int += 1
         # print(f"Generation {generation_int}: Best Fitness = {best_fitness_float}")
         # 获得当前代的排课信息
-        # current_generation_info_dict = await asyncio.to_thread(CurSchedule.display)
-        current_generation_info_dict = CurSchedule.display()
+        current_generation_info_dict = await asyncio.to_thread(CurSchedule.display)
+        # current_generation_info_dict = CurSchedule.display()
         # 获得已排课的课程数
         total_assigned_course_number = len(current_generation_info_dict['room_assigned_course_schedule_dict'].keys())
         # 字典添加代数和适应度
@@ -548,9 +496,6 @@ async def ws_course_schedule_better(websocket: WebSocket):
         # time_used = public_function.get_time_used(start_time)
         process_message = '处理种群信息可视化完成'
         print(process_message)
-        # await websocket.send_json({
-        #     "process_message": process_message,
-        #     })
 
         # 添加消息到队列
         await add_to_queue({
@@ -566,10 +511,6 @@ async def ws_course_schedule_better(websocket: WebSocket):
         all_generation_info_dict[generation_int] = current_generation_info_dict
 
         # 将内容发送给前端实时显示
-        # await websocket.send_json({
-        #     "generation": generation_int,"best_fitness":best_fitness_float,
-        #     'current_generation_info_dict':current_generation_info_dict
-        #     })
         # 添加消息到队列
         await add_to_queue({
             "generation": generation_int,"best_fitness":best_fitness_float,
@@ -580,7 +521,7 @@ async def ws_course_schedule_better(websocket: WebSocket):
         while not MessageQueue.empty():
             message = await MessageQueue.get()
             await websocket.send_json(message)
-
+   
 @router.get("/download_schedule_to_excel")
 async def download_schedule_to_excel(generation: int = 0,fitness: float = 0.0):
 

@@ -2,7 +2,7 @@
 Author: xudawu
 Date: 2024-11-26 15:02:14
 LastEditors: xudawu
-LastEditTime: 2024-12-18 16:31:12
+LastEditTime: 2024-12-19 16:33:29
 '''
 import time
 
@@ -37,7 +37,7 @@ def initialize_teacher_course(semester_str):
     select_sql_str = f"""
         select * from {table_name_str} 
         where 学期 = '{semester_str}' 
-        and 排课类别 != '{schedule_type1_str}' and 课程性质 !='实践教学' and 课程体系 !='慕课' and 是否排课 ='是'
+        and 排课类别 != '{schedule_type1_str}' and 课程性质 !='实践教学' and 课程体系 !='慕课' and 是否排课 ='是' and 排课类别='实验'
     """
 
     excute_sql_flag_str,excute_count_int,rows = database_course_schedule.select_table_data_database(select_sql_str)
@@ -48,7 +48,138 @@ def initialize_teacher_course(semester_str):
     Course_list = []
     # 初始化临时教师列表
     temp_teacher_list = []
-    for row in rows[:100]:
+    for row in rows[:20]:
+        
+        # 初始化临时教师列表
+        TempTeacherList = []
+        # 初始化临时教师学时列表
+        TempTeacherStudyHourList = []
+
+        # 教师1
+        teacher_name_str = row.教师
+        # 教师工号
+        teacher_id_str = row.教师工号
+
+        TempTeacherList.append(model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[]))
+        TempTeacherStudyHourList.append(row.教师学时)
+
+        if teacher_id_str not in temp_teacher_list:
+            unavailable_timeslot_list=[]
+            # 教师姓名、id、不可上课时间列表
+            teacher = model_course_schedule.Teacher(teacher_name_str,teacher_id_str,unavailable_timeslot_list)
+            Teacher_list.append(teacher)
+
+            # 更新已处理教师列表
+            temp_teacher_list.append(teacher_id_str)
+
+        
+        # 教师2
+        teacher_name_str = row.教师1
+        if teacher_name_str != '无':
+            # 教师工号
+            teacher_id_str = row.教师1工号
+            
+            TempTeacherList.append(model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[]))
+            TempTeacherStudyHourList.append(row.教师1学时)
+
+            if teacher_id_str not in temp_teacher_list:
+                teacher = model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[])
+                Teacher_list.append(teacher)
+
+                # 更新已处理教师列表
+                temp_teacher_list.append(teacher_id_str)
+
+        # 教师3
+        teacher_name_str = row.教师2
+        if teacher_name_str != '无':
+            # 教师工号
+            teacher_id_str = row.教师2工号
+
+            TempTeacherList.append(model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[]))
+            TempTeacherStudyHourList.append(row.教师2学时)
+
+            if teacher_id_str not in temp_teacher_list:
+                teacher = model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[])
+                Teacher_list.append(teacher)
+
+                # 更新已处理教师列表
+                temp_teacher_list.append(teacher_id_str)
+
+        # 教师4
+        teacher_name_str = row.教师3
+        if teacher_name_str != '无':
+            # 教师工号
+            teacher_id_str = row.教师3工号
+
+            TempTeacherList.append(model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[]))
+            TempTeacherStudyHourList.append(row.教师3学时)
+
+            if teacher_id_str not in temp_teacher_list:
+                teacher = model_course_schedule.Teacher(teacher_name_str,teacher_id_str,[])
+                Teacher_list.append(teacher)
+
+                # 更新已处理教师列表
+                temp_teacher_list.append(teacher_id_str)
+
+        # 课程列表
+        id_int = row.id
+        # 课程编号
+        course_id = row.课程编号
+        name_str = row.课程
+        # 周学时
+        week_study_hour = row.周学时
+        # 理论课总学时
+        theoretical_study_hour = row.理论学时
+        # 实验课总学时
+        experimental_study_hour = row.实验学时
+        # 总学时
+        total_study_hour = row.总学时
+        # 自修(自学)学时
+        self_study_hour = row.自修
+        CourseTeacher_list = TempTeacherList
+        # 排课类别
+        schedule_course_type_str = row.排课类别
+        # 课程性质
+        course_type_str = row.课程性质
+        # 数据库列名为课程体系，内容如慕课、通识必修、专业方向课
+        course_system_str = row.课程体系
+        # 理论可选学生人数
+        theoretical_selectable_student_num_int = row.人数
+        # 已选学生人数
+        selected_student_num_int = row.已选人数
+        # 教室类别
+        room_type_str = row.教室类别
+        # 校区
+        campus_area_str = row.校区
+        # 教学班编号
+        teaching_class_id_int = row.编号
+        # 教师学时列表
+        teacher_study_hour_list = TempTeacherStudyHourList
+
+        course = model_course_schedule.Course(
+            id_int,course_id,name_str, week_study_hour, theoretical_study_hour,experimental_study_hour,total_study_hour,
+            self_study_hour,CourseTeacher_list,schedule_course_type_str,course_type_str,course_system_str,
+            theoretical_selectable_student_num_int,selected_student_num_int,room_type_str,campus_area_str,
+            teaching_class_id_int,teacher_study_hour_list,
+        )
+        Course_list.append(course)
+
+    
+    # 再选择20个理论课
+    table_name_str = "开课任务"
+    schedule_type1_str = "混班"
+    # 构造sql语句
+    select_sql_str = f"""
+        select * from {table_name_str} 
+        where 学期 = '{semester_str}' 
+        and 排课类别 != '{schedule_type1_str}' and 课程性质 !='实践教学' and 课程体系 !='慕课' and 是否排课 ='是' and 排课类别='混教'
+    """
+
+    excute_sql_flag_str,excute_count_int,rows = database_course_schedule.select_table_data_database(select_sql_str)
+
+    # 初始化临时教师列表
+    temp_teacher_list = []
+    for row in rows[:20]:
         
         # 初始化临时教师列表
         TempTeacherList = []
@@ -264,7 +395,7 @@ def initialize_room():
 
     # 初始化教室列表
     Room_list = []
-    for row in rows[:300]:
+    for row in rows[:500]:
         id_int = row.id
         # 校区
         campus_area_str = row.校区
